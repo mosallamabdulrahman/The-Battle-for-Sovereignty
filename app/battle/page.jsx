@@ -5,29 +5,58 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Shield, 
-  Swords, 
-  Users, 
   RefreshCw, 
-  Trophy, 
   Gamepad2,
   Lock, 
-  Eye, 
-  EyeOff, 
   Check, 
-  Bomb, 
-  Flame, 
-  Target,
-  Clock, 
   AlertTriangle, 
-  QrCode, 
   Crown, 
   CheckCircle, 
   Share2,
-  LockKeyhole
+  LockKeyhole,
+  LogOut
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { QRCodeSVG } from 'qrcode.react';
 import Link from 'next/link';
+import {
+  AbandonedGameView,
+  CombatEventModal,
+  JudgeCombatDashboard,
+  TeamCombatDashboard,
+} from '../../components/battle/CombatViews';
+
+const TEAM_PUBLIC_COLUMNS = [
+  'id',
+  'room_id',
+  'team_index',
+  'name',
+  'points',
+  'score',
+  'available_strikes',
+  'is_ready',
+  'joined',
+  'member_id',
+  'tools',
+  'used_tools',
+  'shield_active',
+  'created_at',
+  'updated_at',
+].join(',');
+
+function BattleAlert({ alert }) {
+  if (!alert) return null;
+
+  return (
+    <div className={`fixed top-6 left-1/2 -translate-x-1/2 z-[120] rounded-2xl border px-5 py-3 text-sm font-black text-white shadow-2xl ${
+      alert.type === 'error'
+        ? 'border-rose-700 bg-rose-900'
+        : 'border-emerald-700 bg-emerald-900'
+    }`}>
+      {alert.message}
+    </div>
+  );
+}
 
 export default function BattlePage() {
   const [mounted, setMounted] = useState(false);
@@ -44,8 +73,15 @@ export default function BattlePage() {
   // Supabase Database States
   const [room, setRoom] = useState(null);
   const [teams, setTeams] = useState([]);
+  const [questions, setQuestions] = useState([]);
+  const [combatEvents, setCombatEvents] = useState([]);
   const [dbLoading, setDbLoading] = useState(false);
   const [dbError, setDbError] = useState(null);
+  const [activeAnswer, setActiveAnswer] = useState('');
+  const [isActionBusy, setIsActionBusy] = useState(false);
+  const [latestCombatEvent, setLatestCombatEvent] = useState(null);
+  const [radarCells, setRadarCells] = useState([]);
+  const [radarMode, setRadarMode] = useState(false);
 
   // Selected Unit to Deploy (for active players)
   const [selectedUnit, setSelectedUnit] = useState('infantry'); // 'infantry', 'tank', 'aircraft', 'submarine', 'mine'
@@ -84,11 +120,25 @@ export default function BattlePage() {
   useEffect(() => {
     setMounted(true);
     if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
+      let params = new URLSearchParams(window.location.search);
+      const savedPath = window.localStorage.getItem('sovereignty_active_battle_path');
+
+      if (!params.get('room_id') && savedPath?.startsWith('/battle?')) {
+        window.history.replaceState({}, '', savedPath);
+        params = new URLSearchParams(window.location.search);
+      }
+
       setRoomId(params.get('room_id'));
       const t = params.get('team');
       if (t) setTeamIndex(Number(t));
       setRole(params.get('role'));
+
+      if (params.get('room_id')) {
+        window.localStorage.setItem(
+          'sovereignty_active_battle_path',
+          `${window.location.pathname}${window.location.search}`
+        );
+      }
     }
 
     // Auth Listeners
@@ -125,30 +175,77 @@ export default function BattlePage() {
       // Fetch both Teams
       const { data: tData, error: tError } = await supabase
         .from('teams')
-        .select('*')
+        .select(TEAM_PUBLIC_COLUMNS)
         .eq('room_id', roomId)
         .order('team_index');
 
       if (tError) throw tError;
-      setTeams(tData);
+      let visibleTeams = (tData || []).map((team) => ({ ...team, board: [] }));
 
       // 3. Mark team participants as joined in Database (optimistic write once scanned)
-      if (teamIndex && (teamIndex === 1 || teamIndex === 2)) {
-        const teamObj = tData.find(t => t.team_index === teamIndex);
-        if (teamObj && !teamObj.joined) {
-          await supabase
-            .from('teams')
-            .update({ joined: true, member_id: user?.id ?? null })
-            .eq('id', teamObj.id);
-        }
+      if (user && teamIndex && (teamIndex === 1 || teamIndex === 2)) {
+        const { error: claimError } = await supabase.rpc('claim_team_slot', {
+          p_room_id: roomId,
+          p_team_index: teamIndex,
+        });
+        if (claimError) throw claimError;
+
+        const { data: claimedTeams, error: claimedTeamsError } = await supabase
+          .from('teams')
+          .select(TEAM_PUBLIC_COLUMNS)
+          .eq('room_id', roomId)
+          .order('team_index');
+
+        if (claimedTeamsError) throw claimedTeamsError;
+        visibleTeams = claimedTeams.map((team) => ({ ...team, board: [] }));
       }
+
+      const visibleBoardIndexes = role === 'judge'
+        ? [1, 2]
+        : teamIndex
+        ? [teamIndex]
+        : [];
+
+      for (const visibleTeamIndex of visibleBoardIndexes) {
+        const { data: board, error: boardError } = await supabase.rpc('get_team_board', {
+          p_room_id: roomId,
+          p_team_index: visibleTeamIndex,
+        });
+
+        if (boardError) throw boardError;
+        visibleTeams = visibleTeams.map((team) =>
+          team.team_index === visibleTeamIndex ? { ...team, board } : team
+        );
+      }
+
+      setTeams(visibleTeams);
+
+      const { data: questionData, error: questionError } = await supabase
+        .from('room_questions')
+        .select('*')
+        .eq('room_id', roomId)
+        .order('category_id')
+        .order('position');
+
+      if (questionError) throw questionError;
+      setQuestions(questionData || []);
+
+      const { data: eventData, error: eventError } = await supabase
+        .from('combat_events')
+        .select('*')
+        .eq('room_id', roomId)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (eventError) throw eventError;
+      setCombatEvents(eventData || []);
     } catch (err) {
       console.error(err);
       setDbError(err.message || 'فشل تحميل بيانات معركة سيادة من الخادم الريادي القديم.');
     } finally {
       setDbLoading(false);
     }
-  }, [roomId, teamIndex, user]);
+  }, [roomId, role, teamIndex, user]);
 
   // Load database rows when variables lock
   useEffect(() => {
@@ -178,8 +275,39 @@ export default function BattlePage() {
         (payload) => {
           const updatedTeam = payload.new;
           setTeams((prev) => 
-            prev.map((t) => (t.id === updatedTeam.id ? updatedTeam : t))
+            prev.map((t) => (t.id === updatedTeam.id ? { ...t, ...updatedTeam } : t))
           );
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'room_questions', filter: `room_id=eq.${roomId}` },
+        (payload) => {
+          setQuestions((previous) =>
+            previous.map((question) => question.id === payload.new.id ? payload.new : question)
+          );
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'combat_events', filter: `room_id=eq.${roomId}` },
+        (payload) => {
+          setCombatEvents((previous) => [payload.new, ...previous].slice(0, 50));
+          if (payload.new.event_type === 'strike') {
+            setLatestCombatEvent(payload.new);
+            if (teamIndex && payload.new.target_team_index === teamIndex) {
+              supabase.rpc('get_team_board', {
+                p_room_id: roomId,
+                p_team_index: teamIndex,
+              }).then(({ data }) => {
+                if (data) {
+                  setTeams((previous) => previous.map((team) =>
+                    team.team_index === teamIndex ? { ...team, board: data } : team
+                  ));
+                }
+              });
+            }
+          }
         }
       )
       .subscribe();
@@ -187,26 +315,29 @@ export default function BattlePage() {
     return () => {
       supabase.removeChannel(roomChannel);
     };
-  }, [roomId]);
+  }, [roomId, teamIndex]);
 
-  // 5. Evaluate if all armaments are set to automatically advance the whole layout to ready_to_start
   useEffect(() => {
-    if (!room || teams.length !== 2 || room.status === 'battle_ready') return;
-
-    const team1Ready = teams[0]?.is_ready;
-    const team2Ready = teams[1]?.is_ready;
-
-    if (team1Ready && team2Ready) {
-      // Both teams ready: trigger state lock in the cloud
-      const advanceRoomStatus = async () => {
-        await supabase
-          .from('game_rooms')
-          .update({ status: 'battle_ready' })
-          .eq('id', roomId);
-      };
-      advanceRoomStatus();
+    if (role !== 'judge' || !room?.active_question_id) {
+      setActiveAnswer('');
+      return;
     }
-  }, [room, teams, roomId]);
+
+    const loadAnswer = async () => {
+      const { data, error } = await supabase.rpc('get_question_answer', {
+        p_question_id: room.active_question_id,
+      });
+
+      if (error) {
+        showAlert(`تعذر تحميل الإجابة: ${error.message}`, 'error');
+        return;
+      }
+
+      setActiveAnswer(data);
+    };
+
+    loadAnswer();
+  }, [role, room?.active_question_id]);
 
   // 6. Handle unit placement (for active playing teams)
   const handleCellClick = async (cellIndex) => {
@@ -248,11 +379,17 @@ export default function BattlePage() {
       )
     );
 
-    // Write directly in database
-    await supabase
-      .from('teams')
-      .update({ board: currentBoard, points: currentPoints })
-      .eq('id', activeTeam.id);
+    const { error } = await supabase.rpc('update_team_deployment', {
+      p_room_id: roomId,
+      p_team_index: teamIndex,
+      p_board: currentBoard,
+      p_points: currentPoints,
+    });
+
+    if (error) {
+      showAlert(error.message, 'error');
+      loadDatabaseData();
+    }
   };
 
   // 7. Flag readiness to lock board deployment
@@ -273,12 +410,83 @@ export default function BattlePage() {
       prev.map((t) => (t.team_index === teamIndex ? { ...t, is_ready: true } : t))
     );
 
-    // Save Team Readiness in Cloud
-    await supabase
-      .from('teams')
-      .update({ is_ready: true })
-      .eq('id', activeTeam.id);
+    const { error } = await supabase.rpc('set_team_ready', {
+      p_room_id: roomId,
+      p_team_index: teamIndex,
+    });
+
+    if (error) {
+      showAlert(error.message, 'error');
+      loadDatabaseData();
+    }
   };
+
+  const runAction = async (action) => {
+    setIsActionBusy(true);
+    try {
+      await action();
+    } catch (error) {
+      showAlert(error.message || 'تعذر تنفيذ العملية.', 'error');
+    } finally {
+      setIsActionBusy(false);
+    }
+  };
+
+  const handleSelectQuestion = (question) => runAction(async () => {
+    const { error } = await supabase.rpc('select_room_question', {
+      p_room_id: roomId,
+      p_question_id: question.id,
+      p_team_index: role === 'judge' ? null : teamIndex,
+    });
+    if (error) throw error;
+  });
+
+  const handleResolveQuestion = (questionId, winnerTeamIndex) => runAction(async () => {
+    const { error } = await supabase.rpc('resolve_room_question', {
+      p_room_id: roomId,
+      p_question_id: questionId,
+      p_winner_team_index: winnerTeamIndex,
+    });
+    if (error) throw error;
+    setActiveAnswer('');
+  });
+
+  const handleStrike = (cellIndex) => runAction(async () => {
+    const { error } = await supabase.rpc('execute_strike', {
+      p_room_id: roomId,
+      p_attacker_team_index: teamIndex,
+      p_cell_index: cellIndex,
+    });
+    if (error) throw error;
+  });
+
+  const handleUseTool = (toolId, cellIndex) => runAction(async () => {
+    const { data, error } = await supabase.rpc('use_team_tool', {
+      p_room_id: roomId,
+      p_team_index: teamIndex,
+      p_tool: toolId,
+      p_cell_index: cellIndex,
+    });
+    if (error) throw error;
+
+    if (toolId === 'radar_scan') {
+      setRadarCells(data?.cells || []);
+      setRadarMode(false);
+    }
+  });
+
+  const handleExitGame = () => runAction(async () => {
+    const actorRole = role === 'judge' || room?.judge_id === user?.id ? 'judge' : 'team';
+    const { error } = await supabase.rpc('abandon_game', {
+      p_room_id: roomId,
+      p_actor_role: actorRole,
+      p_team_index: actorRole === 'team' ? teamIndex : null,
+    });
+    if (error) throw error;
+
+    window.localStorage.removeItem('sovereignty_active_room');
+    window.localStorage.removeItem('sovereignty_active_battle_path');
+  });
 
   // 8. Gateways & Loading Overlays
   if (!mounted || authLoading) {
@@ -360,6 +568,80 @@ export default function BattlePage() {
     );
   }
 
+  if (roomId && room?.status === 'abandoned') {
+    return (
+      <AbandonedGameView
+        room={room}
+        onReturnHome={() => {
+          window.localStorage.removeItem('sovereignty_active_room');
+          window.localStorage.removeItem('sovereignty_active_battle_path');
+          window.location.assign('/');
+        }}
+      />
+    );
+  }
+
+  if (roomId && room && ['playing', 'finished'].includes(room.status) && role === 'judge') {
+    if (room.judge_id !== user?.id) {
+      return (
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 dir-rtl">
+          <div className="rounded-3xl border border-rose-200 bg-white p-8 text-center shadow-xl">
+            <AlertTriangle className="w-12 h-12 text-rose-500 mx-auto" />
+            <h2 className="mt-4 font-black text-slate-950">هذه الشاشة مخصصة لحكم الغرفة فقط</h2>
+            <Link href="/" className="mt-5 inline-block text-sm font-black text-cyan-600">العودة للرئيسية</Link>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <>
+        <BattleAlert alert={alertMsg} />
+        <JudgeCombatDashboard
+          room={room}
+          teams={teams}
+          questions={questions}
+          events={combatEvents}
+          answer={activeAnswer}
+          isBusy={isActionBusy}
+          onSelectQuestion={handleSelectQuestion}
+          onResolveQuestion={handleResolveQuestion}
+          onExit={handleExitGame}
+        />
+        <CombatEventModal event={latestCombatEvent} onClose={() => setLatestCombatEvent(null)} />
+      </>
+    );
+  }
+
+  if (roomId && room && ['playing', 'finished'].includes(room.status) && teamIndex) {
+    const activeTeam = teams.find((team) => team.team_index === teamIndex);
+    const opponentTeam = teams.find((team) => team.team_index !== teamIndex);
+
+    if (activeTeam && opponentTeam) {
+      return (
+        <>
+          <BattleAlert alert={alertMsg} />
+          <TeamCombatDashboard
+            room={room}
+            activeTeam={activeTeam}
+            opponentTeam={opponentTeam}
+            questions={questions}
+            events={combatEvents}
+            radarCells={radarCells}
+            radarMode={radarMode}
+            isBusy={isActionBusy}
+            onSelectQuestion={handleSelectQuestion}
+            onStrike={handleStrike}
+            onUseTool={handleUseTool}
+            onToggleRadar={() => setRadarMode((value) => !value)}
+            onExit={handleExitGame}
+          />
+          <CombatEventModal event={latestCombatEvent} onClose={() => setLatestCombatEvent(null)} />
+        </>
+      );
+    }
+  }
+
   // A. VIEW GATEWAY (when no team/role parameter is active as player or referee)
   if (roomId && room && !teamIndex && !role) {
     return (
@@ -397,16 +679,25 @@ export default function BattlePage() {
             </Link>
 
             {room.judge_id === user?.id && (
-              <Link
-                href={`/battle?room_id=${roomId}&role=judge`}
-                className="w-full flex items-center justify-between p-4 rounded-2xl border border-slate-200 hover:border-slate-400 bg-slate-50 hover:bg-slate-100 transition-all text-right group"
-              >
-                <div>
-                  <span className="font-extrabold text-sm text-slate-800 block">الدخول كحكم المباراة (شاشة المتابعة)</span>
-                  <span className="text-[10px] text-slate-500 font-medium">إدارة التلغرافات، رصد ضربات الرادار وتتبع المؤشرات</span>
-                </div>
-                <Crown className="w-5 h-5 text-slate-600 group-hover:scale-110 transition-transform" />
-              </Link>
+              <>
+                <Link
+                  href={`/battle?room_id=${roomId}&role=judge`}
+                  className="w-full flex items-center justify-between p-4 rounded-2xl border border-slate-200 hover:border-slate-400 bg-slate-50 hover:bg-slate-100 transition-all text-right group"
+                >
+                  <div>
+                    <span className="font-extrabold text-sm text-slate-800 block">الدخول كحكم المباراة (شاشة المتابعة)</span>
+                    <span className="text-[10px] text-slate-500 font-medium">إدارة التلغرافات، رصد ضربات الرادار وتتبع المؤشرات</span>
+                  </div>
+                  <Crown className="w-5 h-5 text-slate-600 group-hover:scale-110 transition-transform" />
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleExitGame}
+                  className="w-full rounded-2xl border border-rose-200 bg-rose-50 p-3 text-sm font-black text-rose-700"
+                >
+                  خروج من اللعبة وإنهاء الغرفة
+                </button>
+              </>
             )}
           </div>
         </div>
@@ -452,13 +743,21 @@ export default function BattlePage() {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={handleExitGame}
+                className="px-4 py-2 border border-rose-200 bg-rose-50 hover:bg-rose-100 font-bold rounded-xl text-xs transition-colors text-rose-700 flex items-center gap-1.5"
+              >
+                <LogOut className="w-4 h-4" />
+                خروج من اللعبة
+              </button>
               <Link href="/" className="px-4 py-2 border border-slate-200 hover:bg-slate-50 font-bold rounded-xl text-xs transition-colors text-slate-600">
                 العودة للرئيسية
               </Link>
               <span className={`px-3.5 py-1.5 rounded-full text-[10px] font-black ${
-                room.status === 'battle_ready' ? 'bg-emerald-500 text-white animate-bounce' : 'bg-amber-100 text-amber-700'
+                'bg-amber-100 text-amber-700'
               }`}>
-                {room.status === 'battle_ready' ? '● الجيش جاهز للاشتباك' : '● جاري تهيئة التعبئة العسكرية'}
+                ● جاري تهيئة التعبئة العسكرية
               </span>
             </div>
           </div>
@@ -572,24 +871,6 @@ export default function BattlePage() {
 
             </div>
 
-            {/* Battle Readiness feedback overlay once both teams are ready */}
-            {room.status === 'battle_ready' && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="bg-emerald-950 text-white p-8 rounded-3xl border border-emerald-900 shadow-2xl text-center relative overflow-hidden"
-              >
-                <div className="absolute -right-10 -bottom-10 opacity-10 font-sans text-9xl">🛡️</div>
-                <Trophy className="w-14 h-14 text-amber-400 mx-auto animate-bounce mb-4" />
-                <h3 className="font-sans font-black text-xl">تعبئة الجيوش اكتملت بنجاح!</h3>
-                <p className="text-xs text-slate-300 max-w-md mx-auto mt-2 leading-relaxed">
-                  تم حجب وتعمية أرض المعركتين لكلا الجبهتين! القلاع مخلّقة بالتعتيم التكتيكي الذكي ومغلقة تماماً لمنع التسرب العسكري.
-                </p>
-                <div className="bg-black/20 p-4 border border-white/5 rounded-2xl max-w-xs mx-auto mt-6 text-xs font-bold font-mono">
-                  تم إنزال كلمة سر سيادة المشتركة 🛡️
-                </div>
-              </motion.div>
-            )}
           </div>
 
           {/* Right Panel: Selected Params Summary */}
@@ -610,26 +891,8 @@ export default function BattlePage() {
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-slate-100">
-                  <span className="text-[10px] text-slate-400 font-bold block mb-2">رسوم المساعدة المعتمدة لـ {room.team_1_name}:</span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {room.team_1_tools.map((toolId, idx) => (
-                      <span key={idx} className="bg-cyan-50 border border-cyan-100 text-cyan-700 font-bold text-[10px] px-2.5 py-1 rounded-lg">
-                        ⚡ {toolId}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="pt-4 border-t border-slate-100">
-                  <span className="text-[10px] text-slate-400 font-bold block mb-2">رسوم المساعدة المعتمدة لـ {room.team_2_name}:</span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {room.team_2_tools.map((toolId, idx) => (
-                      <span key={idx} className="bg-orange-50 border border-orange-100 text-orange-705 font-bold text-[10px] px-2.5 py-1 rounded-lg">
-                        🛡️ {toolId}
-                      </span>
-                    ))}
-                  </div>
+                <div className="pt-4 border-t border-slate-100 text-[10px] font-bold text-slate-500">
+                  الأدوات التكتيكية مخفية حتى تبدأ مرحلة القتال.
                 </div>
               </div>
             </div>
@@ -657,7 +920,7 @@ export default function BattlePage() {
     }
 
     // Checking if battle has started and both teams ready
-    const isBattleLocked = room.status === 'battle_ready';
+    const isBattleLocked = activeTeam.is_ready;
 
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col dir-rtl pb-16">
@@ -695,6 +958,14 @@ export default function BattlePage() {
             </div>
 
             <div className="flex items-center gap-4">
+              <button
+                type="button"
+                onClick={handleExitGame}
+                className="px-3 py-2 border border-rose-200 bg-rose-50 hover:bg-rose-100 font-bold rounded-xl text-[10px] transition-colors text-rose-700 flex items-center gap-1.5"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                خروج من اللعبة
+              </button>
               <div className="text-right">
                 <span className="text-[9px] text-slate-400 block font-bold">باقي نقاط الحرب للتسليح</span>
                 <span className="text-base font-black text-cyan-600">{activeTeam.points}ن</span>

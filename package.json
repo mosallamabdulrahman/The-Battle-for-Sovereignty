@@ -9,6 +9,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "start:cpanel": "node app.js",
     "lint": "eslint .",
     "clean": "next clean"
   },

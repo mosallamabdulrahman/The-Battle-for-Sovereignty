@@ -3,23 +3,17 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  Shield, 
-  HelpCircle, 
-  Users, 
   Smartphone, 
   Check, 
   AlertTriangle, 
   Play, 
-  BookOpen, 
   Crown, 
   Zap, 
-  ArrowLeft,
-  QrCode,
-  Link as LinkIcon,
   Copy
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { QRCodeSVG } from 'qrcode.react';
+import { buildRoomQuestions } from '../lib/game-data';
 
 export default function GameSetupSection() {
   const [user, setUser] = useState(null);
@@ -31,8 +25,6 @@ export default function GameSetupSection() {
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [team1Name, setTeam1Name] = useState('كتائب الفرسان');
   const [team2Name, setTeam2Name] = useState('صقور النخبة');
-  const [team1Tools, setTeam1Tools] = useState([]);
-  const [team2Tools, setTeam2Tools] = useState([]);
 
   // Toast Helper
   const triggerToast = (message, type = 'warning') => {
@@ -54,6 +46,65 @@ export default function GameSetupSection() {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const restoreActiveRoom = async () => {
+      const savedRoomId = window.localStorage.getItem('sovereignty_active_room');
+      if (!savedRoomId) return;
+
+      const { data } = await supabase
+        .from('game_rooms')
+        .select('*')
+        .eq('id', savedRoomId)
+        .eq('judge_id', user.id)
+        .in('status', ['setup', 'playing'])
+        .maybeSingle();
+
+      if (data) {
+        setCreatedRoom(data);
+        setSelectedCategories(data.selected_categories || []);
+        setTeam1Name(data.team_1_name);
+        setTeam2Name(data.team_2_name);
+      } else {
+        window.localStorage.removeItem('sovereignty_active_room');
+      }
+    };
+
+    restoreActiveRoom();
+  }, [user]);
+
+  useEffect(() => {
+    if (!createdRoom?.id) return;
+
+    const channel = supabase
+      .channel(`setup-room-${createdRoom.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'game_rooms',
+          filter: `id=eq.${createdRoom.id}`,
+        },
+        (payload) => {
+          setCreatedRoom(payload.new);
+          if (payload.new.status === 'abandoned') {
+            window.localStorage.removeItem('sovereignty_active_room');
+            setToast({
+              message: 'خرج الفريق الآخر أو الحكم من اللعبة، وتم إنهاء الغرفة.',
+              type: 'error',
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [createdRoom?.id]);
 
   // Category Database (18 Rich Categories as requested)
   const categoriesList = [
@@ -77,14 +128,6 @@ export default function GameSetupSection() {
     { id: 'elite', name: 'أسئلة صعبة للنخبة', desc: 'تحديات فكرية معقدة للأدمغة المتطورة', emoji: 'Brain 🧠' },
   ];
 
-  // Helper Tools (4 items as requested)
-  const availableTools = [
-    { id: 'lifeline', name: 'اتصال بصديق', sub: 'The Lifeline', desc: 'يمنح 60 ثانية إضافية للتواصل الخارجي لطلب المساعدة.', color: 'border-emerald-200 bg-emerald-50 text-emerald-700', activeBg: 'bg-emerald-500 text-white border-emerald-600 shadow-emerald-200' },
-    { id: 'doubleChance', name: 'جوابين', sub: 'Double Chance', desc: 'يمنح الفريق فرصة اختيار إجابتين بدلاً من إجابة واحدة.', color: 'border-cyan-200 bg-cyan-50 text-cyan-700', activeBg: 'bg-cyan-500 text-white border-cyan-600 shadow-cyan-200' },
-    { id: 'hole', name: 'الحفرة', sub: 'The Hole', desc: 'تستخدم قبل ظهور السؤال، وإذا أجاب الفريق صح يحصل على ضربة إضافية.', color: 'border-amber-200 bg-amber-50 text-amber-700', activeBg: 'bg-amber-500 text-white border-amber-600 shadow-amber-200' },
-    { id: 'detector', name: 'الكاشف', sub: 'The Detector', desc: 'يظهر بعد نصف الأسئلة، ويكشف المربع المختار والمربعات الملاصقة له قبل الضرب.', color: 'border-orange-200 bg-orange-50 text-orange-705', activeBg: 'bg-orange-500 text-white border-orange-600 shadow-orange-200' }
-  ];
-
   // Handle category toggle
   const handleCategoryClick = (catId) => {
     if (selectedCategories.includes(catId)) {
@@ -95,42 +138,6 @@ export default function GameSetupSection() {
         return;
       }
       setSelectedCategories(prev => [...prev, catId]);
-    }
-  };
-
-  // Safeguard Interactivity Order
-  const checkOrderSetup = (currentStep) => {
-    if (selectedCategories.length !== 6) {
-      triggerToast('يجب اختيار تصنيفات الأسئلة أولاً قبل إكمال باقي الإعدادات.', 'error');
-      return false;
-    }
-    return true;
-  };
-
-  // Tool state toggle
-  const handleToolToggle = (team, toolId) => {
-    if (!checkOrderSetup()) return;
-
-    if (team === 1) {
-      if (team1Tools.includes(toolId)) {
-        setTeam1Tools(prev => prev.filter(t => t !== toolId));
-      } else {
-        if (team1Tools.length >= 3) {
-          triggerToast('يمكن للفريق الأول اختيار 3 وسائل مساعدة كحد أقصى.', 'warning');
-          return;
-        }
-        setTeam1Tools(prev => [...prev, toolId]);
-      }
-    } else {
-      if (team2Tools.includes(toolId)) {
-        setTeam2Tools(prev => prev.filter(t => t !== toolId));
-      } else {
-        if (team2Tools.length >= 3) {
-          triggerToast('يمكن للفريق الثاني اختيار 3 وسائل مساعدة كحد أقصى.', 'warning');
-          return;
-        }
-        setTeam2Tools(prev => [...prev, toolId]);
-      }
     }
   };
 
@@ -153,64 +160,32 @@ export default function GameSetupSection() {
       return;
     }
 
-    if (team1Tools.length !== 3 || team2Tools.length !== 3) {
-      triggerToast('يرجى اختيار وسائل المساعدة لكل فريق (3 لكل فريق).', 'error');
-      return;
-    }
-
-    // Create Room in database
     setIsSubmitting(true);
     try {
-      // a. Insert Room Details
+      const selectedCategoryRecords = categoriesList.filter((category) =>
+        selectedCategories.includes(category.id)
+      );
+      const questions = buildRoomQuestions(selectedCategoryRecords);
+
+      const { data: roomId, error: createError } = await supabase.rpc('create_game_room', {
+        p_team_1_name: team1Name.trim(),
+        p_team_2_name: team2Name.trim(),
+        p_selected_categories: selectedCategories,
+        p_questions: questions,
+      });
+
+      if (createError) throw createError;
+
       const { data: room, error: roomError } = await supabase
         .from('game_rooms')
-        .insert({
-          judge_id: user.id,
-          team_1_name: team1Name,
-          team_2_name: team2Name,
-          selected_categories: selectedCategories,
-          team_1_tools: team1Tools,
-          team_2_tools: team2Tools,
-          status: 'setup'
-        })
-        .select()
+        .select('*')
+        .eq('id', roomId)
         .single();
 
-      if (roomError) {
-        throw roomError;
-      }
-
-      // b. Insert 2 Connected Teams with initial points and empty 6x6 boards
-      // Represent boarding as 36 nulls
-      const emptyBoard = Array(36).fill(null);
-      const { error: teamsError } = await supabase
-        .from('teams')
-        .insert([
-          {
-            room_id: room.id,
-            team_index: 1,
-            name: team1Name,
-            points: 1000,
-            board: emptyBoard,
-            is_ready: false,
-            joined: false
-          },
-          {
-            room_id: room.id,
-            team_index: 2,
-            name: team2Name,
-            points: 1000,
-            board: emptyBoard,
-            is_ready: false,
-            joined: false
-          }
-        ]);
-
-      if (teamsError) {
-        throw teamsError;
-      }
+      if (roomError) throw roomError;
 
       setCreatedRoom(room);
+      window.localStorage.setItem('sovereignty_active_room', room.id);
       triggerToast('تم تجهيز الغرفة العسكرية وتوليد شيفرات الانضمام بنجاح!', 'success');
     } catch (err) {
       console.error(err);
@@ -222,12 +197,34 @@ export default function GameSetupSection() {
 
   const getTeamUrl = (room_id, teamIndex) => {
     if (typeof window !== 'undefined') {
-      return `${window.location.origin}/battle?room_id=${room_id}&team=${teamIndex}`;
+      const url = new URL('/battle', window.location.origin);
+      url.searchParams.set('room_id', room_id);
+      url.searchParams.set('team', String(teamIndex));
+      return url.toString();
     }
     return `/battle?room_id=${room_id}&team=${teamIndex}`;
   };
 
   const masterJudgeUrl = createdRoom ? `/battle?room_id=${createdRoom.id}&role=judge` : '#';
+
+  const handleExitCreatedRoom = async () => {
+    if (!createdRoom) return;
+
+    const { error } = await supabase.rpc('abandon_game', {
+      p_room_id: createdRoom.id,
+      p_actor_role: 'judge',
+      p_team_index: null,
+    });
+
+    if (error) {
+      triggerToast(`تعذر الخروج من الغرفة: ${error.message}`, 'error');
+      return;
+    }
+
+    window.localStorage.removeItem('sovereignty_active_room');
+    setCreatedRoom(null);
+    triggerToast('تم إنهاء الغرفة والخروج من اللعبة.', 'success');
+  };
 
   const copyLinkToClip = (url, label) => {
     navigator.clipboard.writeText(url);
@@ -292,8 +289,13 @@ export default function GameSetupSection() {
         </AnimatePresence>
 
         {/* Setup Stage Modules */}
-        {!createdRoom ? (
+        {!createdRoom || createdRoom.status === 'abandoned' ? (
           <div className="space-y-16">
+            {createdRoom?.status === 'abandoned' && (
+              <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-center text-sm font-black text-rose-800">
+                خرج أحد أطراف اللعبة وتم إنهاء الغرفة. يمكنك إنشاء غرفة جديدة.
+              </div>
+            )}
             
             {/* STEP 1: Categories Selection */}
             <div>
@@ -403,111 +405,23 @@ export default function GameSetupSection() {
               </div>
             </div>
 
-            {/* STEP 3: Special Tools configuration */}
+            {/* STEP 3: Fixed tools preview */}
             <div className={selectedCategories.length === 6 ? 'opacity-100' : 'opacity-40'}>
-              <div className="flex items-center justify-between border-b border-slate-200 pb-4 mb-8">
-                <div className="flex items-center gap-3">
-                  <span className="w-8 h-8 rounded-full bg-cyan-600 text-white font-black text-sm flex items-center justify-center">٣</span>
-                  <div>
-                    <h3 className="text-lg font-black text-slate-900">الخطوة الثالثة: ترسانة وسائل المساعدة والدعم</h3>
-                    <p className="text-xs text-slate-500">اختر بالضبط 3 وسائل تكتيكية خارقة لكل فريق من أصل 4</p>
-                  </div>
+              <div className="flex items-center gap-3 border-b border-slate-200 pb-4 mb-8">
+                <span className="w-8 h-8 rounded-full bg-cyan-600 text-white font-black text-sm flex items-center justify-center">٣</span>
+                <div>
+                  <h3 className="text-lg font-black text-slate-900">الخطوة الثالثة: الأدوات التكتيكية الثابتة</h3>
+                  <p className="text-xs text-slate-500">
+                    يحصل الفريقان تلقائيًا على الأدوات نفسها، ولا تظهر للاستخدام إلا بعد بدء القتال.
+                  </p>
                 </div>
               </div>
 
-              <div 
-                className="grid grid-cols-1 lg:grid-cols-2 gap-12"
-                onClick={() => {
-                  if (selectedCategories.length !== 6) {
-                    triggerToast('يجب اختيار تصنيفات الأسئلة أولاً قبل إكمال باقي الإعدادات.', 'error');
-                  }
-                }}
-              >
-                
-                {/* Team 1 Tools */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="font-sans font-black text-sm text-cyan-600">ترسانة الدعم لـ {team1Name}</span>
-                    <span className="bg-slate-200 text-slate-700 text-[10px] font-black px-2.5 py-1 rounded-lg">
-                      {team1Tools.length} / 3 معتمدة
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    {availableTools.map((tool) => {
-                      const isActive = team1Tools.includes(tool.id);
-                      return (
-                        <button
-                          key={tool.id}
-                          type="button"
-                          disabled={selectedCategories.length !== 6}
-                          onClick={() => handleToolToggle(1, tool.id)}
-                          className={`p-4 rounded-xl border text-right transition-all flex flex-col justify-between gap-3 relative overflow-hidden h-40 cursor-pointer ${
-                            isActive ? tool.activeBg : 'bg-white border-slate-150 hover:bg-slate-50'
-                          }`}
-                        >
-                          <span className="block w-full text-right">
-                            <span className="flex items-center justify-between">
-                              <span className="text-sm font-black">{tool.name}</span>
-                              {isActive ? (
-                                <Check className="w-4 h-4 bg-white text-slate-900 rounded p-0.5" />
-                              ) : (
-                                <HelpCircle className="w-4 h-4 text-slate-400" />
-                              )}
-                            </span>
-                            <span className="text-[9px] block opacity-80 font-mono mt-0.5">{tool.sub}</span>
-                          </span>
-                          <span className="text-[10px] opacity-75 mt-auto leading-relaxed text-slate-600 dark:text-neutral-300 block">
-                            {tool.desc}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Team 2 Tools */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="font-sans font-black text-sm text-orange-600">ترسانة الدعم لـ {team2Name}</span>
-                    <span className="bg-slate-200 text-slate-700 text-[10px] font-black px-2.5 py-1 rounded-lg">
-                      {team2Tools.length} / 3 معتمدة
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    {availableTools.map((tool) => {
-                      const isActive = team2Tools.includes(tool.id);
-                      return (
-                        <button
-                          key={tool.id}
-                          type="button"
-                          disabled={selectedCategories.length !== 6}
-                          onClick={() => handleToolToggle(2, tool.id)}
-                          className={`p-4 rounded-xl border text-right transition-all flex flex-col justify-between gap-3 relative overflow-hidden h-40 cursor-pointer ${
-                            isActive ? tool.activeBg : 'bg-white border-slate-150 hover:bg-slate-50'
-                          }`}
-                        >
-                          <span className="block w-full text-right">
-                            <span className="flex items-center justify-between">
-                              <span className="text-sm font-black">{tool.name}</span>
-                              {isActive ? (
-                                <Check className="w-4 h-4 bg-white text-slate-900 rounded p-0.5" />
-                              ) : (
-                                <HelpCircle className="w-4 h-4 text-slate-400" />
-                              )}
-                            </span>
-                            <span className="text-[9px] block opacity-80 font-mono mt-0.5">{tool.sub}</span>
-                          </span>
-                          <span className="text-[10px] opacity-75 mt-auto leading-relaxed text-slate-600 dark:text-neutral-300 block">
-                            {tool.desc}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
+              <div className="rounded-2xl border border-cyan-200 bg-cyan-50 p-5 flex items-center gap-3">
+                <Zap className="w-5 h-5 text-cyan-600 shrink-0" />
+                <p className="text-xs font-bold text-cyan-900 leading-relaxed">
+                  سيحصل الفريقان تلقائيًا على ثلاث أدوات متساوية. تبقى الأدوات مخفية ولا يمكن استخدامها قبل انتقال الغرفة إلى مرحلة القتال.
+                </p>
               </div>
             </div>
 
@@ -649,10 +563,10 @@ export default function GameSetupSection() {
               <div className="flex gap-3 shrink-0">
                 <button
                   type="button"
-                  onClick={() => setCreatedRoom(null)}
-                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-150 border border-slate-200 text-slate-800 text-xs font-black rounded-xl transition-all cursor-pointer"
+                  onClick={handleExitCreatedRoom}
+                  className="px-5 py-2.5 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 text-xs font-black rounded-xl transition-all cursor-pointer"
                 >
-                  البدء من جديد
+                  خروج من اللعبة
                 </button>
                 <a
                   href={masterJudgeUrl}

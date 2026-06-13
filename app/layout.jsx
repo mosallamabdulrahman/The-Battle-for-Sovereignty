@@ -1,17 +1,4 @@
-import { Cairo, Tajawal } from 'next/font/google';
 import './globals.css';
-
-const cairo = Cairo({
-  subsets: ['arabic'],
-  weight: ['300', '400', '500', '600', '700', '800', '900'],
-  variable: '--font-cairo',
-});
-
-const tajawal = Tajawal({
-  subsets: ['arabic'],
-  weight: ['300', '400', '500', '700', '800', '900'],
-  variable: '--font-tajawal',
-});
 
 export const metadata = {
   title: 'معركة سيادة - اللعبة الاستراتيجية الثقافية',
@@ -20,7 +7,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="ar" dir="rtl" className={`scroll-smooth ${tajawal.variable} ${cairo.variable}`} suppressHydrationWarning>
+    <html lang="ar" dir="rtl" className="scroll-smooth" suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{

@@ -2,7 +2,7 @@
 
 @layer base {
   body {
-    font-family: var(--font-tajawal), var(--font-cairo), system-ui, -apple-system, sans-serif;
+    font-family: Tahoma, Arial, "Segoe UI", system-ui, sans-serif;
   }
 }
 
