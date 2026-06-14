@@ -1185,6 +1185,7 @@ to authenticated
 using (true);
 
 grant select on public.combat_events to authenticated;
+grant usage on schema public to authenticated;
 
 revoke all on public.room_question_answers from anon, authenticated;
 revoke execute on function public.create_game_room(text, text, text[], jsonb) from public, anon;

@@ -3,6 +3,8 @@
 -- This version never grants the web application access to auth.users.
 -- A missing profile is created from the signed-in user's JWT when they join.
 
+reset role;
+
 create or replace function public.claim_team_slot(
   p_room_id uuid,
   p_team_index integer
@@ -65,5 +67,6 @@ begin
 end;
 $$;
 
+grant usage on schema public to authenticated;
 revoke execute on function public.claim_team_slot(uuid, integer) from public, anon;
 grant execute on function public.claim_team_slot(uuid, integer) to authenticated;
