@@ -69,6 +69,7 @@ export default function BattlePage() {
   // Session user storage
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const userId = user?.id || null;
 
   // Supabase Database States
   const [room, setRoom] = useState(null);
@@ -119,6 +120,7 @@ export default function BattlePage() {
 
   // 1. Initial State Parsing & Auth checking
   useEffect(() => {
+    let isActive = true;
     setMounted(true);
     if (typeof window !== 'undefined') {
       let params = new URLSearchParams(window.location.search);
@@ -142,23 +144,53 @@ export default function BattlePage() {
       }
     }
 
-    // Auth Listeners
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+    const restoreSession = async () => {
+      const recentlyLoggedIn = Boolean(window.sessionStorage.getItem('sovereignty_login_verified'));
+      const maxAttempts = recentlyLoggedIn ? 5 : 2;
+      let restoredUser = null;
+
+      for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          restoredUser = session.user;
+          break;
+        }
+        await new Promise((resolve) => window.setTimeout(resolve, 200));
+      }
+
+      if (!isActive) return;
+      setUser((currentUser) => (
+        currentUser?.id === restoredUser?.id ? currentUser : restoredUser
+      ));
       setAuthLoading(false);
+      window.sessionStorage.removeItem('sovereignty_login_verified');
+    };
+
+    restoreSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!isActive) return;
+
+      if (session?.user) {
+        setUser((currentUser) => (
+          currentUser?.id === session.user.id ? currentUser : session.user
+        ));
+        setAuthLoading(false);
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setAuthLoading(false);
+      }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      setAuthLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    return () => {
+      isActive = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   // 2. Fetch Room & associated Team records from Supabase
   const loadDatabaseData = useCallback(async () => {
-    if (!roomId) return;
+    if (!roomId || !userId) return;
     setDbLoading(true);
     setDbError(null);
     setTeamAccessIssue(null);
@@ -186,8 +218,8 @@ export default function BattlePage() {
       let canLoadTeamBoard = true;
 
       // 3. Mark team participants as joined in Database (optimistic write once scanned)
-      if (user && teamIndex && (teamIndex === 1 || teamIndex === 2)) {
-        if (rData.judge_id === user.id) {
+      if (teamIndex && (teamIndex === 1 || teamIndex === 2)) {
+        if (rData.judge_id === userId) {
           canLoadTeamBoard = false;
           setTeamAccessIssue({
             type: 'referee',
@@ -265,14 +297,14 @@ export default function BattlePage() {
     } finally {
       setDbLoading(false);
     }
-  }, [roomId, role, teamIndex, user]);
+  }, [roomId, role, teamIndex, userId]);
 
   // Load database rows when variables lock
   useEffect(() => {
-    if (roomId) {
+    if (roomId && userId && !authLoading) {
       loadDatabaseData();
     }
-  }, [roomId, loadDatabaseData]);
+  }, [authLoading, roomId, userId, loadDatabaseData]);
 
   // 4. Set up Supabase Realtime Channel Subscription to automatically receive board adjustments
   useEffect(() => {

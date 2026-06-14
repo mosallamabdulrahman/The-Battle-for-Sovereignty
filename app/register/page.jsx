@@ -5,7 +5,12 @@ import { motion } from 'motion/react';
 import { Shield, User, Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
-import { getSafeRedirect, normalizeEmail, validateRegistration } from '../../lib/auth';
+import {
+  getSafeRedirect,
+  normalizeEmail,
+  redirectWithVerifiedSession,
+  validateRegistration,
+} from '../../lib/auth';
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -59,14 +64,14 @@ export default function RegisterPage() {
 
       setIsSuccess(true);
       if (data.session) {
-        setMsg('تم إنشاء الحساب وتسجيل الدخول بنجاح. جاري تحويلك...');
-        window.setTimeout(() => window.location.assign(redirect), 700);
+        setMsg('تم إنشاء الحساب وتسجيل الدخول بنجاح. جاري تثبيت الجلسة وتحويلك...');
+        await redirectWithVerifiedSession(supabase, data.session, redirect);
       } else {
         setMsg('تم إنشاء الحساب. افتح رسالة Supabase في بريدك واضغط تأكيد البريد، ثم سيتم تسجيل دخولك.');
       }
     } catch (err) {
       setIsSuccess(false);
-      setMsg('حدث خطأ غير متوقع أثناء إنشاء الحساب. حاول مرة أخرى.');
+      setMsg(err.message || 'حدث خطأ غير متوقع أثناء إنشاء الحساب. حاول مرة أخرى.');
     } finally {
       setIsLoading(false);
     }

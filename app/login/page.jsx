@@ -5,7 +5,7 @@ import { motion } from 'motion/react';
 import { Shield, Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
-import { getSafeRedirect, normalizeEmail } from '../../lib/auth';
+import { getSafeRedirect, normalizeEmail, redirectWithVerifiedSession } from '../../lib/auth';
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -20,7 +20,12 @@ export default function LoginPage() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         setMsg('تم تأكيد البريد وتسجيل الدخول بنجاح. جاري تحويلك...');
-        window.setTimeout(() => window.location.assign(getSafeRedirect('/')), 500);
+        try {
+          await redirectWithVerifiedSession(supabase, session, getSafeRedirect('/'));
+        } catch (error) {
+          setIsError(true);
+          setMsg(error.message || 'تعذر استكمال تسجيل الدخول.');
+        }
       }
     };
 
@@ -51,13 +56,11 @@ export default function LoginPage() {
         return;
       }
 
-      setMsg('تم تسجيل الدخول بنجاح. جاري تحويلك...');
-      setTimeout(() => {
-        window.location.assign(getSafeRedirect('/'));
-      }, 700);
+      setMsg('تم تسجيل الدخول بنجاح. جاري تثبيت الجلسة وتحويلك...');
+      await redirectWithVerifiedSession(supabase, data.session, getSafeRedirect('/'));
     } catch (err) {
       setIsError(true);
-      setMsg('حدث خطأ غير متوقع أثناء الاتصال. حاول مرة أخرى.');
+      setMsg(err.message || 'حدث خطأ غير متوقع أثناء الاتصال. حاول مرة أخرى.');
     } finally {
       setIsLoading(false);
     }

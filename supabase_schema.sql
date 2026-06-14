@@ -333,6 +333,24 @@ begin
     raise exception 'Invalid team claim';
   end if;
 
+  insert into public.profiles (id, email, display_name)
+  select
+    auth_user.id,
+    coalesce(auth_user.email, ''),
+    case
+      when char_length(trim(coalesce(auth_user.raw_user_meta_data ->> 'display_name', ''))) between 2 and 40
+        then trim(auth_user.raw_user_meta_data ->> 'display_name')
+      when char_length(split_part(coalesce(auth_user.email, ''), '@', 1)) between 2 and 40
+        then split_part(auth_user.email, '@', 1)
+      else 'مستخدم'
+    end
+  from auth.users auth_user
+  where auth_user.id = auth.uid()
+  on conflict (id) do update
+  set email = excluded.email,
+      display_name = excluded.display_name,
+      updated_at = now();
+
   if exists (
     select 1 from public.game_rooms
     where id = p_room_id and judge_id = auth.uid()
