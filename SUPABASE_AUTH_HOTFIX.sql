@@ -1,23 +1,7 @@
 -- Run this once in Supabase Dashboard > SQL Editor.
--- It repairs missing profiles and makes team claiming work for users
--- created manually from Authentication > Users.
-
-insert into public.profiles (id, email, display_name)
-select
-  id,
-  coalesce(email, ''),
-  case
-    when char_length(trim(coalesce(raw_user_meta_data ->> 'display_name', ''))) between 2 and 40
-      then trim(raw_user_meta_data ->> 'display_name')
-    when char_length(split_part(coalesce(email, ''), '@', 1)) between 2 and 40
-      then split_part(email, '@', 1)
-    else 'مستخدم'
-  end
-from auth.users
-on conflict (id) do update
-set email = excluded.email,
-    display_name = excluded.display_name,
-    updated_at = now();
+-- Use the default postgres role in SQL Editor.
+-- This version never grants the web application access to auth.users.
+-- A missing profile is created from the signed-in user's JWT when they join.
 
 create or replace function public.claim_team_slot(
   p_room_id uuid,
@@ -28,24 +12,25 @@ language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  v_email text := coalesce(auth.jwt() ->> 'email', '');
+  v_metadata jsonb := coalesce(auth.jwt() -> 'user_metadata', '{}'::jsonb);
+  v_display_name text;
 begin
   if auth.uid() is null or p_team_index not in (1, 2) then
     raise exception 'Invalid team claim';
   end if;
 
+  v_display_name := case
+    when char_length(trim(coalesce(v_metadata ->> 'display_name', ''))) between 2 and 40
+      then trim(v_metadata ->> 'display_name')
+    when char_length(split_part(v_email, '@', 1)) between 2 and 40
+      then split_part(v_email, '@', 1)
+    else 'مستخدم'
+  end;
+
   insert into public.profiles (id, email, display_name)
-  select
-    auth_user.id,
-    coalesce(auth_user.email, ''),
-    case
-      when char_length(trim(coalesce(auth_user.raw_user_meta_data ->> 'display_name', ''))) between 2 and 40
-        then trim(auth_user.raw_user_meta_data ->> 'display_name')
-      when char_length(split_part(coalesce(auth_user.email, ''), '@', 1)) between 2 and 40
-        then split_part(auth_user.email, '@', 1)
-      else 'مستخدم'
-    end
-  from auth.users auth_user
-  where auth_user.id = auth.uid()
+  values (auth.uid(), v_email, v_display_name)
   on conflict (id) do update
   set email = excluded.email,
       display_name = excluded.display_name,
