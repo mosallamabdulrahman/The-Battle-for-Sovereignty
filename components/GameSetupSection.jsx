@@ -552,6 +552,10 @@ export default function GameSetupSection() {
 
             </div>
 
+            <div className="mb-8 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-center text-xs font-bold leading-relaxed text-amber-900">
+              لا تفتح رابط الفريق بنفس حساب الحكم. انسخ كل رابط وافتحه في نافذة خاصة أو جهاز آخر، ثم سجل الدخول بحساب مختلف لكل فريق.
+            </div>
+
             {/* Launch Referee view */}
             <div className="border-t border-slate-100 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="text-right">

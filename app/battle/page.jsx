@@ -77,6 +77,7 @@ export default function BattlePage() {
   const [combatEvents, setCombatEvents] = useState([]);
   const [dbLoading, setDbLoading] = useState(false);
   const [dbError, setDbError] = useState(null);
+  const [teamAccessIssue, setTeamAccessIssue] = useState(null);
   const [activeAnswer, setActiveAnswer] = useState('');
   const [isActionBusy, setIsActionBusy] = useState(false);
   const [latestCombatEvent, setLatestCombatEvent] = useState(null);
@@ -160,6 +161,7 @@ export default function BattlePage() {
     if (!roomId) return;
     setDbLoading(true);
     setDbError(null);
+    setTeamAccessIssue(null);
 
     try {
       // Fetch Room
@@ -181,28 +183,46 @@ export default function BattlePage() {
 
       if (tError) throw tError;
       let visibleTeams = (tData || []).map((team) => ({ ...team, board: [] }));
+      let canLoadTeamBoard = true;
 
       // 3. Mark team participants as joined in Database (optimistic write once scanned)
       if (user && teamIndex && (teamIndex === 1 || teamIndex === 2)) {
-        const { error: claimError } = await supabase.rpc('claim_team_slot', {
-          p_room_id: roomId,
-          p_team_index: teamIndex,
-        });
-        if (claimError) throw claimError;
+        if (rData.judge_id === user.id) {
+          canLoadTeamBoard = false;
+          setTeamAccessIssue({
+            type: 'referee',
+            message: 'أنت مسجل حاليًا بحساب حكم هذه الغرفة، لذلك لا يمكن حجز مقعد فريق بنفس الحساب.',
+          });
+        } else {
+          const { error: claimError } = await supabase.rpc('claim_team_slot', {
+            p_room_id: roomId,
+            p_team_index: teamIndex,
+          });
 
-        const { data: claimedTeams, error: claimedTeamsError } = await supabase
-          .from('teams')
-          .select(TEAM_PUBLIC_COLUMNS)
-          .eq('room_id', roomId)
-          .order('team_index');
+          if (claimError) {
+            canLoadTeamBoard = false;
+            setTeamAccessIssue({
+              type: 'occupied',
+              message: claimError.message?.includes('already assigned')
+                ? 'هذا الفريق محجوز بالفعل بحساب لاعب آخر.'
+                : claimError.message || 'تعذر الانضمام إلى هذا الفريق.',
+            });
+          } else {
+            const { data: claimedTeams, error: claimedTeamsError } = await supabase
+              .from('teams')
+              .select(TEAM_PUBLIC_COLUMNS)
+              .eq('room_id', roomId)
+              .order('team_index');
 
-        if (claimedTeamsError) throw claimedTeamsError;
-        visibleTeams = claimedTeams.map((team) => ({ ...team, board: [] }));
+            if (claimedTeamsError) throw claimedTeamsError;
+            visibleTeams = claimedTeams.map((team) => ({ ...team, board: [] }));
+          }
+        }
       }
 
       const visibleBoardIndexes = role === 'judge'
         ? [1, 2]
-        : teamIndex
+        : teamIndex && canLoadTeamBoard
         ? [teamIndex]
         : [];
 
@@ -488,6 +508,12 @@ export default function BattlePage() {
     window.localStorage.removeItem('sovereignty_active_battle_path');
   });
 
+  const handleSwitchToTeamAccount = async () => {
+    await supabase.auth.signOut();
+    window.localStorage.removeItem('sovereignty_active_battle_path');
+    window.location.reload();
+  };
+
   // 8. Gateways & Loading Overlays
   if (!mounted || authLoading) {
     return (
@@ -563,6 +589,41 @@ export default function BattlePage() {
           >
             تحديث الاتصال
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (roomId && room && teamIndex && teamAccessIssue) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 dir-rtl">
+        <div className="w-full max-w-md rounded-3xl border border-amber-200 bg-white p-8 text-center shadow-xl">
+          <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto" />
+          <h2 className="mt-4 text-xl font-black text-slate-950">
+            {teamAccessIssue.type === 'referee' ? 'حساب الحكم لا يمكنه حجز فريق' : 'تعذر الانضمام إلى الفريق'}
+          </h2>
+          <p className="mt-3 text-sm leading-relaxed text-slate-600">{teamAccessIssue.message}</p>
+
+          <div className="mt-7 space-y-3">
+            {teamAccessIssue.type === 'referee' && (
+              <Link
+                href={`/battle?room_id=${roomId}&role=judge`}
+                className="block w-full rounded-xl bg-gradient-to-r from-cyan-600 to-sky-500 px-5 py-3 font-black text-white"
+              >
+                العودة إلى شاشة الحكم
+              </Link>
+            )}
+            <button
+              type="button"
+              onClick={handleSwitchToTeamAccount}
+              className="w-full rounded-xl border border-slate-200 bg-slate-100 px-5 py-3 font-black text-slate-800"
+            >
+              تسجيل الخروج والدخول بحساب الفريق
+            </button>
+            <p className="text-[11px] leading-relaxed text-slate-400">
+              يمكنك أيضًا فتح رابط الفريق في نافذة خاصة Incognito أو على جهاز آخر ثم تسجيل حساب مختلف.
+            </p>
+          </div>
         </div>
       </div>
     );
