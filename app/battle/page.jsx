@@ -1,7 +1,7 @@
 'use client';
 /* eslint-disable react-hooks/set-state-in-effect */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Shield, 
@@ -84,6 +84,14 @@ export default function BattlePage() {
   const [latestCombatEvent, setLatestCombatEvent] = useState(null);
   const [radarCells, setRadarCells] = useState([]);
   const [radarMode, setRadarMode] = useState(false);
+  const [activeRadarTool, setActiveRadarTool] = useState('radar_scan');
+  const [lifelineActive, setLifelineActive] = useState(false);
+  const [lifelineSeconds, setLifelineSeconds] = useState(60);
+  const [doubleChanceActive, setDoubleChanceActive] = useState(false);
+  const [holeActive, setHoleActive] = useState(false);
+  const [holeConfirmPending, setHoleConfirmPending] = useState(false);
+  const [lastPlacedCell, setLastPlacedCell] = useState(null);
+  const lastActiveQuestionIdRef = useRef(null);
 
   // Selected Unit to Deploy (for active players)
   const [selectedUnit, setSelectedUnit] = useState('infantry'); // 'infantry', 'tank', 'aircraft', 'submarine', 'mine'
@@ -99,6 +107,36 @@ export default function BattlePage() {
     submarine: { name: 'غواصة بحرية', cost: 200, emoji: '⛵' },
     mine: { name: 'لغم مغناطيسي', cost: 100, emoji: '💥' }
   };
+
+  useEffect(() => {
+    if (!lifelineActive) return undefined;
+    if (lifelineSeconds <= 0) {
+      const timeout = window.setTimeout(() => {
+        setLifelineActive(false);
+        setLifelineSeconds(60);
+      }, 450);
+      return () => window.clearTimeout(timeout);
+    }
+
+    const interval = window.setInterval(() => {
+      setLifelineSeconds((seconds) => Math.max(0, seconds - 1));
+    }, 1000);
+
+    return () => window.clearInterval(interval);
+  }, [lifelineActive, lifelineSeconds]);
+
+  useEffect(() => {
+    const currentQuestionId = room?.active_question_id || null;
+    const previousQuestionId = lastActiveQuestionIdRef.current;
+
+    if (previousQuestionId && !currentQuestionId) {
+      setDoubleChanceActive(false);
+      setHoleConfirmPending(false);
+      if (holeActive) setHoleActive(false);
+    }
+
+    lastActiveQuestionIdRef.current = currentQuestionId;
+  }, [room?.active_question_id, holeActive]);
 
   const getTeamUrl = (rId, tIndex) => {
     if (typeof window !== 'undefined') {
@@ -412,6 +450,7 @@ export default function BattlePage() {
       const refundCost = unitSpecs[currentBoard[cellIndex]]?.cost || 0;
       currentPoints += refundCost;
       currentBoard[cellIndex] = null;
+      setLastPlacedCell(null);
     } 
     // B. Purchase and placement checks
     else {
@@ -422,6 +461,7 @@ export default function BattlePage() {
       }
       currentPoints -= cost;
       currentBoard[cellIndex] = selectedUnit;
+      setLastPlacedCell(cellIndex);
     }
 
     // Apply Optimistic update locally
@@ -493,6 +533,16 @@ export default function BattlePage() {
     if (error) throw error;
   });
 
+  const finalizeRoomIfComplete = async () => {
+    const { error } = await supabase.rpc('finalize_room_if_complete', {
+      p_room_id: roomId,
+    });
+
+    if (error && !error.message?.includes('Could not find the function')) {
+      throw error;
+    }
+  };
+
   const handleResolveQuestion = (questionId, winnerTeamIndex) => runAction(async () => {
     const { error } = await supabase.rpc('resolve_room_question', {
       p_room_id: roomId,
@@ -500,6 +550,7 @@ export default function BattlePage() {
       p_winner_team_index: winnerTeamIndex,
     });
     if (error) throw error;
+    await finalizeRoomIfComplete();
     setActiveAnswer('');
   });
 
@@ -510,6 +561,7 @@ export default function BattlePage() {
       p_cell_index: cellIndex,
     });
     if (error) throw error;
+    await finalizeRoomIfComplete();
   });
 
   const handleUseTool = (toolId, cellIndex) => runAction(async () => {
@@ -524,6 +576,18 @@ export default function BattlePage() {
     if (toolId === 'radar_scan') {
       setRadarCells(data?.cells || []);
       setRadarMode(false);
+      setActiveRadarTool('radar_scan');
+    } else if (toolId === 'the_detector') {
+      setRadarCells(data?.cells || []);
+      setRadarMode(false);
+      setActiveRadarTool('radar_scan');
+    } else if (toolId === 'lifeline_call') {
+      setLifelineSeconds(60);
+      setLifelineActive(true);
+    } else if (toolId === 'double_chance') {
+      setDoubleChanceActive(true);
+    } else if (toolId === 'the_hole') {
+      setHoleConfirmPending(true);
     }
   });
 
@@ -722,11 +786,32 @@ export default function BattlePage() {
             events={combatEvents}
             radarCells={radarCells}
             radarMode={radarMode}
+            activeRadarTool={activeRadarTool}
             isBusy={isActionBusy}
+            lifelineActive={lifelineActive}
+            lifelineSeconds={lifelineSeconds}
+            doubleChanceActive={doubleChanceActive}
+            holeActive={holeActive}
+            holeConfirmPending={holeConfirmPending}
             onSelectQuestion={handleSelectQuestion}
             onStrike={handleStrike}
             onUseTool={handleUseTool}
-            onToggleRadar={() => setRadarMode((value) => !value)}
+            onToggleRadar={(toolId = 'radar_scan') => {
+              setActiveRadarTool(toolId);
+              setRadarMode((value) => (activeRadarTool === toolId ? !value : true));
+            }}
+            onDismissLifeline={() => {
+              setLifelineActive(false);
+              setLifelineSeconds(60);
+            }}
+            onConfirmHole={() => {
+              setHoleConfirmPending(false);
+              setHoleActive(true);
+            }}
+            onCancelHole={() => {
+              setHoleConfirmPending(false);
+              showAlert('تم إلغاء الحفرة — الوسيلة استُهلكت', 'warning');
+            }}
             onExit={handleExitGame}
           />
           <CombatEventModal event={latestCombatEvent} onClose={() => setLatestCombatEvent(null)} />
@@ -1109,12 +1194,18 @@ export default function BattlePage() {
                       >
                         {/* Unit Emoji display */}
                         {cellUnit ? (
-                          <span className="flex flex-col items-center">
-                            <span>{cellUnit.emoji}</span>
+                          <motion.span
+                            key={`${idx}-${cell}`}
+                            initial={lastPlacedCell === idx ? { scale: 0.35, rotate: -12, opacity: 0 } : false}
+                            animate={lastPlacedCell === idx ? { scale: [1, 1.18, 1], rotate: 0, opacity: 1 } : { scale: 1, rotate: 0, opacity: 1 }}
+                            transition={{ duration: 0.45, ease: 'easeOut' }}
+                            className="flex flex-col items-center"
+                          >
+                            <span className="drop-shadow-sm">{cellUnit.emoji}</span>
                             <span className="text-[8px] absolute bottom-1 text-cyan-700 font-black tracking-tight scale-90">
                               {cellUnit.cost}ن
                             </span>
-                          </span>
+                          </motion.span>
                         ) : (
                           <span className="text-slate-300 group-hover:text-cyan-600 text-xs font-black transition-colors">
                             {idx}

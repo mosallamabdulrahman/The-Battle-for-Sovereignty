@@ -13,13 +13,17 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { QRCodeSVG } from 'qrcode.react';
-import { buildRoomQuestions } from '../lib/game-data';
+import { FALLBACK_CATEGORIES, buildRoomQuestions, loadQuestionSetupData } from '../lib/game-data';
 
 export default function GameSetupSection() {
   const [user, setUser] = useState(null);
   const [toast, setToast] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdRoom, setCreatedRoom] = useState(null);
+  const [categoriesList, setCategoriesList] = useState(FALLBACK_CATEGORIES);
+  const [questionRows, setQuestionRows] = useState([]);
+  const [questionSourceReady, setQuestionSourceReady] = useState(false);
+  const [questionSourceFromSupabase, setQuestionSourceFromSupabase] = useState(false);
 
   // Core setup states
   const [selectedCategories, setSelectedCategories] = useState([]);
@@ -106,27 +110,32 @@ export default function GameSetupSection() {
     };
   }, [createdRoom?.id]);
 
-  // Category Database (18 Rich Categories as requested)
-  const categoriesList = [
-    { id: 'general', name: 'أسئلة معرفة عامة', desc: 'معلومات عامة وشاملة', emoji: '🌐' },
-    { id: 'history', name: 'تاريخ وحضارات', desc: 'حقائق وأسرار من عبق التاريخ', emoji: '📜' },
-    { id: 'geography', name: 'جغرافيا وبلدان', desc: 'تضاريس، عواصم ومعالم جغرافية', emoji: '🗺️' },
-    { id: 'science_inv', name: 'علوم واختراعات', desc: 'ابتكارات غيرت مجرى البشرية', emoji: '🔬' },
-    { id: 'sports', name: 'رياضة وكرة قدم', desc: 'أرقام وإنجازات كروية وعالمية', emoji: '⚽' },
-    { id: 'tech', name: 'تكنولوجيا وعلوم', desc: 'عالم الحواسيب والبرمجيات والذكاء', emoji: '💻' },
-    { id: 'literature', name: 'أدب ولغة عربية', desc: 'شعر، بلاغة ونحو وقواعد أدبية', emoji: '✍️' },
-    { id: 'art_cinema', name: 'فن وسينما', desc: 'روائع الإنتاج الفني والدرامي', emoji: '🎬' },
-    { id: 'islamic', name: 'ثقافة إسلامية', desc: 'غزوات، أحاديث وفقر تاريخية إسلامية', emoji: '🕌' },
-    { id: 'puzzles', name: 'ألغاز وتفكير', desc: 'أسئلة ذكاء رياضية ومنطقية', emoji: '🧩' },
-    { id: 'business', name: 'اقتصاد وأعمال', desc: 'أسواق المال، شركات وتواريخ اقتصادية', emoji: '💼' },
-    { id: 'famous', name: 'شخصيات مشهورة', desc: 'سير ذاتية للقادة والعلماء والمؤثرين', emoji: '👤' },
-    { id: 'animals', name: 'حيوانات وطبيعة', desc: 'عجائب الكائنات الحية والبيئات', emoji: '🦁' },
-    { id: 'space', name: 'الفضاء والكواكب', desc: 'أسرار الكون الفسيح والمجرات', emoji: '🚀' },
-    { id: 'medicine', name: 'طب وصحة', desc: 'جسم الإنسان، اللقاحات والمفاهيم الطبية', emoji: '🩺' },
-    { id: 'gaming', name: 'ألعاب وترفيه', desc: 'ثقافة ألعاب الفيديو والترفيه المنزلي', emoji: '🎮' },
-    { id: 'egy_arab', name: 'معلومات مصرية وعربية', desc: 'حضارة النيل والموروث العربي الأصيل', emoji: '🏺' },
-    { id: 'elite', name: 'أسئلة صعبة للنخبة', desc: 'تحديات فكرية معقدة للأدمغة المتطورة', emoji: 'Brain 🧠' },
-  ];
+  useEffect(() => {
+    let isActive = true;
+
+    const loadSetupData = async () => {
+      const result = await loadQuestionSetupData(supabase);
+      if (!isActive) return;
+
+      setCategoriesList(result.categories);
+      setQuestionRows(result.questions);
+      setQuestionSourceFromSupabase(result.fromSupabase);
+      setQuestionSourceReady(true);
+
+      if (!result.fromSupabase) {
+        triggerToast(
+          'لم يتم العثور على بنك الأسئلة في Supabase. شغّل ملف SUPABASE_QUESTION_BANK.sql أولاً.',
+          'warning'
+        );
+      }
+    };
+
+    loadSetupData();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   // Handle category toggle
   const handleCategoryClick = (catId) => {
@@ -155,6 +164,11 @@ export default function GameSetupSection() {
       return;
     }
 
+    if (!questionSourceReady) {
+      triggerToast('جاري تحميل بنك الأسئلة من قاعدة البيانات، حاول مرة أخرى بعد لحظات.', 'warning');
+      return;
+    }
+
     if (!team1Name.trim() || !team2Name.trim()) {
       triggerToast('يرجى إدخال اسم الفريق الأول واسم الفريق الثاني.', 'error');
       return;
@@ -165,7 +179,11 @@ export default function GameSetupSection() {
       const selectedCategoryRecords = categoriesList.filter((category) =>
         selectedCategories.includes(category.id)
       );
-      const questions = buildRoomQuestions(selectedCategoryRecords);
+      const questions = buildRoomQuestions(selectedCategoryRecords, questionRows);
+
+      if (questions.length !== 36) {
+        throw new Error('كل تصنيف مختار يجب أن يحتوي على 6 أسئلة مفعلة داخل بنك الأسئلة.');
+      }
 
       const { data: roomId, error: createError } = await supabase.rpc('create_game_room', {
         p_team_1_name: team1Name.trim(),
@@ -308,9 +326,21 @@ export default function GameSetupSection() {
                   </div>
                 </div>
                 <div className="bg-slate-200/80 px-4 py-1.5 rounded-xl text-xs font-black text-slate-700">
+                  {questionSourceReady
+                    ? questionSourceFromSupabase
+                      ? 'بنك Supabase متصل'
+                      : 'بانتظار Supabase'
+                    : 'جاري تحميل البنك...'}
+                  {' · '}
                   تم اختيار {selectedCategories.length} من 6
                 </div>
               </div>
+
+              {questionSourceReady && categoriesList.length === 0 && (
+                <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-center text-sm font-black text-amber-900">
+                  لا توجد تصنيفات محملة من Supabase. شغّل ملف SUPABASE_QUESTION_BANK.sql من SQL Editor ثم حدّث الصفحة.
+                </div>
+              )}
 
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 {categoriesList.map((cat) => {
@@ -342,6 +372,11 @@ export default function GameSetupSection() {
                         <span className="text-[10px] text-slate-400 mt-1 line-clamp-2 leading-tight block">
                           {cat.desc}
                         </span>
+                        {questionSourceFromSupabase && (
+                          <span className="text-[9px] text-emerald-600 mt-2 font-black block">
+                            من قاعدة البيانات
+                          </span>
+                        )}
                       </span>
                     </motion.button>
                   );
