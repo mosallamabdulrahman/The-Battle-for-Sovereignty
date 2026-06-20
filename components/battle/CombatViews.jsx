@@ -31,7 +31,8 @@ const RESULT_LABELS = {
   blocked: "تم صد الضربة",
 };
 
-const FALLBACK_CATEGORY_IMAGE = "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=360&q=80";
+const FALLBACK_CATEGORY_IMAGE =
+  "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=360&q=80";
 
 function FinishedCelebration({
   room,
@@ -156,7 +157,14 @@ function CircularTimer({ seconds, label = "مؤقت السؤال", onDismiss }) 
             viewBox="0 0 140 140"
             aria-hidden="true"
           >
-            <circle cx="70" cy="70" r={radius} fill="none" stroke="#e2e8f0" strokeWidth="11" />
+            <circle
+              cx="70"
+              cy="70"
+              r={radius}
+              fill="none"
+              stroke="#e2e8f0"
+              strokeWidth="11"
+            />
             <circle
               cx="70"
               cy="70"
@@ -167,18 +175,23 @@ function CircularTimer({ seconds, label = "مؤقت السؤال", onDismiss }) 
               strokeWidth="11"
               strokeDasharray={circumference}
               strokeDashoffset={strokeDashoffset}
-              style={{ transition: "stroke-dashoffset 1000ms linear, stroke 300ms ease" }}
+              style={{
+                transition:
+                  "stroke-dashoffset 1000ms linear, stroke 300ms ease",
+              }}
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className={`text-4xl font-bold ${colorClass}`}>{seconds}</span>
+            <span className={`text-4xl font-bold ${colorClass}`}>
+              {seconds}
+            </span>
             <span className="text-[10px] font-bold text-slate-400">ثانية</span>
           </div>
         </div>
         <div className="text-center sm:text-right">
           <h3 className="text-lg font-bold text-slate-950">{label}</h3>
           <p className="mt-1 text-xs font-bold leading-relaxed text-slate-500">
-            لديك 60 ثانية للإجابة. آخر 10 ثوانٍ تصدر تنبيهًا صوتيًا لزيادة الحماس.
+            لديك 60 ثانية للإجابة.
           </p>
           {onDismiss && (
             <button
@@ -215,92 +228,90 @@ export function QuestionGrid({
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-      {Object.entries(categories).map(
-        ([categoryId, category]) => {
-          const sortedQuestions = [...category.questions].sort(
-            (a, b) => a.position - b.position,
-          );
-          const rightColumn = sortedQuestions.filter(
-            (_, index) => index % 2 === 0,
-          );
-          const leftColumn = sortedQuestions.filter(
-            (_, index) => index % 2 === 1,
-          );
+      {Object.entries(categories).map(([categoryId, category]) => {
+        const sortedQuestions = [...category.questions].sort(
+          (a, b) => a.position - b.position,
+        );
+        const rightColumn = sortedQuestions.filter(
+          (_, index) => index % 2 === 0,
+        );
+        const leftColumn = sortedQuestions.filter(
+          (_, index) => index % 2 === 1,
+        );
 
-          return (
-            <section
-              key={categoryId}
-              className="grid grid-cols-[1fr_120px_1fr] items-stretch gap-0"
-            >
-              <div className="flex flex-col justify-between gap-2">
-                {rightColumn.map((question) => {
-                  const isActive = activeQuestionId === question.id;
-                  const isDisabled =
-                    disabled || question.is_used || Boolean(activeQuestionId);
-                  return (
-                    <button
-                      key={question.id}
-                      type="button"
-                      disabled={isDisabled}
-                      onClick={() => onSelect(question)}
-                      className={`h-14 rounded-r-full rounded-l-2xl border text-center text-xl font-semibold transition-all ${
-                        question.is_used
-                          ? "border-slate-200 bg-slate-200 text-slate-400 line-through"
-                          : isActive
-                            ? "border-amber-400 bg-amber-100 text-amber-900 ring-2 ring-amber-300"
-                            : "border-slate-200 bg-[#CDD2D2] text-rose-800 hover:border-cyan-400 hover:bg-cyan-50 disabled:cursor-not-allowed"
-                      }`}
-                      title={`${DIFFICULTY_LABELS[question.difficulty]} - ${question.strikes} ضربة`}
-                    >
-                      {question.points}
-                    </button>
-                  );
-                })}
-              </div>
+        return (
+          <section
+            key={categoryId}
+            className="grid grid-cols-[1fr_120px_1fr] items-stretch gap-0"
+          >
+            <div className="flex flex-col justify-between gap-2">
+              {rightColumn.map((question) => {
+                const isActive = activeQuestionId === question.id;
+                const isDisabled =
+                  disabled || question.is_used || Boolean(activeQuestionId);
+                return (
+                  <button
+                    key={question.id}
+                    type="button"
+                    disabled={isDisabled}
+                    onClick={() => onSelect(question)}
+                    className={`h-14 rounded-r-full rounded-l-2xl border text-center text-xl font-semibold transition-all ${
+                      question.is_used
+                        ? "border-slate-200 bg-slate-200 text-slate-400 line-through"
+                        : isActive
+                          ? "border-amber-400 bg-amber-100 text-amber-900 ring-2 ring-amber-300"
+                          : "border-slate-200 bg-[#CDD2D2] text-rose-800 hover:border-cyan-400 hover:bg-cyan-50 disabled:cursor-not-allowed"
+                    }`}
+                    title={`${DIFFICULTY_LABELS[question.difficulty]} - ${question.strikes} ضربة`}
+                  >
+                    {question.points}
+                  </button>
+                );
+              })}
+            </div>
 
-              <div className="relative overflow-hidden bg-cyan-50 shadow-sm">
-                <img
-                  src={category.imageUrl || FALLBACK_CATEGORY_IMAGE}
-                  alt={category.name}
-                  className="h-full w-full object-cover"
-                  loading="lazy"
-                />
-                <div className="absolute inset-x-0 bottom-0 bg-[#E1734B] border-t border-solid border-black px-2 py-2 text-center">
-                  <h3 className="truncate font-medium text-white">
-                    {category.name}
-                  </h3>
-                </div>
+            <div className="relative overflow-hidden bg-cyan-50 shadow-sm">
+              <img
+                src={category.imageUrl || FALLBACK_CATEGORY_IMAGE}
+                alt={category.name}
+                className="h-full w-full object-cover"
+                loading="lazy"
+              />
+              <div className="absolute inset-x-0 bottom-0 bg-[#E1734B] border-t border-3 border-solid border-black px-2 py-2 text-center">
+                <h3 className="truncate font-medium text-white">
+                  {category.name}
+                </h3>
               </div>
+            </div>
 
-              <div className="flex flex-col justify-between gap-2">
-                {leftColumn.map((question) => {
-                  const isActive = activeQuestionId === question.id;
-                  const isDisabled =
-                    disabled || question.is_used || Boolean(activeQuestionId);
-                  return (
-                    <button
-                      key={question.id}
-                      type="button"
-                      disabled={isDisabled}
-                      onClick={() => onSelect(question)}
-                      className={`h-14 rounded-l-full rounded-r-2xl border text-center text-xl font-semibold transition-all ${
-                        question.is_used
-                          ? "border-slate-200 bg-slate-200 text-slate-400 line-through"
-                          : isActive
-                            ? "border-amber-400 bg-amber-100 text-amber-900 ring-2 ring-amber-300"
-                            : "border-slate-200 bg-slate-200 text-rose-800 hover:border-cyan-400 hover:bg-cyan-50 disabled:cursor-not-allowed"
-                      }`}
-                      title={`${DIFFICULTY_LABELS[question.difficulty]} - ${question.strikes} ضربة`}
-                    >
-                      {question.points}
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
-          );
-        },
-      )}
+            <div className="flex flex-col justify-between gap-2">
+              {leftColumn.map((question) => {
+                const isActive = activeQuestionId === question.id;
+                const isDisabled =
+                  disabled || question.is_used || Boolean(activeQuestionId);
+                return (
+                  <button
+                    key={question.id}
+                    type="button"
+                    disabled={isDisabled}
+                    onClick={() => onSelect(question)}
+                    className={`h-14 rounded-l-full rounded-r-2xl border text-center text-xl font-semibold transition-all ${
+                      question.is_used
+                        ? "border-slate-200 bg-slate-200 text-slate-400 line-through"
+                        : isActive
+                          ? "border-amber-400 bg-amber-100 text-amber-900 ring-2 ring-amber-300"
+                          : "border-slate-200 bg-slate-200 text-rose-800 hover:border-cyan-400 hover:bg-cyan-50 disabled:cursor-not-allowed"
+                    }`}
+                    title={`${DIFFICULTY_LABELS[question.difficulty]} - ${question.strikes} ضربة`}
+                  >
+                    {question.points}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        );
+      })}
     </div>
   );
 }
