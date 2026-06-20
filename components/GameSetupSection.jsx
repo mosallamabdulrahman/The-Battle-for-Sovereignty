@@ -428,11 +428,6 @@ export default function GameSetupSection() {
                         <span className="text-[10px] text-slate-400 mt-1 line-clamp-2 leading-tight block">
                           {cat.desc}
                         </span>
-                        {questionSourceFromSupabase && (
-                          <span className="text-[9px] text-emerald-600 mt-2 font-bold block">
-                            من قاعدة البيانات
-                          </span>
-                        )}
                       </span>
                     </motion.button>
                   );
