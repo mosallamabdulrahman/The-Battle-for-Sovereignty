@@ -277,7 +277,7 @@ export function QuestionGrid({
                 className="h-full w-full object-cover"
                 loading="lazy"
               />
-              <div className="absolute inset-x-0 bottom-0 bg-[#E1734B] border-t border-3 border-solid border-black px-2 py-2 text-center">
+              <div className="absolute inset-x-0 bottom-0 bg-[#E1734B] border-t-2 border-solid border-black px-2 py-2 text-center">
                 <h3 className="truncate font-medium text-white">
                   {category.name}
                 </h3>
