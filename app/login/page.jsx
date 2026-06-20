@@ -1,30 +1,40 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { motion } from 'motion/react';
-import { Shield, Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
-import Link from 'next/link';
-import { supabase } from '../../lib/supabase';
-import { getSafeRedirect, normalizeEmail, redirectWithVerifiedSession } from '../../lib/auth';
+import { useEffect, useState } from "react";
+import { motion } from "motion/react";
+import { Shield, Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
+import Link from "next/link";
+import { supabase } from "../../lib/supabase";
+import {
+  getSafeRedirect,
+  normalizeEmail,
+  redirectWithVerifiedSession,
+} from "../../lib/auth";
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [msg, setMsg] = useState('');
+  const [msg, setMsg] = useState("");
   const [isError, setIsError] = useState(false);
 
   useEffect(() => {
     const finishConfirmedLogin = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (session) {
-        setMsg('تم تأكيد البريد وتسجيل الدخول بنجاح. جاري تحويلك...');
+        setMsg("تم تأكيد البريد وتسجيل الدخول بنجاح. جاري تحويلك...");
         try {
-          await redirectWithVerifiedSession(supabase, session, getSafeRedirect('/'));
+          await redirectWithVerifiedSession(
+            supabase,
+            session,
+            getSafeRedirect("/"),
+          );
         } catch (error) {
           setIsError(true);
-          setMsg(error.message || 'تعذر استكمال تسجيل الدخول.');
+          setMsg(error.message || "تعذر استكمال تسجيل الدخول.");
         }
       }
     };
@@ -35,7 +45,7 @@ export default function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    setMsg('');
+    setMsg("");
     setIsError(false);
 
     try {
@@ -46,21 +56,30 @@ export default function LoginPage() {
 
       if (error) {
         setIsError(true);
-        if (error.message?.toLowerCase().includes('email not confirmed')) {
-          setMsg('يجب تأكيد البريد أولًا. افتح رسالة Supabase واضغط رابط التأكيد.');
-        } else if (error.status === 400 || error.message?.includes('Invalid login')) {
-          setMsg('البريد الإلكتروني أو كلمة المرور غير صحيحة.');
+        if (error.message?.toLowerCase().includes("email not confirmed")) {
+          setMsg(
+            "يجب تأكيد البريد أولًا. افتح رسالة Supabase واضغط رابط التأكيد.",
+          );
+        } else if (
+          error.status === 400 ||
+          error.message?.includes("Invalid login")
+        ) {
+          setMsg("البريد الإلكتروني أو كلمة المرور غير صحيحة.");
         } else {
-          setMsg(`تعذر تسجيل الدخول: ${error.message || 'حاول مرة أخرى.'}`);
+          setMsg(`تعذر تسجيل الدخول: ${error.message || "حاول مرة أخرى."}`);
         }
         return;
       }
 
-      setMsg('تم تسجيل الدخول بنجاح. جاري تثبيت الجلسة وتحويلك...');
-      await redirectWithVerifiedSession(supabase, data.session, getSafeRedirect('/'));
+      setMsg("تم تسجيل الدخول بنجاح. جاري تثبيت الجلسة وتحويلك...");
+      await redirectWithVerifiedSession(
+        supabase,
+        data.session,
+        getSafeRedirect("/"),
+      );
     } catch (err) {
       setIsError(true);
-      setMsg(err.message || 'حدث خطأ غير متوقع أثناء الاتصال. حاول مرة أخرى.');
+      setMsg(err.message || "حدث خطأ غير متوقع أثناء الاتصال. حاول مرة أخرى.");
     } finally {
       setIsLoading(false);
     }
@@ -70,7 +89,7 @@ export default function LoginPage() {
     const cleanEmail = normalizeEmail(email);
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
       setIsError(true);
-      setMsg('اكتب بريدك الإلكتروني أولًا لإرسال رابط استعادة كلمة المرور.');
+      setMsg("اكتب بريدك الإلكتروني أولًا لإرسال رابط استعادة كلمة المرور.");
       return;
     }
 
@@ -87,7 +106,7 @@ export default function LoginPage() {
       return;
     }
 
-    setMsg('تم إرسال رابط استعادة كلمة المرور إلى بريدك.');
+    setMsg("تم إرسال رابط استعادة كلمة المرور إلى بريدك.");
   };
 
   return (
@@ -113,7 +132,7 @@ export default function LoginPage() {
             <Shield className="w-8 h-8" />
           </div>
         </div>
-        <h2 className="mt-6 text-center text-3xl font-black text-slate-900">
+        <h2 className="mt-6 text-center text-3xl font-bold text-slate-900">
           تسجيل الدخول للقائد العسكري
         </h2>
         <p className="mt-2 text-center text-sm text-slate-500">
@@ -131,7 +150,10 @@ export default function LoginPage() {
           <form className="space-y-6" onSubmit={handleSubmit}>
             {/* Target Email input */}
             <div>
-              <label htmlFor="email" className="block text-sm font-bold text-slate-700 mb-2">
+              <label
+                htmlFor="email"
+                className="block text-sm font-bold text-slate-700 mb-2"
+              >
                 البريد الإلكتروني (قناة الاتصال)
               </label>
               <div className="relative rounded-xl shadow-sm">
@@ -154,7 +176,10 @@ export default function LoginPage() {
 
             {/* Target Password input */}
             <div>
-              <label htmlFor="password" className="block text-sm font-bold text-slate-700 mb-2">
+              <label
+                htmlFor="password"
+                className="block text-sm font-bold text-slate-700 mb-2"
+              >
                 كلمة المرور (رمز النفاذ الآمن)
               </label>
               <div className="relative rounded-xl shadow-sm">
@@ -164,7 +189,7 @@ export default function LoginPage() {
                 <input
                   id="password"
                   name="password"
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -177,7 +202,11 @@ export default function LoginPage() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 hover:text-cyan-500 transition-colors"
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
                 </button>
               </div>
             </div>
@@ -191,13 +220,20 @@ export default function LoginPage() {
                   type="checkbox"
                   className="h-4.5 w-4.5 text-cyan-500 focus:ring-cyan-500/30 border-slate-300 rounded-lg"
                 />
-                <label htmlFor="remember-me" className="mr-2 block text-sm font-bold text-slate-600 cursor-pointer">
+                <label
+                  htmlFor="remember-me"
+                  className="mr-2 block text-sm font-bold text-slate-600 cursor-pointer"
+                >
                   تذكر جهازي العسكري
                 </label>
               </div>
 
               <div className="text-sm">
-                <button type="button" onClick={handleForgotPassword} className="font-bold text-cyan-600 hover:text-cyan-500 transition-colors">
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  className="font-bold text-cyan-600 hover:text-cyan-500 transition-colors"
+                >
                   نسيت رمز النفاذ؟
                 </button>
               </div>
@@ -205,11 +241,13 @@ export default function LoginPage() {
 
             {/* Notification Messages */}
             {msg && (
-              <div className={`p-3.5 border rounded-xl text-sm font-bold text-center ${
-                isError 
-                  ? 'bg-rose-50 border-rose-200 text-rose-800' 
-                  : 'bg-emerald-50 border-emerald-200 text-emerald-800'
-              }`}>
+              <div
+                className={`p-3.5 border rounded-xl text-sm font-bold text-center ${
+                  isError
+                    ? "bg-rose-50 border-rose-200 text-rose-800"
+                    : "bg-emerald-50 border-emerald-200 text-emerald-800"
+                }`}
+              >
                 {msg}
               </div>
             )}
@@ -221,15 +259,20 @@ export default function LoginPage() {
                 disabled={isLoading}
                 className="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-lg shadow-cyan-600/10 text-md font-bold text-white bg-gradient-to-r from-cyan-500 to-sky-500 hover:shadow-cyan-600/25 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transition-all transform hover:-translate-y-0.5 active:translate-y-0"
               >
-                {isLoading ? 'جاري التحقق من التفويض والمصادقة...' : 'تسجيل الدخول للجبهة'}
+                {isLoading
+                  ? "جاري التحقق من التفويض والمصادقة..."
+                  : "تسجيل الدخول للجبهة"}
               </button>
             </div>
           </form>
 
           <div className="mt-8 text-center border-t border-slate-100 pt-6">
             <p className="text-sm text-slate-500 font-medium">
-              هل أنت قائد جديد هنا؟{' '}
-              <Link href="/register" className="font-extrabold text-cyan-600 hover:text-cyan-500 transition-colors">
+              هل أنت قائد جديد هنا؟{" "}
+              <Link
+                href="/register"
+                className="font-extrabold text-cyan-600 hover:text-cyan-500 transition-colors"
+              >
                 طلب رتبة جديدة وإنشاء حساب
               </Link>
             </p>

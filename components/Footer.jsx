@@ -14,7 +14,7 @@ export default function Footer() {
               <div className="bg-gradient-to-tr from-cyan-400 to-sky-500 text-white p-2 rounded-xl shadow-md">
                 <Shield className="w-6 h-6" />
               </div>
-              <span className="font-sans font-black text-2xl tracking-tight text-white">
+              <span className="font-sans font-bold text-2xl tracking-tight text-white">
                 معركة سيادة
               </span>
             </Link>

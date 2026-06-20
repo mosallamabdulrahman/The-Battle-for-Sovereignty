@@ -1,16 +1,16 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { Lock, Shield } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Lock, Shield } from "lucide-react";
+import { supabase } from "../../lib/supabase";
 
 export default function ResetPasswordPage() {
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [isReady, setIsReady] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
 
   useEffect(() => {
@@ -18,7 +18,7 @@ export default function ResetPasswordPage() {
       setIsReady(Boolean(session));
       if (!session) {
         setIsError(true);
-        setMessage('رابط استعادة كلمة المرور غير صالح أو انتهت صلاحيته.');
+        setMessage("رابط استعادة كلمة المرور غير صالح أو انتهت صلاحيته.");
       }
     });
   }, []);
@@ -27,15 +27,19 @@ export default function ResetPasswordPage() {
     event.preventDefault();
     setIsError(false);
 
-    if (password.length < 8 || !/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+    if (
+      password.length < 8 ||
+      !/[A-Za-z]/.test(password) ||
+      !/\d/.test(password)
+    ) {
       setIsError(true);
-      setMessage('كلمة المرور يجب ألا تقل عن 8 أحرف وتحتوي على حرف ورقم.');
+      setMessage("كلمة المرور يجب ألا تقل عن 8 أحرف وتحتوي على حرف ورقم.");
       return;
     }
 
     if (password !== confirmPassword) {
       setIsError(true);
-      setMessage('كلمة المرور وتأكيدها غير متطابقين.');
+      setMessage("كلمة المرور وتأكيدها غير متطابقين.");
       return;
     }
 
@@ -49,8 +53,8 @@ export default function ResetPasswordPage() {
       return;
     }
 
-    setMessage('تم تحديث كلمة المرور بنجاح. جاري تحويلك للرئيسية...');
-    window.setTimeout(() => window.location.assign('/'), 800);
+    setMessage("تم تحديث كلمة المرور بنجاح. جاري تحويلك للرئيسية...");
+    window.setTimeout(() => window.location.assign("/"), 800);
   };
 
   return (
@@ -59,11 +63,15 @@ export default function ResetPasswordPage() {
         <div className="mx-auto mb-5 w-fit rounded-2xl bg-gradient-to-tr from-cyan-500 to-sky-500 p-3 text-white">
           <Shield className="h-8 w-8" />
         </div>
-        <h1 className="text-center text-2xl font-black text-slate-900">تعيين كلمة مرور جديدة</h1>
+        <h1 className="text-center text-2xl font-bold text-slate-900">
+          تعيين كلمة مرور جديدة
+        </h1>
 
         <form onSubmit={handleSubmit} className="mt-7 space-y-5">
           <label className="block">
-            <span className="mb-2 block text-sm font-bold text-slate-700">كلمة المرور الجديدة</span>
+            <span className="mb-2 block text-sm font-bold text-slate-700">
+              كلمة المرور الجديدة
+            </span>
             <span className="relative block">
               <Lock className="absolute right-3.5 top-3.5 h-5 w-5 text-slate-400" />
               <input
@@ -78,7 +86,9 @@ export default function ResetPasswordPage() {
           </label>
 
           <label className="block">
-            <span className="mb-2 block text-sm font-bold text-slate-700">تأكيد كلمة المرور</span>
+            <span className="mb-2 block text-sm font-bold text-slate-700">
+              تأكيد كلمة المرور
+            </span>
             <input
               type="password"
               required
@@ -90,11 +100,13 @@ export default function ResetPasswordPage() {
           </label>
 
           {message && (
-            <p className={`rounded-xl border p-3 text-center text-sm font-bold ${
-              isError
-                ? 'border-rose-200 bg-rose-50 text-rose-700'
-                : 'border-emerald-200 bg-emerald-50 text-emerald-700'
-            }`}>
+            <p
+              className={`rounded-xl border p-3 text-center text-sm font-bold ${
+                isError
+                  ? "border-rose-200 bg-rose-50 text-rose-700"
+                  : "border-emerald-200 bg-emerald-50 text-emerald-700"
+              }`}
+            >
               {message}
             </p>
           )}
@@ -104,11 +116,14 @@ export default function ResetPasswordPage() {
             disabled={!isReady || isLoading}
             className="w-full rounded-xl bg-gradient-to-r from-cyan-500 to-sky-500 py-3.5 font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {isLoading ? 'جاري الحفظ...' : 'حفظ كلمة المرور الجديدة'}
+            {isLoading ? "جاري الحفظ..." : "حفظ كلمة المرور الجديدة"}
           </button>
         </form>
 
-        <Link href="/login" className="mt-5 block text-center text-sm font-bold text-cyan-600">
+        <Link
+          href="/login"
+          className="mt-5 block text-center text-sm font-bold text-cyan-600"
+        >
           العودة لتسجيل الدخول
         </Link>
       </div>

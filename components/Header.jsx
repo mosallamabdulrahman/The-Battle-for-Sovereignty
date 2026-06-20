@@ -1,11 +1,19 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { Shield, Menu, X, ArrowLeft, Gamepad2, LogOut, User } from 'lucide-react';
-import Link from 'next/link';
-import { supabase } from '../lib/supabase';
-import { getUserDisplayName } from '../lib/auth';
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import {
+  Shield,
+  Menu,
+  X,
+  ArrowLeft,
+  Gamepad2,
+  LogOut,
+  User,
+} from "lucide-react";
+import Link from "next/link";
+import { supabase } from "../lib/supabase";
+import { getUserDisplayName } from "../lib/auth";
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -20,19 +28,21 @@ export default function Header() {
         setIsScrolled(false);
       }
     };
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll);
 
     // Fetch user session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
     });
 
     return () => {
-      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener("scroll", handleScroll);
       subscription.unsubscribe();
     };
   }, []);
@@ -43,10 +53,10 @@ export default function Header() {
   };
 
   const navLinks = [
-    { name: 'الرئيسية', href: '#hero' },
-    { name: 'طريقة اللعب', href: '#how-to-play' },
-    { name: 'التصنيفات', href: '#categories' },
-    { name: 'محاكي المعركة', href: '/battle' },
+    { name: "الرئيسية", href: "#hero" },
+    { name: "طريقة اللعب", href: "#how-to-play" },
+    { name: "التصنيفات", href: "#categories" },
+    { name: "محاكي المعركة", href: "/battle" },
   ];
 
   return (
@@ -54,8 +64,8 @@ export default function Header() {
       suppressHydrationWarning
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         isScrolled
-          ? 'bg-white/90 backdrop-blur-md shadow-md border-b border-slate-200/80 py-3'
-          : 'bg-transparent py-5'
+          ? "bg-white/90 backdrop-blur-md shadow-md border-b border-slate-200/80 py-3"
+          : "bg-transparent py-5"
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -65,7 +75,7 @@ export default function Header() {
             <div className="bg-gradient-to-tr from-sky-400 to-cyan-500 text-white p-2 rounded-xl shadow-md group-hover:scale-105 transition-transform duration-300">
               <Shield className="w-6 h-6" />
             </div>
-            <span className="font-sans font-black text-2xl tracking-tight bg-gradient-to-r from-slate-900 via-cyan-600 to-sky-500 bg-clip-text text-transparent">
+            <span className="font-sans font-bold text-2xl tracking-tight bg-gradient-to-r from-slate-900 via-cyan-600 to-sky-500 bg-clip-text text-transparent">
               معركة سيادة
             </span>
           </Link>
@@ -73,7 +83,7 @@ export default function Header() {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-8">
             {navLinks.map((link) => {
-              const isDirectLink = link.href.startsWith('/');
+              const isDirectLink = link.href.startsWith("/");
               return isDirectLink ? (
                 <Link
                   key={link.name}
@@ -137,7 +147,11 @@ export default function Header() {
             className="md:hidden p-2 text-slate-600 hover:text-cyan-600 hover:bg-slate-100 rounded-lg transition-colors"
             aria-label="القائمة الجانبية"
           >
-            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {isMobileMenuOpen ? (
+              <X className="w-6 h-6" />
+            ) : (
+              <Menu className="w-6 h-6" />
+            )}
           </button>
         </div>
       </div>
@@ -147,14 +161,14 @@ export default function Header() {
         {isMobileMenuOpen && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
+            animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3 }}
             className="md:hidden bg-white/95 backdrop-blur-md border-b border-slate-200 overflow-hidden"
           >
             <div className="px-4 pt-2 pb-6 space-y-4">
               {navLinks.map((link) => {
-                const isDirectLink = link.href.startsWith('/');
+                const isDirectLink = link.href.startsWith("/");
                 return isDirectLink ? (
                   <Link
                     key={link.name}

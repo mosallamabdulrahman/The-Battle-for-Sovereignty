@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { motion } from "motion/react";
 import {
   AlertTriangle,
@@ -30,21 +31,7 @@ const RESULT_LABELS = {
   blocked: "تم صد الضربة",
 };
 
-const CATEGORY_IMAGES = [
-  "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=360&q=80",
-  "https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&w=360&q=80",
-  "https://images.unsplash.com/photo-1564769662533-4f00a87b4056?auto=format&fit=crop&w=360&q=80",
-  "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=360&q=80",
-  "https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=360&q=80",
-  "https://images.unsplash.com/photo-1519817650390-64a93db51149?auto=format&fit=crop&w=360&q=80",
-];
-
-const getCategoryImage = (categoryId, index) => {
-  const codeSum = String(categoryId)
-    .split("")
-    .reduce((sum, char) => sum + char.charCodeAt(0), 0);
-  return CATEGORY_IMAGES[(codeSum + index) % CATEGORY_IMAGES.length];
-};
+const FALLBACK_CATEGORY_IMAGE = "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=360&q=80";
 
 function FinishedCelebration({
   room,
@@ -95,14 +82,14 @@ function FinishedCelebration({
         ))}
       </div>
       <Trophy className="relative z-10 h-16 w-16 mx-auto text-amber-300 drop-shadow" />
-      <h2 className="relative z-10 mt-4 text-2xl font-black">{title}</h2>
+      <h2 className="relative z-10 mt-4 text-2xl font-bold">{title}</h2>
       <p className="relative z-10 mt-2 text-sm text-cyan-100">
         انتهت المباراة. يمكن للحكم والفريقين الخروج والعودة للواجهة الرئيسية.
       </p>
       <button
         type="button"
         onClick={onExit}
-        className="relative z-10 mt-6 rounded-2xl bg-white px-6 py-3 text-sm font-black text-slate-950 shadow-lg transition hover:bg-amber-100"
+        className="relative z-10 mt-6 rounded-2xl bg-white px-6 py-3 text-sm font-bold text-slate-950 shadow-lg transition hover:bg-amber-100"
       >
         خروج من اللعبة
       </button>
@@ -122,13 +109,13 @@ function ScoreCards({ teams }) {
         >
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="font-black text-slate-900">{team.name}</p>
+              <p className="font-bold text-slate-900">{team.name}</p>
               <p className="text-xs text-slate-500 mt-1">
                 النتيجة: {team.score}
               </p>
             </div>
             <div className="text-center rounded-xl bg-slate-950 text-white px-4 py-2">
-              <span className="block text-xl font-black">
+              <span className="block text-xl font-bold">
                 {team.available_strikes}
               </span>
               <span className="text-[9px] text-slate-300">ضربات متاحة</span>
@@ -140,7 +127,7 @@ function ScoreCards({ teams }) {
   );
 }
 
-function LifelineTimer({ seconds, onDismiss }) {
+function CircularTimer({ seconds, label = "مؤقت السؤال", onDismiss }) {
   const radius = 52;
   const circumference = 2 * Math.PI * radius;
   const progress = Math.max(0, Math.min(60, seconds)) / 60;
@@ -169,14 +156,7 @@ function LifelineTimer({ seconds, onDismiss }) {
             viewBox="0 0 140 140"
             aria-hidden="true"
           >
-            <circle
-              cx="70"
-              cy="70"
-              r={radius}
-              fill="none"
-              stroke="#e2e8f0"
-              strokeWidth="11"
-            />
+            <circle cx="70" cy="70" r={radius} fill="none" stroke="#e2e8f0" strokeWidth="11" />
             <circle
               cx="70"
               cy="70"
@@ -187,33 +167,28 @@ function LifelineTimer({ seconds, onDismiss }) {
               strokeWidth="11"
               strokeDasharray={circumference}
               strokeDashoffset={strokeDashoffset}
-              style={{
-                transition:
-                  "stroke-dashoffset 1000ms linear, stroke 300ms ease",
-              }}
+              style={{ transition: "stroke-dashoffset 1000ms linear, stroke 300ms ease" }}
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className={`text-4xl font-black ${colorClass}`}>
-              {seconds}
-            </span>
-            <span className="text-[10px] font-black text-slate-400">ثانية</span>
+            <span className={`text-4xl font-bold ${colorClass}`}>{seconds}</span>
+            <span className="text-[10px] font-bold text-slate-400">ثانية</span>
           </div>
         </div>
         <div className="text-center sm:text-right">
-          <h3 className="text-lg font-black text-slate-950">
-            اتصال بصديق جارٍ الآن
-          </h3>
+          <h3 className="text-lg font-bold text-slate-950">{label}</h3>
           <p className="mt-1 text-xs font-bold leading-relaxed text-slate-500">
-            لديك دقيقة واحدة للتشاور. عندما تنتهي، أخبر الحكم بالإجابة النهائية.
+            لديك 60 ثانية للإجابة. آخر 10 ثوانٍ تصدر تنبيهًا صوتيًا لزيادة الحماس.
           </p>
-          <button
-            type="button"
-            onClick={onDismiss}
-            className="mt-4 rounded-2xl bg-slate-950 px-5 py-2.5 text-xs font-black text-white transition hover:bg-cyan-700"
-          >
-            انتهيت من الاتصال
-          </button>
+          {onDismiss && (
+            <button
+              type="button"
+              onClick={onDismiss}
+              className="mt-4 rounded-2xl bg-slate-950 px-5 py-2.5 text-xs font-bold text-white transition hover:bg-cyan-700"
+            >
+              انتهيت من الاتصال
+            </button>
+          )}
         </div>
       </div>
     </motion.div>
@@ -230,6 +205,7 @@ export function QuestionGrid({
     if (!groups[question.category_id]) {
       groups[question.category_id] = {
         name: question.category_name,
+        imageUrl: question.category_image_url || question.category_image || "",
         questions: [],
       };
     }
@@ -240,7 +216,7 @@ export function QuestionGrid({
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
       {Object.entries(categories).map(
-        ([categoryId, category], categoryIndex) => {
+        ([categoryId, category]) => {
           const sortedQuestions = [...category.questions].sort(
             (a, b) => a.position - b.position,
           );
@@ -254,7 +230,7 @@ export function QuestionGrid({
           return (
             <section
               key={categoryId}
-              className="grid grid-cols-[1fr_90px_1fr] items-stretch gap-0"
+              className="grid grid-cols-[1fr_120px_1fr] items-stretch gap-0"
             >
               <div className="flex flex-col justify-between gap-2">
                 {rightColumn.map((question) => {
@@ -267,12 +243,12 @@ export function QuestionGrid({
                       type="button"
                       disabled={isDisabled}
                       onClick={() => onSelect(question)}
-                      className={`h-14 rounded-r-full rounded-l-2xl border text-center text-xl font-black transition-all ${
+                      className={`h-14 rounded-r-full rounded-l-2xl border text-center text-xl font-semibold transition-all ${
                         question.is_used
                           ? "border-slate-200 bg-slate-200 text-slate-400 line-through"
                           : isActive
                             ? "border-amber-400 bg-amber-100 text-amber-900 ring-2 ring-amber-300"
-                            : "border-slate-200 bg-slate-200 text-rose-800 hover:border-cyan-400 hover:bg-cyan-50 disabled:cursor-not-allowed"
+                            : "border-slate-200 bg-[#CDD2D2] text-rose-800 hover:border-cyan-400 hover:bg-cyan-50 disabled:cursor-not-allowed"
                       }`}
                       title={`${DIFFICULTY_LABELS[question.difficulty]} - ${question.strikes} ضربة`}
                     >
@@ -284,19 +260,19 @@ export function QuestionGrid({
 
               <div className="relative overflow-hidden bg-cyan-50 shadow-sm">
                 <img
-                  src={getCategoryImage(categoryId, categoryIndex)}
+                  src={category.imageUrl || FALLBACK_CATEGORY_IMAGE}
                   alt={category.name}
                   className="h-full w-full object-cover"
                   loading="lazy"
                 />
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-r from-orange-500 to-amber-500 px-2 py-2 text-center">
-                  <h3 className="truncate text-[11px] font-black text-white">
+                <div className="absolute inset-x-0 bottom-0 bg-[#E1734B] border-t border-solid border-black px-2 py-2 text-center">
+                  <h3 className="truncate font-medium text-white">
                     {category.name}
                   </h3>
                 </div>
               </div>
 
-              <div className="flex flex-col justify-between gap-2 py-1">
+              <div className="flex flex-col justify-between gap-2">
                 {leftColumn.map((question) => {
                   const isActive = activeQuestionId === question.id;
                   const isDisabled =
@@ -307,7 +283,7 @@ export function QuestionGrid({
                       type="button"
                       disabled={isDisabled}
                       onClick={() => onSelect(question)}
-                      className={`h-14 rounded-l-full rounded-r-2xl border text-center text-xl font-black transition-all ${
+                      className={`h-14 rounded-l-full rounded-r-2xl border text-center text-xl font-semibold transition-all ${
                         question.is_used
                           ? "border-slate-200 bg-slate-200 text-slate-400 line-through"
                           : isActive
@@ -336,7 +312,7 @@ function EventFeed({ events }) {
 
   return (
     <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-      <h3 className="font-black text-slate-900">آخر أحداث المعركة</h3>
+      <h3 className="font-bold text-slate-900">آخر أحداث المعركة</h3>
       <div className="mt-4 space-y-2">
         {visibleEvents.length === 0 && (
           <p className="text-xs text-slate-400">
@@ -385,6 +361,7 @@ export function JudgeCombatDashboard({
   events,
   answer,
   isBusy,
+  questionSeconds,
   onSelectQuestion,
   onResolveQuestion,
   onExit,
@@ -405,7 +382,7 @@ export function JudgeCombatDashboard({
               <Crown className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="font-black text-slate-950">
+              <h1 className="font-bold text-slate-950">
                 لوحة حكم معركة السيادة
               </h1>
               <p className="text-[10px] text-slate-500">
@@ -416,7 +393,7 @@ export function JudgeCombatDashboard({
           <button
             type="button"
             onClick={onExit}
-            className="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-black text-rose-700"
+            className="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-bold text-rose-700"
           >
             <LogOut className="h-4 w-4" />
             خروج من اللعبة
@@ -439,23 +416,27 @@ export function JudgeCombatDashboard({
           >
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <span className="text-xs font-black text-cyan-600">
+                <span className="text-xs font-bold text-cyan-600">
                   {activeQuestion.category_name}
                 </span>
-                <h2 className="mt-2 text-xl font-black text-slate-950">
+                <h2 className="mt-2 text-xl font-bold text-slate-950">
                   {activeQuestion.question_text}
                 </h2>
               </div>
-              <span className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-black text-white">
+              <span className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-bold text-white">
                 {activeQuestion.points} نقطة · {activeQuestion.strikes} ضربة
               </span>
+            </div>
+
+            <div className="mt-5">
+              <CircularTimer seconds={questionSeconds} label="مؤقت السؤال" />
             </div>
 
             <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
               <span className="text-xs font-bold text-emerald-700">
                 الإجابة الصحيحة
               </span>
-              <p className="mt-1 font-black text-emerald-950">
+              <p className="mt-1 font-bold text-emerald-950">
                 {answer || "جاري تحميل الإجابة..."}
               </p>
             </div>
@@ -469,7 +450,7 @@ export function JudgeCombatDashboard({
                   onClick={() =>
                     onResolveQuestion(activeQuestion.id, team.team_index)
                   }
-                  className={`rounded-xl px-4 py-3 font-black text-white ${
+                  className={`rounded-xl px-4 py-3 font-bold text-white ${
                     team.team_index === 1 ? "bg-cyan-600" : "bg-orange-600"
                   }`}
                 >
@@ -480,7 +461,7 @@ export function JudgeCombatDashboard({
                 type="button"
                 disabled={isBusy}
                 onClick={() => onResolveQuestion(activeQuestion.id, null)}
-                className="rounded-xl bg-slate-700 px-4 py-3 font-black text-white"
+                className="rounded-xl bg-slate-700 px-4 py-3 font-bold text-white"
               >
                 كلاهما أخطأ
               </button>
@@ -521,6 +502,7 @@ export function TeamCombatDashboard({
   radarMode,
   activeRadarTool,
   isBusy,
+  questionSeconds,
   lifelineActive,
   lifelineSeconds,
   doubleChanceActive,
@@ -573,7 +555,7 @@ export function TeamCombatDashboard({
               <Shield className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="font-black text-slate-950">{activeTeam.name}</h1>
+              <h1 className="font-bold text-slate-950">{activeTeam.name}</h1>
               <p className="text-[10px] text-slate-500">
                 النتيجة {activeTeam.score} · الضربات المتاحة{" "}
                 {activeTeam.available_strikes}
@@ -583,7 +565,7 @@ export function TeamCombatDashboard({
           <button
             type="button"
             onClick={onExit}
-            className="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-black text-rose-700"
+            className="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-bold text-rose-700"
           >
             <LogOut className="h-4 w-4" />
             خروج من اللعبة
@@ -599,7 +581,7 @@ export function TeamCombatDashboard({
             className="w-full max-w-md rounded-3xl border border-red-500 bg-slate-900 p-8 text-center text-white shadow-2xl"
           >
             <p className="text-4xl mb-3">تحذير</p>
-            <h2 className="text-xl font-black text-amber-300">الحفرة نشطة!</h2>
+            <h2 className="text-xl font-bold text-amber-300">الحفرة نشطة!</h2>
             <p className="mt-3 text-sm leading-relaxed text-slate-300">
               اختر سؤالك الآن. إذا أجبت صحيحًا تحصل على ضربة إضافية. إذا أجبت
               خطأً، الوسيلة تضيع.
@@ -608,14 +590,14 @@ export function TeamCombatDashboard({
               <button
                 type="button"
                 onClick={onConfirmHole}
-                className="rounded-2xl bg-red-600 py-3 text-sm font-black text-white transition hover:bg-red-500"
+                className="rounded-2xl bg-red-600 py-3 text-sm font-bold text-white transition hover:bg-red-500"
               >
                 تفعيل الحفرة والمتابعة
               </button>
               <button
                 type="button"
                 onClick={onCancelHole}
-                className="rounded-2xl bg-slate-700 py-3 text-sm font-black text-white transition hover:bg-slate-600"
+                className="rounded-2xl bg-slate-700 py-3 text-sm font-bold text-white transition hover:bg-slate-600"
               >
                 إلغاء
               </button>
@@ -637,26 +619,31 @@ export function TeamCombatDashboard({
           )}
 
           {holeActive && (
-            <div className="rounded-2xl border border-red-400 bg-red-900 px-5 py-3 text-center text-sm font-black text-white animate-pulse">
+            <div className="rounded-2xl border border-red-400 bg-red-900 px-5 py-3 text-center text-sm font-bold text-white animate-pulse">
               تحذير: الحفرة نشطة — اختر سؤالك الآن
             </div>
           )}
 
           {lifelineActive && (
-            <LifelineTimer
+            <CircularTimer
               seconds={lifelineSeconds}
+              label="اتصال بصديق جارٍ الآن"
               onDismiss={onDismissLifeline}
             />
           )}
 
           {activeQuestion && (
             <div className="rounded-3xl border border-cyan-200 bg-white p-6 shadow-sm">
-              <span className="text-xs font-black text-cyan-600">
+              <span className="text-xs font-bold text-cyan-600">
                 {activeQuestion.category_name}
               </span>
-              <h2 className="mt-2 text-xl font-black text-slate-950">
+              <h2 className="mt-2 text-xl font-bold text-slate-950">
                 {activeQuestion.question_text}
               </h2>
+              <div className="mt-4">
+                <CircularTimer seconds={questionSeconds} label="مؤقت السؤال" />
+              </div>
+
               {doubleChanceActive && (
                 <div className="relative mt-4 overflow-hidden rounded-2xl border-2 border-amber-400 bg-amber-50 px-5 py-3">
                   <motion.div
@@ -670,7 +657,7 @@ export function TeamCombatDashboard({
                       ease: "easeInOut",
                     }}
                   />
-                  <span className="relative z-10 text-sm font-black text-amber-800">
+                  <span className="relative z-10 text-sm font-bold text-amber-800">
                     لديك فرصتان للإجابة — أخبر الحكم
                   </span>
                 </div>
@@ -682,7 +669,7 @@ export function TeamCombatDashboard({
           )}
 
           {activeTeam.available_strikes > 0 && room.status === "playing" && (
-            <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-center font-black text-rose-900">
+            <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-center font-bold text-rose-900">
               لديك {activeTeam.available_strikes} ضربة. اختر مربعًا من خريطة{" "}
               {opponentTeam.name}.
             </div>
@@ -691,7 +678,7 @@ export function TeamCombatDashboard({
           <section className="rounded-3xl border border-slate-200 bg-white p-5 sm:p-7 shadow-sm">
             <div className="flex items-center justify-between gap-4 mb-5">
               <div>
-                <h2 className="font-black text-slate-950">
+                <h2 className="font-bold text-slate-950">
                   خريطة الخصم المشفرة
                 </h2>
                 <p className="text-[10px] text-slate-500">
@@ -722,7 +709,7 @@ export function TeamCombatDashboard({
                         ? onUseTool(activeRadarTool || "radar_scan", cellIndex)
                         : onStrike(cellIndex)
                     }
-                    className={`aspect-square rounded-xl border text-xs font-black transition-all ${
+                    className={`aspect-square rounded-xl border text-xs font-bold transition-all ${
                       result === "hit"
                         ? "border-rose-500 bg-rose-500 text-white"
                         : result === "miss"
@@ -759,7 +746,7 @@ export function TeamCombatDashboard({
 
           <section>
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-black text-slate-950">لوحة الأسئلة</h2>
+              <h2 className="font-bold text-slate-950">لوحة الأسئلة</h2>
               <span className="text-xs font-bold text-slate-500">
                 {canChooseQuestion
                   ? "دورك في اختيار السؤال"
@@ -777,7 +764,7 @@ export function TeamCombatDashboard({
 
         <aside className="space-y-6">
           <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="font-black text-slate-950">الأدوات التكتيكية</h2>
+            <h2 className="font-bold text-slate-950">الأدوات التكتيكية</h2>
             <p className="text-[10px] text-slate-500 mt-1">
               كل أداة تستخدم مرة واحدة أثناء القتال.
             </p>
@@ -825,7 +812,7 @@ export function TeamCombatDashboard({
                             : "border-cyan-200 bg-cyan-50 text-cyan-900 hover:border-cyan-500"
                     }`}
                   >
-                    <span className="flex items-center gap-2 font-black">
+                    <span className="flex items-center gap-2 font-bold">
                       {detectorLocked ? (
                         <Lock className="h-4 w-4" />
                       ) : isRadarLike ? (
@@ -853,7 +840,7 @@ export function TeamCombatDashboard({
           </section>
 
           <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="font-black text-slate-950">حالة جيشك</h2>
+            <h2 className="font-bold text-slate-950">حالة جيشك</h2>
             <div className="mt-4 grid grid-cols-6 gap-1.5">
               {(activeTeam.board || Array(36).fill(null)).map((cell, index) => (
                 <div
@@ -868,7 +855,7 @@ export function TeamCombatDashboard({
               ))}
             </div>
             {activeTeam.shield_active && (
-              <p className="mt-3 flex items-center gap-2 text-xs font-black text-cyan-700">
+              <p className="mt-3 flex items-center gap-2 text-xs font-bold text-cyan-700">
                 <Shield className="h-4 w-4" />
                 الدرع مفعل للضربة القادمة
               </p>
@@ -896,12 +883,12 @@ export function AbandonedGameView({ room, onReturnHome }) {
     <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 dir-rtl">
       <div className="w-full max-w-md rounded-3xl border border-rose-900 bg-slate-900 p-8 text-center text-white shadow-2xl">
         <AlertTriangle className="h-14 w-14 mx-auto text-rose-400" />
-        <h1 className="mt-4 text-2xl font-black">تم إنهاء اللعبة</h1>
+        <h1 className="mt-4 text-2xl font-bold">تم إنهاء اللعبة</h1>
         <p className="mt-3 text-sm text-slate-300">{actor} خرج من اللعبة.</p>
         <button
           type="button"
           onClick={onReturnHome}
-          className="mt-7 rounded-xl bg-white px-6 py-3 font-black text-slate-950"
+          className="mt-7 rounded-xl bg-white px-6 py-3 font-bold text-slate-950"
         >
           العودة للرئيسية
         </button>
@@ -910,7 +897,13 @@ export function AbandonedGameView({ room, onReturnHome }) {
   );
 }
 
-export function CombatEventModal({ event, onClose }) {
+export function CombatEventModal({ event, onClose, autoCloseMs = 3000 }) {
+  useEffect(() => {
+    if (!event || event.event_type !== "strike") return undefined;
+    const timeout = window.setTimeout(onClose, autoCloseMs);
+    return () => window.clearTimeout(timeout);
+  }, [autoCloseMs, event, onClose]);
+
   if (!event || event.event_type !== "strike") return null;
 
   const isHit = event.result === "hit";
@@ -933,7 +926,7 @@ export function CombatEventModal({ event, onClose }) {
         ) : (
           <XCircle className="h-14 w-14 mx-auto text-slate-400" />
         )}
-        <h2 className="mt-4 text-2xl font-black text-slate-950">
+        <h2 className="mt-4 text-2xl font-bold text-slate-950">
           {RESULT_LABELS[event.result] || event.result}
         </h2>
         <p className="mt-2 text-sm text-slate-500">
@@ -943,7 +936,7 @@ export function CombatEventModal({ event, onClose }) {
         <button
           type="button"
           onClick={onClose}
-          className="mt-6 rounded-xl bg-slate-950 px-6 py-3 font-black text-white"
+          className="mt-6 rounded-xl bg-slate-950 px-6 py-3 font-bold text-white"
         >
           متابعة المعركة
         </button>

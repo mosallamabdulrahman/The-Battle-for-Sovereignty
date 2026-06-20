@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { motion } from 'motion/react';
-import { Swords, Info, Compass, ShieldAlert, Zap } from 'lucide-react';
-import Link from 'next/link';
+import { motion } from "motion/react";
+import { Swords, Info, Compass, ShieldAlert, Zap } from "lucide-react";
+import Link from "next/link";
 
 export default function HeroSection() {
   // Let's create a model representation of a 6x6 coordinate grid for illustration
@@ -11,17 +11,32 @@ export default function HeroSection() {
     const col = i % 6;
     // Put some mock items at specific coordinates
     let unitType = null;
-    let unitColor = '';
-    if (row === 1 && col === 2) { unitType = '✈️'; unitColor = 'bg-sky-100 border-sky-400 text-sky-600 animate-pulse'; }
-    if (row === 3 && col === 4) { unitType = '⛵'; unitColor = 'bg-emerald-100 border-emerald-400 text-emerald-600'; }
-    if (row === 4 && col === 1) { unitType = '🚜'; unitColor = 'bg-amber-100 border-amber-400 text-amber-600 shadow-sm'; }
-    if (row === 2 && col === 5) { unitType = '👤'; unitColor = 'bg-rose-100 border-rose-400 text-rose-600'; }
+    let unitColor = "";
+    if (row === 1 && col === 2) {
+      unitType = "✈️";
+      unitColor = "bg-sky-100 border-sky-400 text-sky-600 animate-pulse";
+    }
+    if (row === 3 && col === 4) {
+      unitType = "⛵";
+      unitColor = "bg-emerald-100 border-emerald-400 text-emerald-600";
+    }
+    if (row === 4 && col === 1) {
+      unitType = "🚜";
+      unitColor = "bg-amber-100 border-amber-400 text-amber-600 shadow-sm";
+    }
+    if (row === 2 && col === 5) {
+      unitType = "👤";
+      unitColor = "bg-rose-100 border-rose-400 text-rose-600";
+    }
 
     return { id: i, row, col, unitType, unitColor };
   });
 
   return (
-    <section id="hero" className="relative pt-0 pb-16 md:pb-24 overflow-hidden bg-gradient-to-b from-cyan-50 via-sky-50/30 to-white">
+    <section
+      id="hero"
+      className="relative pt-0 pb-16 md:pb-24 overflow-hidden bg-gradient-to-b from-cyan-50 via-sky-50/30 to-white"
+    >
       {/* Absolute Decorative Blobs */}
       <div className="absolute top-0 right-1/4 w-96 h-96 bg-cyan-200/40 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-12 left-10 w-80 h-80 bg-orange-100/50 rounded-full blur-3xl pointer-events-none" />
@@ -29,7 +44,6 @@ export default function HeroSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Adjusted content to offset header height gracefully while maintaining requested pt-0 */}
         <div className="pt-28 md:pt-36 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          
           {/* Hero text */}
           <div className="lg:col-span-7 flex flex-col items-start text-right">
             <motion.div
@@ -46,7 +60,7 @@ export default function HeroSection() {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-4xl sm:text-5xl md:text-6xl font-black text-slate-900 leading-tight tracking-tight mb-6"
+              className="text-4xl sm:text-5xl md:text-6xl font-bold text-slate-900 leading-tight tracking-tight mb-6"
             >
               القمّة تطلب سيادة المعرفة... <br />
               <span className="bg-gradient-to-r from-cyan-600 to-sky-500 bg-clip-text text-transparent">
@@ -60,7 +74,10 @@ export default function HeroSection() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="text-lg md:text-xl text-slate-600 leading-relaxed max-w-2xl mb-8"
             >
-              حوّل معلوماتك العامة وقدرتك الذهنية إلى عتاد حقيقي! ابنِ معسكرك العسكري، وزّع وحداتك بذكاء وسريّة تامة على رقعة الإحداثيات، ثم أطلق ضربات ساحقة على خارطة عدوك عبر حلّ الأسئلة الثقافية الصعبة واستخدم وسائل المساعدة التكتيكية للسيطرة على ساحة السيادة.
+              حوّل معلوماتك العامة وقدرتك الذهنية إلى عتاد حقيقي! ابنِ معسكرك
+              العسكري، وزّع وحداتك بذكاء وسريّة تامة على رقعة الإحداثيات، ثم
+              أطلق ضربات ساحقة على خارطة عدوك عبر حلّ الأسئلة الثقافية الصعبة
+              واستخدم وسائل المساعدة التكتيكية للسيطرة على ساحة السيادة.
             </motion.p>
 
             <motion.div
@@ -106,8 +123,8 @@ export default function HeroSection() {
                     key={cell.id}
                     className={`aspect-square border border-slate-100 rounded-xl flex items-center justify-center text-lg sm:text-xl relative transition-all duration-300 cursor-default ${
                       cell.unitType
-                        ? cell.unitColor + ' border-2 font-bold shadow'
-                        : 'bg-slate-50/50 hover:bg-cyan-50 hover:border-cyan-200'
+                        ? cell.unitColor + " border-2 font-bold shadow"
+                        : "bg-slate-50/50 hover:bg-cyan-50 hover:border-cyan-200"
                     }`}
                   >
                     {!cell.unitType && (
@@ -116,7 +133,9 @@ export default function HeroSection() {
                       </span>
                     )}
                     {cell.unitType && (
-                      <span className="drop-shadow-sm select-none">{cell.unitType}</span>
+                      <span className="drop-shadow-sm select-none">
+                        {cell.unitType}
+                      </span>
                     )}
 
                     {/* Show a cool radar scope effect on one square */}
@@ -131,16 +150,21 @@ export default function HeroSection() {
               <div className="mt-6 flex justify-between items-center bg-slate-50 p-3 rounded-2xl border border-slate-100">
                 <div className="flex flex-col text-right">
                   <span className="text-xs text-slate-400">الرصيد المتاح</span>
-                  <span className="text-sm font-black text-slate-800">1000 نقطة الحرب</span>
+                  <span className="text-sm font-bold text-slate-800">
+                    1000 نقطة الحرب
+                  </span>
                 </div>
                 <div className="flex gap-2">
-                  <span className="bg-white px-2 py-1 rounded-lg text-xs font-bold border border-slate-200">👥 مشاة (10ن)</span>
-                  <span className="bg-white px-2 py-1 rounded-lg text-xs font-bold border border-slate-200">🚜 دبابة (50ن)</span>
+                  <span className="bg-white px-2 py-1 rounded-lg text-xs font-bold border border-slate-200">
+                    👥 مشاة (10ن)
+                  </span>
+                  <span className="bg-white px-2 py-1 rounded-lg text-xs font-bold border border-slate-200">
+                    🚜 دبابة (50ن)
+                  </span>
                 </div>
               </div>
             </div>
           </motion.div>
-          
         </div>
       </div>
     </section>
