@@ -1,19 +1,17 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# The Battle for Sovereignty (معركة سيادة)
 
-# Run and deploy your AI Studio app
+The Battle for Sovereignty is a competitive, strategic military and trivia quiz game between two teams, built with Next.js and Supabase.
 
-This contains everything you need to run your app locally.
-
-View your app in AI Studio: https://ai.studio/apps/1a628ce2-963b-418a-9a98-657505b55b33
+---
 
 ## Run Locally
 
-**Prerequisites:**  Node.js
+**Prerequisites:** Node.js installed on your machine.
 
+### 1. Install Dependencies
 
-1. Install dependencies:
-   `npm install`
-2. Run the app:
-   `npm run dev`
+Open your terminal in the project directory and run:
+
+```bash
+npm install
+```
