@@ -2,5 +2,5 @@
   "name": "معركة سيادة",
   "description": "لعبة استراتيجية تنافسية مبنية على الأسئلة العامة والتخطيط العسكري",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": []
 }
