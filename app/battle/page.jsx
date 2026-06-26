@@ -97,6 +97,8 @@ export default function BattlePage() {
   const lastActiveQuestionIdRef = useRef(null);
   const audioContextRef = useRef(null);
   const lastSoundEventIdRef = useRef(null);
+  const deploymentTimerRef = useRef(null);
+  const pendingBoardRef = useRef(null);
 
   // Selected Unit to Deploy (for active players)
   const [selectedUnit, setSelectedUnit] = useState("infantry"); // 'infantry', 'tank', 'aircraft', 'submarine', 'mine'
@@ -113,6 +115,15 @@ export default function BattlePage() {
     mine: { name: "لغم مغناطيسي", cost: 100, emoji: "💥" },
   };
 
+  // Max units per type allowed per team
+  const unitLimits = {
+    infantry: 10,
+    tank: 4,
+    aircraft: 3,
+    submarine: 2,
+    mine: 2,
+  };
+
   const getAudioContext = useCallback(() => {
     if (typeof window === "undefined") return null;
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -126,61 +137,76 @@ export default function BattlePage() {
     return audioContextRef.current;
   }, []);
 
-  const playTone = useCallback((frequency, duration = 0.12, type = "sine", gainValue = 0.05) => {
-    const context = getAudioContext();
-    if (!context) return;
-    const oscillator = context.createOscillator();
-    const gain = context.createGain();
-    oscillator.type = type;
-    oscillator.frequency.setValueAtTime(frequency, context.currentTime);
-    gain.gain.setValueAtTime(gainValue, context.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + duration);
-    oscillator.connect(gain);
-    gain.connect(context.destination);
-    oscillator.start();
-    oscillator.stop(context.currentTime + duration);
-  }, [getAudioContext]);
+  const playTone = useCallback(
+    (frequency, duration = 0.12, type = "sine", gainValue = 0.05) => {
+      const context = getAudioContext();
+      if (!context) return;
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      oscillator.type = type;
+      oscillator.frequency.setValueAtTime(frequency, context.currentTime);
+      gain.gain.setValueAtTime(gainValue, context.currentTime);
+      gain.gain.exponentialRampToValueAtTime(
+        0.001,
+        context.currentTime + duration,
+      );
+      oscillator.connect(gain);
+      gain.connect(context.destination);
+      oscillator.start();
+      oscillator.stop(context.currentTime + duration);
+    },
+    [getAudioContext],
+  );
 
-  const playNoise = useCallback((duration = 0.35, gainValue = 0.12) => {
-    const context = getAudioContext();
-    if (!context) return;
-    const bufferSize = Math.max(1, Math.floor(context.sampleRate * duration));
-    const buffer = context.createBuffer(1, bufferSize, context.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let index = 0; index < bufferSize; index += 1) {
-      data[index] = (Math.random() * 2 - 1) * (1 - index / bufferSize);
-    }
-    const source = context.createBufferSource();
-    const gain = context.createGain();
-    source.buffer = buffer;
-    gain.gain.setValueAtTime(gainValue, context.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + duration);
-    source.connect(gain);
-    gain.connect(context.destination);
-    source.start();
-  }, [getAudioContext]);
+  const playNoise = useCallback(
+    (duration = 0.35, gainValue = 0.12) => {
+      const context = getAudioContext();
+      if (!context) return;
+      const bufferSize = Math.max(1, Math.floor(context.sampleRate * duration));
+      const buffer = context.createBuffer(1, bufferSize, context.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let index = 0; index < bufferSize; index += 1) {
+        data[index] = (Math.random() * 2 - 1) * (1 - index / bufferSize);
+      }
+      const source = context.createBufferSource();
+      const gain = context.createGain();
+      source.buffer = buffer;
+      gain.gain.setValueAtTime(gainValue, context.currentTime);
+      gain.gain.exponentialRampToValueAtTime(
+        0.001,
+        context.currentTime + duration,
+      );
+      source.connect(gain);
+      gain.connect(context.destination);
+      source.start();
+    },
+    [getAudioContext],
+  );
 
-  const playGameSound = useCallback((type) => {
-    if (type === "tick") {
-      playTone(880, 0.07, "square", 0.025);
-    } else if (type === "timeout") {
-      playTone(220, 0.25, "sawtooth", 0.06);
-      window.setTimeout(() => playTone(165, 0.25, "sawtooth", 0.05), 150);
-    } else if (type === "hit") {
-      playTone(180, 0.12, "sawtooth", 0.08);
-      window.setTimeout(() => playTone(90, 0.25, "sawtooth", 0.07), 80);
-      playNoise(0.2, 0.06);
-    } else if (type === "mine") {
-      playNoise(0.55, 0.16);
-      playTone(70, 0.45, "sawtooth", 0.08);
-    } else if (type === "blocked") {
-      playTone(520, 0.1, "triangle", 0.05);
-      window.setTimeout(() => playTone(700, 0.1, "triangle", 0.04), 110);
-    } else if (type === "miss") {
-      playTone(320, 0.08, "sine", 0.035);
-      window.setTimeout(() => playTone(260, 0.08, "sine", 0.03), 90);
-    }
-  }, [playNoise, playTone]);
+  const playGameSound = useCallback(
+    (type) => {
+      if (type === "tick") {
+        playTone(880, 0.07, "square", 0.025);
+      } else if (type === "timeout") {
+        playTone(220, 0.25, "sawtooth", 0.06);
+        window.setTimeout(() => playTone(165, 0.25, "sawtooth", 0.05), 150);
+      } else if (type === "hit") {
+        playTone(180, 0.12, "sawtooth", 0.08);
+        window.setTimeout(() => playTone(90, 0.25, "sawtooth", 0.07), 80);
+        playNoise(0.2, 0.06);
+      } else if (type === "mine") {
+        playNoise(0.55, 0.16);
+        playTone(70, 0.45, "sawtooth", 0.08);
+      } else if (type === "blocked") {
+        playTone(520, 0.1, "triangle", 0.05);
+        window.setTimeout(() => playTone(700, 0.1, "triangle", 0.04), 110);
+      } else if (type === "miss") {
+        playTone(320, 0.08, "sine", 0.035);
+        window.setTimeout(() => playTone(260, 0.08, "sine", 0.03), 90);
+      }
+    },
+    [playNoise, playTone],
+  );
 
   useEffect(() => {
     if (!lifelineActive) return undefined;
@@ -218,7 +244,8 @@ export default function BattlePage() {
   }, [room?.active_question_id, holeActive]);
 
   useEffect(() => {
-    if (!room?.active_question_id || room.status !== "playing") return undefined;
+    if (!room?.active_question_id || room.status !== "playing")
+      return undefined;
     if (questionSeconds <= 0) {
       playGameSound("timeout");
       return undefined;
@@ -437,19 +464,31 @@ export default function BattlePage() {
       if (questionError) throw questionError;
 
       let categoryImageMap = new Map();
-      const categoryIds = [...new Set((questionData || []).map((question) => question.category_id))];
+      const categoryIds = [
+        ...new Set(
+          (questionData || []).map((question) => question.category_id),
+        ),
+      ];
       if (categoryIds.length > 0) {
         const { data: categoryData } = await supabase
           .from("question_categories")
           .select("id,image_url")
           .in("id", categoryIds);
-        categoryImageMap = new Map((categoryData || []).map((category) => [category.id, category.image_url]));
+        categoryImageMap = new Map(
+          (categoryData || []).map((category) => [
+            category.id,
+            category.image_url,
+          ]),
+        );
       }
 
       setQuestions(
         (questionData || []).map((question) => ({
           ...question,
-          category_image_url: categoryImageMap.get(question.category_id) || question.category_image_url || "",
+          category_image_url:
+            categoryImageMap.get(question.category_id) ||
+            question.category_image_url ||
+            "",
         })),
       );
 
@@ -530,7 +569,10 @@ export default function BattlePage() {
               question.id === payload.new.id
                 ? {
                     ...payload.new,
-                    category_image_url: question.category_image_url || payload.new.category_image_url || "",
+                    category_image_url:
+                      question.category_image_url ||
+                      payload.new.category_image_url ||
+                      "",
                   }
                 : question,
             ),
@@ -602,13 +644,12 @@ export default function BattlePage() {
   }, [role, room?.active_question_id]);
 
   // 6. Handle unit placement (for active playing teams)
-  const handleCellClick = async (cellIndex) => {
+  const handleCellClick = (cellIndex) => {
     if (!room || teams.length < 2 || !teamIndex) return;
 
     const activeTeam = teams.find((t) => t.team_index === teamIndex);
     if (!activeTeam) return;
 
-    // Reject deployment mutations if already flagged ready
     if (activeTeam.is_ready) {
       showAlert(
         "تم تشفير وإقفال الترسانة مسبقاً، يرجى انتظار اللواء الآخر.",
@@ -636,12 +677,26 @@ export default function BattlePage() {
         showAlert("رصيد الفريق غير كافٍ لإضافة هذه الوحدة العسكرية.", "error");
         return;
       }
+
+      // Unit count limit check
+      const currentUnitCount = currentBoard.filter(
+        (cell) => cell === selectedUnit,
+      ).length;
+      const maxAllowed = unitLimits[selectedUnit];
+      if (currentUnitCount >= maxAllowed) {
+        showAlert(
+          `الحد الأقصى لـ"${unitSpecs[selectedUnit].name}" هو ${maxAllowed} وحدة في الساحة.`,
+          "error",
+        );
+        return;
+      }
+
       currentPoints -= cost;
       currentBoard[cellIndex] = selectedUnit;
       setLastPlacedCell(cellIndex);
     }
 
-    // Apply Optimistic update locally
+    // Apply optimistic update immediately (no loading sensation)
     setTeams((prev) =>
       prev.map((t) =>
         t.team_index === teamIndex
@@ -650,17 +705,24 @@ export default function BattlePage() {
       ),
     );
 
-    const { error } = await supabase.rpc("update_team_deployment", {
-      p_room_id: roomId,
-      p_team_index: teamIndex,
-      p_board: currentBoard,
-      p_points: currentPoints,
-    });
-
-    if (error) {
-      showAlert(error.message, "error");
-      loadDatabaseData();
-    }
+    // Debounce API call so rapid clicks don't queue multiple requests
+    pendingBoardRef.current = { board: currentBoard, points: currentPoints };
+    clearTimeout(deploymentTimerRef.current);
+    deploymentTimerRef.current = setTimeout(async () => {
+      const pending = pendingBoardRef.current;
+      if (!pending) return;
+      const { error } = await supabase.rpc("update_team_deployment", {
+        p_room_id: roomId,
+        p_team_index: teamIndex,
+        p_board: pending.board,
+        p_points: pending.points,
+      });
+      if (error) {
+        showAlert(error.message, "error");
+        loadDatabaseData();
+      }
+      pendingBoardRef.current = null;
+    }, 350);
   };
 
   // 7. Flag readiness to lock board deployment
@@ -674,6 +736,16 @@ export default function BattlePage() {
     if (placedCount === 0) {
       showAlert(
         "يرجى نشر وتعبئة وحدة واحدة على الأقل قبل إعلان الجهوزية.",
+        "error",
+      );
+      return;
+    }
+
+    // Must spend at least 700 points
+    const spentPoints = 1000 - activeTeam.points;
+    if (spentPoints < 700) {
+      showAlert(
+        `يجب إنفاق 700 نقطة على الأقل. المنفق حالياً: ${spentPoints}ن — تبقى ${700 - spentPoints}ن لإتمام التجهيز.`,
         "error",
       );
       return;
@@ -727,7 +799,9 @@ export default function BattlePage() {
       const message = error.message || "";
       const canIgnore =
         message.includes("Could not find the function") ||
-        message.includes("permission denied for function finalize_room_if_complete") ||
+        message.includes(
+          "permission denied for function finalize_room_if_complete",
+        ) ||
         error.code === "42501";
 
       if (!canIgnore) throw error;
@@ -746,6 +820,56 @@ export default function BattlePage() {
       setActiveAnswer("");
     });
 
+  // Resolve question by giving points instead of strikes to the winner
+  const handleResolveQuestionWithPoints = (
+    questionId,
+    winnerTeamIndex,
+    questionPoints,
+  ) =>
+    runAction(async () => {
+      const { error } = await supabase.rpc("resolve_room_question", {
+        p_room_id: roomId,
+        p_question_id: questionId,
+        p_winner_team_index: null,
+      });
+      if (error) throw error;
+
+      const winnerTeam = teams.find((t) => t.team_index === winnerTeamIndex);
+      if (winnerTeam && questionPoints > 0) {
+        const { error: scoreError } = await supabase
+          .from("teams")
+          .update({ score: winnerTeam.score + questionPoints })
+          .eq("id", winnerTeam.id);
+        if (scoreError) throw scoreError;
+      }
+
+      await finalizeRoomIfComplete();
+      setActiveAnswer("");
+    });
+
+  // Resolve as draw: both teams answered correctly, give points to both
+  const handleResolveDraw = (questionId, questionPoints) =>
+    runAction(async () => {
+      const { error } = await supabase.rpc("resolve_room_question", {
+        p_room_id: roomId,
+        p_question_id: questionId,
+        p_winner_team_index: null,
+      });
+      if (error) throw error;
+
+      await Promise.all(
+        teams.map((team) =>
+          supabase
+            .from("teams")
+            .update({ score: team.score + (questionPoints || 0) })
+            .eq("id", team.id),
+        ),
+      );
+
+      await finalizeRoomIfComplete();
+      setActiveAnswer("");
+    });
+
   const handleStrike = (cellIndex) =>
     runAction(async () => {
       const { error } = await supabase.rpc("execute_strike", {
@@ -759,6 +883,16 @@ export default function BattlePage() {
 
   const handleUseTool = (toolId, cellIndex) =>
     runAction(async () => {
+      const activeTeam = teams.find((t) => t.team_index === teamIndex);
+      if (
+        toolId === "extra_strike" &&
+        (!activeTeam || activeTeam.available_strikes <= 0)
+      ) {
+        throw new Error(
+          "يمكنك استخدام الضربة الإضافية فقط عندما يكون لديك ضربات متاحة للضرب.",
+        );
+      }
+
       const { data, error } = await supabase.rpc("use_team_tool", {
         p_room_id: roomId,
         p_team_index: teamIndex,
@@ -994,6 +1128,8 @@ export default function BattlePage() {
           questionSeconds={questionSeconds}
           onSelectQuestion={handleSelectQuestion}
           onResolveQuestion={handleResolveQuestion}
+          onResolveQuestionWithPoints={handleResolveQuestionWithPoints}
+          onResolveDraw={handleResolveDraw}
           onExit={handleExitGame}
         />
         <CombatEventModal
@@ -1406,6 +1542,12 @@ export default function BattlePage() {
     const activeTeam = teams.find((t) => t.team_index === teamIndex);
     const opponentTeam = teams.find((t) => t.team_index !== teamIndex);
 
+    // Compute current unit counts per type
+    const unitCounts = Object.keys(unitSpecs).reduce((acc, key) => {
+      acc[key] = (activeTeam?.board || []).filter((cell) => cell === key).length;
+      return acc;
+    }, {});
+
     if (!activeTeam) {
       return (
         <div className="min-h-screen bg-slate-50 flex items-center justify-center dir-rtl">
@@ -1612,6 +1754,9 @@ export default function BattlePage() {
                 {Object.keys(unitSpecs).map((key) => {
                   const unit = unitSpecs[key];
                   const isSelected = selectedUnit === key;
+                  const count = unitCounts[key] || 0;
+                  const limit = unitLimits[key];
+                  const isFull = count >= limit;
                   return (
                     <button
                       key={key}
@@ -1620,7 +1765,9 @@ export default function BattlePage() {
                       className={`p-3 rounded-2xl border text-right transition-all flex items-center justify-between group cursor-pointer ${
                         isSelected
                           ? "border-cyan-500 bg-cyan-50/70 shadow-sm shadow-cyan-100 ring-2 ring-cyan-500/10"
-                          : "border-slate-150 hover:bg-slate-50 hover:border-slate-250"
+                          : isFull
+                            ? "border-rose-200 bg-rose-50/40 opacity-70"
+                            : "border-slate-150 hover:bg-slate-50 hover:border-slate-250"
                       }`}
                     >
                       <span className="flex items-center gap-3">
@@ -1629,8 +1776,8 @@ export default function BattlePage() {
                           <span className="font-bold text-xs text-slate-900 block group-hover:text-cyan-600">
                             {unit.name}
                           </span>
-                          <span className="text-[10px] text-slate-400 leading-tight block">
-                            وحدة عسكرية في الميدان
+                          <span className={`text-[10px] leading-tight block font-bold ${isFull ? "text-rose-500" : "text-slate-400"}`}>
+                            {count} / {limit} {isFull ? "· اكتمل الحد" : ""}
                           </span>
                         </span>
                       </span>
@@ -1677,9 +1824,11 @@ export default function BattlePage() {
               ) : (
                 <div className="space-y-4">
                   <div className="text-right bg-slate-50 p-4 rounded-2xl border border-slate-100 text-xs font-bold leading-relaxed text-slate-500">
-                    بشرتك اللوجيستية تبدأ بـ{" "}
-                    <strong className="text-slate-800">1000ن</strong>. كل تفريغ
-                    أو إلغاء للوحدة من اللوحة يعيد لك كامل نقاط التأسيس مجاناً.
+                    تبدأ بـ <strong className="text-slate-800">1000ن</strong> ·
+                    يجب إنفاق{" "}
+                    <strong className="text-cyan-700">700ن على الأقل</strong>.
+                    الحدود: جندي (10) · دبابة (4) · طائرة (3) · غواصة (2) · لغم
+                    (2). كل إلغاء يعيد النقاط.
                   </div>
                   <motion.button
                     whileHover={{ scale: 1.02 }}

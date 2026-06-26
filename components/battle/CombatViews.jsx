@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
-import { motion } from "motion/react";
+import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import {
   AlertTriangle,
   CheckCircle,
@@ -12,6 +12,8 @@ import {
   RefreshCw,
   Shield,
   Sparkles,
+  Star,
+  Swords,
   Target,
   Trophy,
   XCircle,
@@ -98,32 +100,105 @@ function FinishedCelebration({
   );
 }
 
+function AnimatedNumber({ value, className }) {
+  return (
+    <AnimatePresence mode="wait">
+      <motion.span
+        key={value}
+        initial={{ y: -14, opacity: 0, scale: 0.75 }}
+        animate={{ y: 0, opacity: 1, scale: 1 }}
+        exit={{ y: 14, opacity: 0, scale: 0.75 }}
+        transition={{ duration: 0.22, ease: "easeOut" }}
+        className={`block ${className}`}
+      >
+        {value}
+      </motion.span>
+    </AnimatePresence>
+  );
+}
+
 function ScoreCards({ teams }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      {teams.map((team) => (
-        <div
-          key={team.id}
-          className={`rounded-2xl border bg-white p-5 shadow-sm ${
-            team.team_index === 1 ? "border-cyan-200" : "border-orange-200"
-          }`}
-        >
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="font-bold text-slate-900">{team.name}</p>
-              <p className="text-xs text-slate-500 mt-1">
-                النتيجة: {team.score}
+      {teams.map((team) => {
+        const isTeam1 = team.team_index === 1;
+        return (
+          <div
+            key={team.id}
+            className={`relative overflow-hidden rounded-2xl border p-5 shadow-lg ${
+              isTeam1
+                ? "bg-gradient-to-br from-cyan-950 via-slate-900 to-slate-900 border-cyan-700"
+                : "bg-gradient-to-br from-orange-950 via-slate-900 to-slate-900 border-orange-700"
+            }`}
+          >
+            {/* top accent line */}
+            <div
+              className={`absolute top-0 left-0 right-0 h-1 rounded-t-2xl ${
+                isTeam1 ? "bg-cyan-400" : "bg-orange-400"
+              }`}
+            />
+
+            {/* team name */}
+            <div className="flex items-center gap-2 mb-4 mt-1">
+              <motion.div
+                animate={{ scale: [1, 1.3, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className={`w-2.5 h-2.5 rounded-full ${
+                  isTeam1 ? "bg-cyan-400" : "bg-orange-400"
+                }`}
+              />
+              <p
+                className={`font-black text-sm tracking-wide ${
+                  isTeam1 ? "text-cyan-200" : "text-orange-200"
+                }`}
+              >
+                {team.name}
               </p>
             </div>
-            <div className="text-center rounded-xl bg-slate-950 text-white px-4 py-2">
-              <span className="block text-xl font-bold">
-                {team.available_strikes}
-              </span>
-              <span className="text-[9px] text-slate-300">ضربات متاحة</span>
+
+            {/* stats row */}
+            <div className="grid grid-cols-3 gap-2">
+              <div className="bg-white/10 rounded-xl p-3 text-center backdrop-blur-sm border border-white/10">
+                <div className="h-8 flex items-center justify-center overflow-hidden">
+                  <AnimatedNumber
+                    value={team.score}
+                    className={`text-xl font-black ${
+                      isTeam1 ? "text-cyan-300" : "text-orange-300"
+                    }`}
+                  />
+                </div>
+                <span className="block text-[10px] text-white/50 font-bold mt-0.5">
+                  النتيجة
+                </span>
+              </div>
+
+              <div className="bg-white/10 rounded-xl p-3 text-center backdrop-blur-sm border border-white/10">
+                <div className="h-8 flex items-center justify-center overflow-hidden">
+                  <AnimatedNumber
+                    value={team.available_strikes}
+                    className="text-xl font-black text-rose-300"
+                  />
+                </div>
+                <span className="block text-[10px] text-white/50 font-bold mt-0.5">
+                  الضربات
+                </span>
+              </div>
+
+              <div className="bg-white/10 rounded-xl p-3 text-center backdrop-blur-sm border border-white/10">
+                <div className="h-8 flex items-center justify-center overflow-hidden">
+                  <AnimatedNumber
+                    value={team.points ?? 0}
+                    className="text-xl font-black text-amber-300"
+                  />
+                </div>
+                <span className="block text-[10px] text-white/50 font-bold mt-0.5">
+                  الرصيد
+                </span>
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -375,6 +450,8 @@ export function JudgeCombatDashboard({
   questionSeconds,
   onSelectQuestion,
   onResolveQuestion,
+  onResolveQuestionWithPoints,
+  onResolveDraw,
   onExit,
 }) {
   const activeQuestion = questions.find(
@@ -452,30 +529,70 @@ export function JudgeCombatDashboard({
               </p>
             </div>
 
-            <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="mt-5 space-y-2">
+              {/* Per-team: strikes or points */}
               {teams.map((team) => (
+                <div key={team.id} className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    disabled={isBusy}
+                    onClick={() =>
+                      onResolveQuestion(activeQuestion.id, team.team_index)
+                    }
+                    className={`rounded-xl px-3 py-2.5 text-sm font-bold text-white flex items-center justify-center gap-1.5 transition-opacity disabled:opacity-60 ${
+                      team.team_index === 1
+                        ? "bg-cyan-600 hover:bg-cyan-700"
+                        : "bg-orange-600 hover:bg-orange-700"
+                    }`}
+                  >
+                    <Swords className="h-3.5 w-3.5" />
+                    {team.name} صح · ضربات
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isBusy}
+                    onClick={() =>
+                      onResolveQuestionWithPoints(
+                        activeQuestion.id,
+                        team.team_index,
+                        activeQuestion.points,
+                      )
+                    }
+                    className={`rounded-xl px-3 py-2.5 text-sm font-bold border flex items-center justify-center gap-1.5 transition-opacity disabled:opacity-60 ${
+                      team.team_index === 1
+                        ? "bg-cyan-50 text-cyan-900 border-cyan-300 hover:bg-cyan-100"
+                        : "bg-orange-50 text-orange-900 border-orange-300 hover:bg-orange-100"
+                    }`}
+                  >
+                    <Star className="h-3.5 w-3.5" />
+                    {team.name} صح · نقاط
+                  </button>
+                </div>
+              ))}
+
+              {/* Draw / Both wrong */}
+              <div className="grid grid-cols-2 gap-2 pt-1">
                 <button
-                  key={team.id}
                   type="button"
                   disabled={isBusy}
                   onClick={() =>
-                    onResolveQuestion(activeQuestion.id, team.team_index)
+                    onResolveDraw(activeQuestion.id, activeQuestion.points)
                   }
-                  className={`rounded-xl px-4 py-3 font-bold text-white ${
-                    team.team_index === 1 ? "bg-cyan-600" : "bg-orange-600"
-                  }`}
+                  className="rounded-xl bg-emerald-50 border border-emerald-300 px-3 py-2.5 text-sm font-bold text-emerald-900 flex items-center justify-center gap-1.5 hover:bg-emerald-100 transition-opacity disabled:opacity-60"
                 >
-                  إجابة {team.name} صحيحة
+                  <CheckCircle className="h-3.5 w-3.5" />
+                  كلاهما صح (تعادل)
                 </button>
-              ))}
-              <button
-                type="button"
-                disabled={isBusy}
-                onClick={() => onResolveQuestion(activeQuestion.id, null)}
-                className="rounded-xl bg-slate-700 px-4 py-3 font-bold text-white"
-              >
-                كلاهما أخطأ
-              </button>
+                <button
+                  type="button"
+                  disabled={isBusy}
+                  onClick={() => onResolveQuestion(activeQuestion.id, null)}
+                  className="rounded-xl bg-slate-700 px-3 py-2.5 text-sm font-bold text-white flex items-center justify-center gap-1.5 hover:bg-slate-600 transition-opacity disabled:opacity-60"
+                >
+                  <XCircle className="h-3.5 w-3.5" />
+                  كلاهما أخطأ
+                </button>
+              </div>
             </div>
           </motion.section>
         )}
@@ -528,9 +645,24 @@ export function TeamCombatDashboard({
   onCancelHole,
   onExit,
 }) {
+  // Store preference keyed by question ID — auto-resets when question changes
+  const [strikesPrefState, setStrikesPrefState] = useState({
+    questionId: null,
+    choice: null,
+  });
+
   const activeQuestion = questions.find(
     (question) => question.id === room.active_question_id,
   );
+
+  // Derive: if question changed, preference is null (no effect needed)
+  const preferStrikes =
+    strikesPrefState.questionId === activeQuestion?.id
+      ? strikesPrefState.choice
+      : null;
+
+  const setPreferStrikes = (choice) =>
+    setStrikesPrefState({ questionId: activeQuestion?.id ?? null, choice });
   const usedTools = activeTeam.used_tools || [];
   const strikeEvents = events.filter(
     (event) =>
@@ -676,6 +808,50 @@ export function TeamCombatDashboard({
               <p className="mt-3 text-xs text-slate-500">
                 أبلغ الحكم بإجابتك. الإجابة الصحيحة لا تظهر على شاشة الفريق.
               </p>
+
+              {/* Team preference: strikes or points — visible only to this team */}
+              {room.status === "playing" && (
+                <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-[11px] font-bold text-slate-500 mb-3 text-center">
+                    إن أجبت صحيحاً — أخبر الحكم باختيارك:
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPreferStrikes(true)}
+                      className={`rounded-xl py-2.5 px-3 text-sm font-bold border-2 transition-all ${
+                        preferStrikes === true
+                          ? "bg-rose-600 text-white border-rose-600 shadow-md"
+                          : "bg-white text-rose-700 border-rose-300 hover:border-rose-500"
+                      }`}
+                    >
+                      ⚔️ أريد الضربات
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPreferStrikes(false)}
+                      className={`rounded-xl py-2.5 px-3 text-sm font-bold border-2 transition-all ${
+                        preferStrikes === false
+                          ? "bg-amber-500 text-white border-amber-500 shadow-md"
+                          : "bg-white text-amber-700 border-amber-300 hover:border-amber-500"
+                      }`}
+                    >
+                      💰 أريد النقاط
+                    </button>
+                  </div>
+                  {preferStrikes !== null && (
+                    <motion.p
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="text-center text-[11px] font-bold text-slate-500 mt-2"
+                    >
+                      اختيارك:{" "}
+                      {preferStrikes ? "الضربات ⚔️" : "النقاط 💰"} — أبلغ
+                      الحكم بذلك
+                    </motion.p>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -792,10 +968,12 @@ export function TeamCombatDashboard({
                 const needsActiveQuestion =
                   toolId === "lifeline_call" || toolId === "double_chance";
                 const needsNoActiveQuestion = toolId === "the_hole";
+                const isExtraStrike = toolId === "extra_strike";
                 const disabledByTiming =
                   !isOwnTurn ||
                   (needsActiveQuestion && !room.active_question_id) ||
-                  (needsNoActiveQuestion && Boolean(room.active_question_id));
+                  (needsNoActiveQuestion && Boolean(room.active_question_id)) ||
+                  (isExtraStrike && activeTeam.available_strikes <= 0);
                 const isDisabled =
                   isBusy ||
                   isUsed ||

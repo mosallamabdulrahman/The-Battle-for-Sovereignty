@@ -10,6 +10,10 @@ import {
   Phone,
   Compass,
   RotateCcw,
+  Zap,
+  Shield,
+  Radar,
+  Lock,
 } from "lucide-react";
 
 export default function HowToPlaySection() {
@@ -49,29 +53,47 @@ export default function HowToPlaySection() {
   ];
 
   const aids = [
-    {
-      name: "اتصال بصديق (The Lifeline)",
-      desc: "يمنحك 60 ثانية إضافية للتفكير في حل الأسئلة الصعبة للغاية.",
-      icon: Phone,
-      color: "text-cyan-600 bg-cyan-50",
-    },
-    {
-      name: "جوابين (Double Chance)",
-      desc: "فرصة ذهبية لاختيار بديلين في الأسئلة التي تشك في إجابتها اليقينية.",
-      icon: RotateCcw,
-      color: "text-emerald-600 bg-emerald-50",
-    },
-    {
-      name: "الحفرة (The Hole)",
-      desc: "أخطر خيار هجومي! استخدمها قبل رؤية السؤال؛ الإجابة الصحيحة تمنح ضربة إضافية، والخطأ يبدد الوسيلة.",
-      icon: Award,
-      color: "text-orange-600 bg-orange-50",
-    },
+    // {
+    //   name: "اتصال بصديق (The Lifeline)",
+    //   desc: "يمنحك 60 ثانية إضافية للتفكير في حل الأسئلة الصعبة للغاية.",
+    //   icon: Phone,
+    //   color: "text-cyan-600 bg-cyan-50",
+    // },
+    // {
+    //   name: "جوابين (Double Chance)",
+    //   desc: "فرصة ذهبية لاختيار بديلين في الأسئلة التي تشك في إجابتها اليقينية.",
+    //   icon: RotateCcw,
+    //   color: "text-emerald-600 bg-emerald-50",
+    // },
+    // {
+    //   name: "الحفرة (The Hole)",
+    //   desc: "أخطر خيار هجومي! استخدمها قبل رؤية السؤال؛ الإجابة الصحيحة تمنح ضربة إضافية، والخطأ يبدد الوسيلة.",
+    //   icon: Award,
+    //   color: "text-orange-600 bg-orange-50",
+    // },
     {
       name: "الكاشف (The Detector)",
-      desc: "يُكشف لك المربع المحدد والمربعات الملاصقة له لزيادة فرصة الفوز بالضربات.",
+      desc: "يكشف لك المربع المختار والمربعات الملاصقة له لزيادة فرصة تحديد أهداف الخصم.",
       icon: Compass,
       color: "text-purple-600 bg-purple-50",
+    },
+    {
+      name: "الضربة الإضافية (Extra Strike)",
+      desc: "تمنحك ضربة حربية إضافية في رصيد الضربات، وتستخدم حصرًا في مرحلة الضرب بعد الإجابة الصحيحة.",
+      icon: Zap,
+      color: "text-amber-600 bg-amber-50",
+    },
+    {
+      name: "الدرع (The Shield)",
+      desc: "يحمي وحداتك العسكرية ويصد تلقائيًا أول هجوم ناجح يوجهه الخصم إلى معسكرك.",
+      icon: Shield,
+      color: "text-blue-600 bg-blue-50",
+    },
+    {
+      name: "الماسح (Radar Scan)",
+      desc: "يمسح المربع المحدد والمربعات الملاصقة له بشكل مباشر للكشف عن إحداثيات تواجد العدو.",
+      icon: Radar,
+      color: "text-teal-600 bg-teal-50",
     },
   ];
 

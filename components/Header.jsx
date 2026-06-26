@@ -56,7 +56,6 @@ export default function Header() {
     { name: "الرئيسية", href: "#hero" },
     { name: "طريقة اللعب", href: "#how-to-play" },
     { name: "التصنيفات", href: "#categories" },
-    { name: "محاكي المعركة", href: "/battle" },
   ];
 
   return (
