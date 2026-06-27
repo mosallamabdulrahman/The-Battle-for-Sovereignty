@@ -41,7 +41,7 @@ export default function HeroSection() {
       <div className="absolute top-0 right-1/4 w-96 h-96 bg-cyan-200/40 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-12 left-10 w-80 h-80 bg-orange-100/50 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[85rem] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Adjusted content to offset header height gracefully while maintaining requested pt-0 */}
         <div className="pt-28 md:pt-36 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           {/* Hero text */}

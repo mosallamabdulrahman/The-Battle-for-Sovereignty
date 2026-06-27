@@ -102,7 +102,7 @@ export default function HowToPlaySection() {
       id="how-to-play"
       className="py-16 md:py-24 bg-gradient-to-b from-white to-slate-50"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[85rem] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Heading */}
         <div className="text-center max-w-3xl mx-auto mb-16">
           <span className="text-orange-600 font-extrabold text-sm uppercase tracking-wider bg-orange-100 px-4 py-1.5 rounded-full inline-block">

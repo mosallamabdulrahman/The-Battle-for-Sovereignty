@@ -12,8 +12,6 @@ import {
   RefreshCw,
   Shield,
   Sparkles,
-  Star,
-  Swords,
   Target,
   Trophy,
   XCircle,
@@ -353,9 +351,7 @@ export function QuestionGrid({
                 loading="lazy"
               />
               <div className="absolute inset-x-0 bottom-0 bg-[#E1734B] border-t-2 border-solid border-black px-2 py-2 text-center">
-                <h3 className="truncate font-medium text-white">
-                  {category.name}
-                </h3>
+                <h3 className="font-medium text-white">{category.name}</h3>
               </div>
             </div>
 
@@ -450,7 +446,6 @@ export function JudgeCombatDashboard({
   questionSeconds,
   onSelectQuestion,
   onResolveQuestion,
-  onResolveQuestionWithPoints,
   onResolveDraw,
   onExit,
 }) {
@@ -464,7 +459,7 @@ export function JudgeCombatDashboard({
   return (
     <div className="min-h-screen bg-slate-100 pb-16 dir-rtl">
       <header className="border-b border-slate-200 bg-white">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-4">
+        <div className="max-w-8xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="rounded-xl bg-gradient-to-tr from-cyan-500 to-sky-500 p-2.5 text-white">
               <Crown className="h-6 w-6" />
@@ -489,7 +484,7 @@ export function JudgeCombatDashboard({
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 mt-7 space-y-7">
+      <main className="max-w-[85rem] mx-auto px-4 mt-7 space-y-7">
         <ScoreCards teams={teams} />
 
         {room.status === "finished" && (
@@ -529,70 +524,50 @@ export function JudgeCombatDashboard({
               </p>
             </div>
 
-            <div className="mt-5 space-y-2">
-              {/* Per-team: strikes or points */}
+            <div className="mt-5 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+              {/* One button per team: correct answer → gives strikes automatically */}
               {teams.map((team) => (
-                <div key={team.id} className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    disabled={isBusy}
-                    onClick={() =>
-                      onResolveQuestion(activeQuestion.id, team.team_index)
-                    }
-                    className={`rounded-xl px-3 py-2.5 text-sm font-bold text-white flex items-center justify-center gap-1.5 transition-opacity disabled:opacity-60 ${
-                      team.team_index === 1
-                        ? "bg-cyan-600 hover:bg-cyan-700"
-                        : "bg-orange-600 hover:bg-orange-700"
-                    }`}
-                  >
-                    <Swords className="h-3.5 w-3.5" />
-                    {team.name} صح · ضربات
-                  </button>
-                  <button
-                    type="button"
-                    disabled={isBusy}
-                    onClick={() =>
-                      onResolveQuestionWithPoints(
-                        activeQuestion.id,
-                        team.team_index,
-                        activeQuestion.points,
-                      )
-                    }
-                    className={`rounded-xl px-3 py-2.5 text-sm font-bold border flex items-center justify-center gap-1.5 transition-opacity disabled:opacity-60 ${
-                      team.team_index === 1
-                        ? "bg-cyan-50 text-cyan-900 border-cyan-300 hover:bg-cyan-100"
-                        : "bg-orange-50 text-orange-900 border-orange-300 hover:bg-orange-100"
-                    }`}
-                  >
-                    <Star className="h-3.5 w-3.5" />
-                    {team.name} صح · نقاط
-                  </button>
-                </div>
-              ))}
-
-              {/* Draw / Both wrong */}
-              <div className="grid grid-cols-2 gap-2 pt-1">
                 <button
+                  key={team.id}
                   type="button"
                   disabled={isBusy}
                   onClick={() =>
-                    onResolveDraw(activeQuestion.id, activeQuestion.points)
+                    onResolveQuestion(activeQuestion.id, team.team_index)
                   }
-                  className="rounded-xl bg-emerald-50 border border-emerald-300 px-3 py-2.5 text-sm font-bold text-emerald-900 flex items-center justify-center gap-1.5 hover:bg-emerald-100 transition-opacity disabled:opacity-60"
+                  className={`rounded-xl px-3 py-3 text-sm font-bold text-white flex items-center justify-center gap-2 transition-opacity disabled:opacity-60 ${
+                    team.team_index === 1
+                      ? "bg-cyan-600 hover:bg-cyan-700"
+                      : "bg-orange-600 hover:bg-orange-700"
+                  }`}
                 >
-                  <CheckCircle className="h-3.5 w-3.5" />
-                  كلاهما صح (تعادل)
+                  <CheckCircle className="h-4 w-4" />
+                  إجابة {team.name} صحيحة
                 </button>
-                <button
-                  type="button"
-                  disabled={isBusy}
-                  onClick={() => onResolveQuestion(activeQuestion.id, null)}
-                  className="rounded-xl bg-slate-700 px-3 py-2.5 text-sm font-bold text-white flex items-center justify-center gap-1.5 hover:bg-slate-600 transition-opacity disabled:opacity-60"
-                >
-                  <XCircle className="h-3.5 w-3.5" />
-                  كلاهما أخطأ
-                </button>
-              </div>
+              ))}
+
+              {/* Draw */}
+              <button
+                type="button"
+                disabled={isBusy}
+                onClick={() =>
+                  onResolveDraw(activeQuestion.id, activeQuestion.points)
+                }
+                className="rounded-xl bg-emerald-50 border border-emerald-300 px-3 py-3 text-sm font-bold text-emerald-900 flex items-center justify-center gap-2 hover:bg-emerald-100 transition-opacity disabled:opacity-60"
+              >
+                <CheckCircle className="h-4 w-4" />
+                كلاهما صح (تعادل)
+              </button>
+
+              {/* Both wrong */}
+              <button
+                type="button"
+                disabled={isBusy}
+                onClick={() => onResolveQuestion(activeQuestion.id, null)}
+                className="rounded-xl bg-slate-700 px-3 py-3 text-sm font-bold text-white flex items-center justify-center gap-2 hover:bg-slate-600 transition-opacity disabled:opacity-60"
+              >
+                <XCircle className="h-4 w-4" />
+                كلاهما أخطأ
+              </button>
             </div>
           </motion.section>
         )}
@@ -644,25 +619,37 @@ export function TeamCombatDashboard({
   onConfirmHole,
   onCancelHole,
   onExit,
+  onSoftExit,
+  onConvertStrikes,
 }) {
-  // Store preference keyed by question ID — auto-resets when question changes
-  const [strikesPrefState, setStrikesPrefState] = useState({
-    questionId: null,
-    choice: null,
-  });
+  // Track which win event has been acknowledged (strikes-or-points modal)
+  const [handledWinEventId, setHandledWinEventId] = useState(null);
+  // Disconnect modal: dismiss collapses to a small banner
+  const [disconnectDismissed, setDisconnectDismissed] = useState(false);
+  // Exit confirmation dialog
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
 
   const activeQuestion = questions.find(
     (question) => question.id === room.active_question_id,
   );
 
-  // Derive: if question changed, preference is null (no effect needed)
-  const preferStrikes =
-    strikesPrefState.questionId === activeQuestion?.id
-      ? strikesPrefState.choice
-      : null;
+  // Detect latest win event for this team
+  const latestWinEvent = events.find(
+    (e) =>
+      e.event_type === "question_resolved" &&
+      e.actor_team_index === activeTeam.team_index,
+  );
+  const showWinModal =
+    latestWinEvent &&
+    latestWinEvent.id !== handledWinEventId &&
+    !room.active_question_id &&
+    room.status === "playing" &&
+    activeTeam.available_strikes > 0;
 
-  const setPreferStrikes = (choice) =>
-    setStrikesPrefState({ questionId: activeQuestion?.id ?? null, choice });
+  // Opponent disconnect detection
+  const opponentDisconnected =
+    opponentTeam.joined === false && room.status === "playing";
+
   const usedTools = activeTeam.used_tools || [];
   const strikeEvents = events.filter(
     (event) =>
@@ -692,7 +679,7 @@ export function TeamCombatDashboard({
   return (
     <div className="min-h-screen bg-slate-100 pb-16 dir-rtl">
       <header className="border-b border-slate-200 bg-white">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-4">
+        <div className="max-w-[85rem] mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="rounded-xl bg-gradient-to-tr from-cyan-500 to-sky-500 p-2.5 text-white">
               <Shield className="h-6 w-6" />
@@ -707,7 +694,7 @@ export function TeamCombatDashboard({
           </div>
           <button
             type="button"
-            onClick={onExit}
+            onClick={() => setShowExitConfirm(true)}
             className="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-bold text-rose-700"
           >
             <LogOut className="h-4 w-4" />
@@ -715,6 +702,159 @@ export function TeamCombatDashboard({
           </button>
         </div>
       </header>
+
+      {/* ── Exit Confirmation ── */}
+      <AnimatePresence>
+        {showExitConfirm && (
+          <motion.div
+            key="exit-confirm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="w-full max-w-sm rounded-3xl bg-slate-900 border border-slate-700 p-7 text-center text-white shadow-2xl"
+            >
+              <LogOut className="w-10 h-10 mx-auto text-rose-400 mb-3" />
+              <h2 className="text-lg font-bold">مغادرة اللعبة؟</h2>
+              <p className="mt-2 text-sm text-slate-400">
+                سيُبلَّغ الفريق الآخر والحكم بمغادرتك. يمكنك العودة لاحقًا.
+              </p>
+              <div className="mt-6 grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowExitConfirm(false);
+                    onSoftExit?.();
+                  }}
+                  className="rounded-2xl bg-rose-600 py-3 text-sm font-bold text-white hover:bg-rose-500 transition"
+                >
+                  مغادرة
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowExitConfirm(false)}
+                  className="rounded-2xl bg-slate-700 py-3 text-sm font-bold text-white hover:bg-slate-600 transition"
+                >
+                  البقاء
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Win Modal: Choose strikes or points ── */}
+      <AnimatePresence>
+        {showWinModal && (
+          <motion.div
+            key="win-modal"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.85, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.85, opacity: 0 }}
+              className="w-full max-w-sm rounded-3xl bg-gradient-to-br from-amber-900 via-slate-900 to-slate-900 border border-amber-500/40 p-7 text-center text-white shadow-2xl"
+            >
+              <div className="text-4xl mb-3">🏆</div>
+              <h2 className="text-xl font-bold text-amber-300">أجبت صحيحًا!</h2>
+              <p className="mt-2 text-sm text-slate-300">
+                لديك {activeTeam.available_strikes}{" "}
+                {activeTeam.available_strikes === 1 ? "ضربة" : "ضربات"}. ماذا
+                تريد؟
+              </p>
+              <div className="mt-6 grid grid-cols-1 gap-3">
+                <button
+                  type="button"
+                  disabled={isBusy}
+                  onClick={() => setHandledWinEventId(latestWinEvent?.id)}
+                  className="rounded-2xl bg-rose-600 py-3 text-sm font-bold text-white hover:bg-rose-500 transition disabled:opacity-60"
+                >
+                  ⚔️ استخدم الضربات على خريطة الخصم
+                </button>
+                <button
+                  type="button"
+                  disabled={isBusy}
+                  onClick={async () => {
+                    await onConvertStrikes?.();
+                    setHandledWinEventId(latestWinEvent?.id);
+                  }}
+                  className="rounded-2xl bg-amber-500 py-3 text-sm font-bold text-white hover:bg-amber-400 transition disabled:opacity-60"
+                >
+                  💰 حوّل الضربات إلى نقاط (+
+                  {activeTeam.available_strikes * 200})
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Opponent Disconnect Modal ── */}
+      <AnimatePresence>
+        {opponentDisconnected && !disconnectDismissed && (
+          <motion.div
+            key="disconnect-modal"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="w-full max-w-sm rounded-3xl bg-slate-900 border border-amber-500/40 p-7 text-center text-white shadow-2xl"
+            >
+              <div className="text-4xl mb-3">⚠️</div>
+              <h2 className="text-lg font-bold text-amber-300">
+                {opponentTeam.name} غادر اللعبة
+              </h2>
+              <p className="mt-2 text-sm text-slate-400">
+                يمكنك الانتظار حتى يعود، أو إنهاء اللعبة.
+              </p>
+              <div className="mt-6 grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setDisconnectDismissed(true)}
+                  className="rounded-2xl bg-slate-700 py-3 text-sm font-bold text-white hover:bg-slate-600 transition"
+                >
+                  انتظار العودة
+                </button>
+                <button
+                  type="button"
+                  onClick={onExit}
+                  className="rounded-2xl bg-rose-600 py-3 text-sm font-bold text-white hover:bg-rose-500 transition"
+                >
+                  إنهاء اللعبة
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Small banner when disconnect dismissed but opponent still offline */}
+      {opponentDisconnected && disconnectDismissed && (
+        <div className="bg-amber-50 border-b border-amber-300 px-4 py-2 text-center text-xs font-bold text-amber-800">
+          {opponentTeam.name} غير متصل حاليًا —{" "}
+          <button
+            type="button"
+            className="underline"
+            onClick={() => setDisconnectDismissed(false)}
+          >
+            إنهاء اللعبة
+          </button>
+        </div>
+      )}
 
       {holeConfirmPending && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
@@ -749,310 +889,352 @@ export function TeamCombatDashboard({
         </div>
       )}
 
-      <main className="max-w-7xl mx-auto px-4 mt-7 grid grid-cols-1 lg:grid-cols-3 gap-7">
-        <div className="lg:col-span-2 space-y-7">
-          {room.status === "finished" && (
-            <FinishedCelebration
-              room={room}
-              teams={[activeTeam, opponentTeam]}
-              activeTeam={activeTeam}
-              opponentTeam={opponentTeam}
-              onExit={onExit}
-            />
-          )}
-
-          {holeActive && (
-            <div className="rounded-2xl border border-red-400 bg-red-900 px-5 py-3 text-center text-sm font-bold text-white animate-pulse">
-              تحذير: الحفرة نشطة — اختر سؤالك الآن
-            </div>
-          )}
-
-          {lifelineActive && (
-            <CircularTimer
-              seconds={lifelineSeconds}
-              label="اتصال بصديق جارٍ الآن"
-              onDismiss={onDismissLifeline}
-            />
-          )}
-
-          {activeQuestion && (
-            <div className="rounded-3xl border border-cyan-200 bg-white p-6 shadow-sm">
-              <span className="text-xs font-bold text-cyan-600">
-                {activeQuestion.category_name}
-              </span>
-              <h2 className="mt-2 text-xl font-bold text-slate-950">
-                {activeQuestion.question_text}
-              </h2>
-              <div className="mt-4">
-                <CircularTimer seconds={questionSeconds} label="مؤقت السؤال" />
-              </div>
-
-              {doubleChanceActive && (
-                <div className="relative mt-4 overflow-hidden rounded-2xl border-2 border-amber-400 bg-amber-50 px-5 py-3">
-                  <motion.div
-                    aria-hidden="true"
-                    className="absolute inset-y-0 w-24 bg-white/50 blur-md"
-                    initial={{ right: "-35%" }}
-                    animate={{ right: ["-35%", "115%"] }}
-                    transition={{
-                      duration: 1.7,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                    }}
-                  />
-                  <span className="relative z-10 text-sm font-bold text-amber-800">
-                    لديك فرصتان للإجابة — أخبر الحكم
-                  </span>
-                </div>
-              )}
-              <p className="mt-3 text-xs text-slate-500">
-                أبلغ الحكم بإجابتك. الإجابة الصحيحة لا تظهر على شاشة الفريق.
-              </p>
-
-              {/* Team preference: strikes or points — visible only to this team */}
-              {room.status === "playing" && (
-                <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-[11px] font-bold text-slate-500 mb-3 text-center">
-                    إن أجبت صحيحاً — أخبر الحكم باختيارك:
-                  </p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setPreferStrikes(true)}
-                      className={`rounded-xl py-2.5 px-3 text-sm font-bold border-2 transition-all ${
-                        preferStrikes === true
-                          ? "bg-rose-600 text-white border-rose-600 shadow-md"
-                          : "bg-white text-rose-700 border-rose-300 hover:border-rose-500"
-                      }`}
-                    >
-                      ⚔️ أريد الضربات
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPreferStrikes(false)}
-                      className={`rounded-xl py-2.5 px-3 text-sm font-bold border-2 transition-all ${
-                        preferStrikes === false
-                          ? "bg-amber-500 text-white border-amber-500 shadow-md"
-                          : "bg-white text-amber-700 border-amber-300 hover:border-amber-500"
-                      }`}
-                    >
-                      💰 أريد النقاط
-                    </button>
+      <main className="max-w-[85rem] mx-auto px-4 mt-6 space-y-6">
+        {/* ── ROW 1: Questions board (right) + Sidebar (left) ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* RIGHT col: score card + active question + questions board */}
+          <div className="lg:col-span-2 space-y-5">
+            {/* My team score card */}
+            <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-xl bg-gradient-to-tr from-cyan-500 to-sky-600 p-2 text-white">
+                    <Shield className="h-5 w-5" />
                   </div>
-                  {preferStrikes !== null && (
-                    <motion.p
-                      initial={{ opacity: 0, y: 4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="text-center text-[11px] font-bold text-slate-500 mt-2"
-                    >
-                      اختيارك:{" "}
-                      {preferStrikes ? "الضربات ⚔️" : "النقاط 💰"} — أبلغ
-                      الحكم بذلك
-                    </motion.p>
-                  )}
+                  <div>
+                    <h2 className="font-bold text-slate-950">
+                      {activeTeam.name}
+                    </h2>
+                    <p className="text-[10px] text-slate-400">نتيجتك</p>
+                  </div>
                 </div>
+                <div className="text-left">
+                  <p className="text-[10px] text-slate-400">
+                    الخصم: {opponentTeam.name}
+                  </p>
+                  <p className="text-sm font-bold text-slate-600">
+                    {opponentTeam.score} نقطة
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="rounded-2xl bg-gradient-to-b from-cyan-50 to-white border border-cyan-200 p-3 text-center">
+                  <p className="text-2xl font-bold text-slate-950">
+                    {activeTeam.score}
+                  </p>
+                  <p className="text-[10px] text-slate-500">النتيجة</p>
+                </div>
+                <div className="rounded-2xl bg-slate-50 border border-slate-200 p-3 text-center">
+                  <p className="text-2xl font-bold text-slate-950">
+                    {activeTeam.available_strikes}
+                  </p>
+                  <p className="text-[10px] text-slate-500">ضرباتي</p>
+                </div>
+                <div className="rounded-2xl bg-slate-50 border border-slate-200 p-3 text-center">
+                  <p className="text-2xl font-bold text-slate-950">
+                    {activeTeam.points}
+                  </p>
+                  <p className="text-[10px] text-slate-500">الرصيد</p>
+                </div>
+              </div>
+            </div>
+
+            {room.status === "finished" && (
+              <FinishedCelebration
+                room={room}
+                teams={[activeTeam, opponentTeam]}
+                activeTeam={activeTeam}
+                opponentTeam={opponentTeam}
+                onExit={onExit}
+              />
+            )}
+
+            {holeActive && (
+              <div className="rounded-2xl border border-red-400 bg-red-900 px-5 py-3 text-center text-sm font-bold text-white animate-pulse">
+                تحذير: الحفرة نشطة — اختر سؤالك الآن
+              </div>
+            )}
+
+            {lifelineActive && (
+              <CircularTimer
+                seconds={lifelineSeconds}
+                label="اتصال بصديق جارٍ الآن"
+                onDismiss={onDismissLifeline}
+              />
+            )}
+
+            {/* Active question slides in above the board */}
+            <AnimatePresence mode="wait">
+              {activeQuestion && (
+                <motion.div
+                  key={activeQuestion.id}
+                  initial={{ opacity: 0, y: -16, scale: 0.97 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -16, scale: 0.97 }}
+                  transition={{ duration: 0.28, ease: "easeOut" }}
+                  className="rounded-3xl border-2 border-cyan-300 bg-white p-6 shadow-md"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="rounded-full bg-cyan-100 px-3 py-1 text-xs font-bold text-cyan-700">
+                      {activeQuestion.category_name}
+                    </span>
+                    <span className="text-xs font-bold text-slate-400">
+                      {activeQuestion.points} نقطة
+                    </span>
+                  </div>
+                  <h2 className="text-lg font-bold text-slate-950 leading-relaxed">
+                    {activeQuestion.question_text}
+                  </h2>
+                  <div className="mt-4">
+                    <CircularTimer
+                      seconds={questionSeconds}
+                      label="مؤقت السؤال"
+                    />
+                  </div>
+                  {doubleChanceActive && (
+                    <div className="relative mt-4 overflow-hidden rounded-2xl border-2 border-amber-400 bg-amber-50 px-5 py-3">
+                      <motion.div
+                        aria-hidden="true"
+                        className="absolute inset-y-0 w-24 bg-white/50 blur-md"
+                        initial={{ right: "-35%" }}
+                        animate={{ right: ["-35%", "115%"] }}
+                        transition={{
+                          duration: 1.7,
+                          repeat: Infinity,
+                          ease: "easeInOut",
+                        }}
+                      />
+                      <span className="relative z-10 text-sm font-bold text-amber-800">
+                        لديك فرصتان للإجابة — أخبر الحكم
+                      </span>
+                    </div>
+                  )}
+                  <p className="mt-3 text-xs text-slate-400">
+                    أبلغ الحكم بإجابتك — الإجابة الصحيحة لا تظهر هنا
+                  </p>
+                </motion.div>
               )}
-            </div>
-          )}
+            </AnimatePresence>
 
-          {activeTeam.available_strikes > 0 && room.status === "playing" && (
-            <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-center font-bold text-rose-900">
-              لديك {activeTeam.available_strikes} ضربة. اختر مربعًا من خريطة{" "}
-              {opponentTeam.name}.
-            </div>
-          )}
-
-          <section className="rounded-3xl border border-slate-200 bg-white p-5 sm:p-7 shadow-sm">
-            <div className="flex items-center justify-between gap-4 mb-5">
-              <div>
-                <h2 className="font-bold text-slate-950">
-                  خريطة الخصم المشفرة
-                </h2>
-                <p className="text-[10px] text-slate-500">
-                  {radarMode
-                    ? "اختر مركز مسح الرادار"
-                    : "المربعات لا تكشف محتواها إلا بعد الضرب"}
+            {activeTeam.available_strikes > 0 && room.status === "playing" && (
+              <div className="rounded-2xl border border-rose-300 bg-rose-50 px-5 py-3 flex items-center gap-3">
+                <Target className="h-5 w-5 text-rose-600 shrink-0" />
+                <p className="font-bold text-rose-900 text-sm">
+                  لديك {activeTeam.available_strikes} ضربة — اختر مربعًا في
+                  خريطة {opponentTeam.name} أدناه
                 </p>
               </div>
-              <Target className="h-6 w-6 text-rose-500" />
-            </div>
-
-            <div className="grid grid-cols-6 gap-2 max-w-xl mx-auto">
-              {Array.from({ length: 36 }, (_, cellIndex) => {
-                const result = cellResults.get(cellIndex);
-                const radarOccupied = radarMap.get(cellIndex);
-                return (
-                  <button
-                    key={cellIndex}
-                    type="button"
-                    disabled={
-                      isBusy ||
-                      room.status !== "playing" ||
-                      (!radarMode && activeTeam.available_strikes <= 0) ||
-                      Boolean(result && result !== "blocked")
-                    }
-                    onClick={() =>
-                      radarMode
-                        ? onUseTool(activeRadarTool || "radar_scan", cellIndex)
-                        : onStrike(cellIndex)
-                    }
-                    className={`aspect-square rounded-xl border text-xs font-bold transition-all ${
-                      result === "hit"
-                        ? "border-rose-500 bg-rose-500 text-white"
-                        : result === "miss"
-                          ? "border-slate-400 bg-slate-300 text-slate-700"
-                          : result === "mine"
-                            ? "border-amber-500 bg-amber-400 text-slate-950"
-                            : result === "blocked"
-                              ? "border-cyan-500 bg-cyan-500 text-white"
-                              : radarOccupied === true
-                                ? "border-amber-400 bg-amber-100 text-amber-800"
-                                : radarOccupied === false
-                                  ? "border-emerald-300 bg-emerald-50 text-emerald-700"
-                                  : "border-slate-300 bg-slate-800 text-slate-300 hover:bg-slate-700"
-                    }`}
-                  >
-                    {result === "hit"
-                      ? "إصابة"
-                      : result === "miss"
-                        ? "فارغ"
-                        : result === "mine"
-                          ? "لغم"
-                          : result === "blocked"
-                            ? "درع"
-                            : radarOccupied === true
-                              ? "هدف"
-                              : radarOccupied === false
-                                ? "خالي"
-                                : cellIndex + 1}
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-
-          <section>
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-bold text-slate-950">لوحة الأسئلة</h2>
-              <span className="text-xs font-bold text-slate-500">
-                {canChooseQuestion
-                  ? "دورك في اختيار السؤال"
-                  : "انتظر دورك أو نفّذ ضرباتك"}
-              </span>
-            </div>
-            <QuestionGrid
-              questions={questions}
-              activeQuestionId={room.active_question_id}
-              disabled={!canChooseQuestion}
-              onSelect={onSelectQuestion}
-            />
-          </section>
-        </div>
-
-        <aside className="space-y-6">
-          <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="font-bold text-slate-950">الأدوات التكتيكية</h2>
-            <p className="text-[10px] text-slate-500 mt-1">
-              كل أداة تستخدم مرة واحدة أثناء القتال.
-            </p>
-            <div className="mt-4 space-y-3">
-              {availableTools.map((toolId) => {
-                const tool = TACTICAL_TOOL_DETAILS[toolId];
-                const isUsed = usedTools.includes(toolId);
-                const isRadarLike =
-                  toolId === "radar_scan" || toolId === "the_detector";
-                const isDetector = toolId === "the_detector";
-                const detectorLocked =
-                  isDetector && usedQuestionsCount < totalQuestions / 2;
-                const isOwnTurn = room.current_turn === activeTeam.team_index;
-                const needsActiveQuestion =
-                  toolId === "lifeline_call" || toolId === "double_chance";
-                const needsNoActiveQuestion = toolId === "the_hole";
-                const isExtraStrike = toolId === "extra_strike";
-                const disabledByTiming =
-                  !isOwnTurn ||
-                  (needsActiveQuestion && !room.active_question_id) ||
-                  (needsNoActiveQuestion && Boolean(room.active_question_id)) ||
-                  (isExtraStrike && activeTeam.available_strikes <= 0);
-                const isDisabled =
-                  isBusy ||
-                  isUsed ||
-                  room.status !== "playing" ||
-                  detectorLocked ||
-                  disabledByTiming ||
-                  (lifelineActive && toolId === "lifeline_call");
-                const isActiveRadar = radarMode && activeRadarTool === toolId;
-                return (
-                  <button
-                    key={toolId}
-                    type="button"
-                    disabled={isDisabled}
-                    onClick={() => {
-                      if (isRadarLike) return onToggleRadar(toolId);
-                      return onUseTool(toolId, null);
-                    }}
-                    className={`w-full rounded-2xl border p-4 text-right transition-all ${
-                      isUsed
-                        ? "border-slate-200 bg-slate-100 text-slate-400"
-                        : detectorLocked
-                          ? "border-slate-200 bg-slate-50 text-slate-400"
-                          : isActiveRadar
-                            ? "border-amber-400 bg-amber-100 text-amber-900"
-                            : "border-cyan-200 bg-cyan-50 text-cyan-900 hover:border-cyan-500"
-                    }`}
-                  >
-                    <span className="flex items-center gap-2 font-bold">
-                      {detectorLocked ? (
-                        <Lock className="h-4 w-4" />
-                      ) : isRadarLike ? (
-                        <Radar className="h-4 w-4" />
-                      ) : toolId === "shield" ? (
-                        <Shield className="h-4 w-4" />
-                      ) : lifelineActive && toolId === "lifeline_call" ? (
-                        <RefreshCw className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Sparkles className="h-4 w-4" />
-                      )}
-                      {lifelineActive && toolId === "lifeline_call"
-                        ? "جارٍ الاتصال..."
-                        : tool?.name || toolId}
-                    </span>
-                    <span className="mt-1 block text-[10px] leading-relaxed">
-                      {detectorLocked
-                        ? "تظهر بعد نصف الأسئلة"
-                        : tool?.description}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-
-          <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="font-bold text-slate-950">حالة جيشك</h2>
-            <div className="mt-4 grid grid-cols-6 gap-1.5">
-              {(activeTeam.board || Array(36).fill(null)).map((cell, index) => (
-                <div
-                  key={index}
-                  className={`aspect-square rounded-md border ${
-                    cell
-                      ? "border-cyan-400 bg-cyan-100"
-                      : "border-slate-200 bg-slate-50"
-                  }`}
-                  title={cell || "فارغ"}
-                />
-              ))}
-            </div>
-            {activeTeam.shield_active && (
-              <p className="mt-3 flex items-center gap-2 text-xs font-bold text-cyan-700">
-                <Shield className="h-4 w-4" />
-                الدرع مفعل للضربة القادمة
-              </p>
             )}
-          </section>
 
-          <EventFeed events={events} />
-        </aside>
+            {/* Questions board */}
+            <section className="rounded-3xl  border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="font-bold text-slate-950">لوحة الأسئلة</h2>
+                <span className="text-xs font-bold text-slate-400">
+                  {canChooseQuestion
+                    ? "دورك في اختيار السؤال"
+                    : "انتظر دورك أو نفّذ ضرباتك"}
+                </span>
+              </div>
+              <QuestionGrid
+                questions={questions}
+                activeQuestionId={room.active_question_id}
+                disabled={!canChooseQuestion}
+                onSelect={onSelectQuestion}
+              />
+            </section>
+
+            <section className="lg:col-span-1">
+              <EventFeed events={events} />
+            </section>
+          </div>
+
+          {/* LEFT sidebar: opponent map + tactical tools */}
+          <aside className="space-y-5">
+            {/* Opponent map — fills the sidebar column */}
+            <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="font-bold text-slate-950">
+                    خريطة {opponentTeam.name}
+                  </h2>
+                  <p className="text-[10px] text-slate-500">
+                    {radarMode ? "اختر مركز مسح الرادار" : "اضغط مربعًا للضرب"}
+                  </p>
+                </div>
+                <Target className="h-5 w-5 text-rose-500" />
+              </div>
+              <div className="grid grid-cols-6 gap-2">
+                {Array.from({ length: 36 }, (_, cellIndex) => {
+                  const result = cellResults.get(cellIndex);
+                  const radarOccupied = radarMap.get(cellIndex);
+                  return (
+                    <button
+                      key={cellIndex}
+                      type="button"
+                      disabled={
+                        isBusy ||
+                        room.status !== "playing" ||
+                        (!radarMode && activeTeam.available_strikes <= 0) ||
+                        Boolean(result && result !== "blocked")
+                      }
+                      onClick={() =>
+                        radarMode
+                          ? onUseTool(
+                              activeRadarTool || "radar_scan",
+                              cellIndex,
+                            )
+                          : onStrike(cellIndex)
+                      }
+                      className={`aspect-square rounded-lg border text-[10px] font-bold transition-all ${
+                        result === "hit"
+                          ? "border-rose-500 bg-rose-500 text-white"
+                          : result === "miss"
+                            ? "border-slate-400 bg-slate-300 text-slate-700"
+                            : result === "mine"
+                              ? "border-amber-500 bg-amber-400 text-slate-950"
+                              : result === "blocked"
+                                ? "border-cyan-500 bg-cyan-500 text-white"
+                                : radarOccupied === true
+                                  ? "border-amber-400 bg-amber-100 text-amber-800"
+                                  : radarOccupied === false
+                                    ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+                                    : activeTeam.available_strikes > 0
+                                      ? "border-slate-600 bg-slate-800 text-slate-200 hover:bg-rose-800 hover:border-rose-500 cursor-pointer"
+                                      : "border-slate-300 bg-slate-800 text-slate-500"
+                      }`}
+                    >
+                      {result === "hit"
+                        ? "✕"
+                        : result === "miss"
+                          ? "○"
+                          : result === "mine"
+                            ? "💥"
+                            : result === "blocked"
+                              ? "🛡"
+                              : radarOccupied === true
+                                ? "●"
+                                : radarOccupied === false
+                                  ? "○"
+                                  : cellIndex + 1}
+                    </button>
+                  );
+                })}
+              </div>
+              {opponentTeam.shield_active && (
+                <p className="mt-3 flex items-center gap-1.5 text-xs font-bold text-cyan-700">
+                  <Shield className="h-3.5 w-3.5" />
+                  الخصم لديه درع مفعل
+                </p>
+              )}
+            </section>
+
+            {/* Tactical tools */}
+            <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+              <h2 className="font-bold text-slate-950">الأدوات التكتيكية</h2>
+              <p className="text-[10px] text-slate-500 mt-1">
+                كل أداة تستخدم مرة واحدة أثناء القتال.
+              </p>
+              <div className="mt-4 space-y-2.5">
+                {availableTools.map((toolId) => {
+                  const tool = TACTICAL_TOOL_DETAILS[toolId];
+                  const isUsed = usedTools.includes(toolId);
+                  const isRadarLike =
+                    toolId === "radar_scan" || toolId === "the_detector";
+                  const isDetector = toolId === "the_detector";
+                  const detectorLocked =
+                    isDetector && usedQuestionsCount < totalQuestions / 2;
+                  const isOwnTurn = room.current_turn === activeTeam.team_index;
+                  const needsActiveQuestion =
+                    toolId === "lifeline_call" || toolId === "double_chance";
+                  const needsNoActiveQuestion = toolId === "the_hole";
+                  const isExtraStrike = toolId === "extra_strike";
+                  const disabledByTiming =
+                    !isOwnTurn ||
+                    (needsActiveQuestion && !room.active_question_id) ||
+                    (needsNoActiveQuestion &&
+                      Boolean(room.active_question_id)) ||
+                    (isExtraStrike && activeTeam.available_strikes <= 0);
+                  const isDisabled =
+                    isBusy ||
+                    isUsed ||
+                    room.status !== "playing" ||
+                    detectorLocked ||
+                    disabledByTiming ||
+                    (lifelineActive && toolId === "lifeline_call");
+                  const isActiveRadar = radarMode && activeRadarTool === toolId;
+                  return (
+                    <button
+                      key={toolId}
+                      type="button"
+                      disabled={isDisabled}
+                      onClick={() => {
+                        if (isRadarLike) return onToggleRadar(toolId);
+                        return onUseTool(toolId, null);
+                      }}
+                      className={`w-full rounded-2xl border p-3.5 text-right transition-all ${
+                        isUsed
+                          ? "border-slate-200 bg-slate-100 text-slate-400"
+                          : detectorLocked
+                            ? "border-slate-200 bg-slate-50 text-slate-400"
+                            : isActiveRadar
+                              ? "border-amber-400 bg-amber-100 text-amber-900"
+                              : "border-cyan-200 bg-cyan-50 text-cyan-900 hover:border-cyan-500"
+                      }`}
+                    >
+                      <span className="flex items-center gap-2 font-bold text-sm">
+                        {detectorLocked ? (
+                          <Lock className="h-3.5 w-3.5" />
+                        ) : isRadarLike ? (
+                          <Radar className="h-3.5 w-3.5" />
+                        ) : toolId === "shield" ? (
+                          <Shield className="h-3.5 w-3.5" />
+                        ) : lifelineActive && toolId === "lifeline_call" ? (
+                          <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Sparkles className="h-3.5 w-3.5" />
+                        )}
+                        {lifelineActive && toolId === "lifeline_call"
+                          ? "جارٍ الاتصال..."
+                          : tool?.name || toolId}
+                      </span>
+                      <span className="mt-0.5 block text-[10px] leading-relaxed opacity-70">
+                        {detectorLocked
+                          ? "تظهر بعد نصف الأسئلة"
+                          : tool?.description}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+            {/* ── ROW 2: Army state + Events ── */}
+            <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+              <h2 className="font-bold text-slate-950">حالة جيشك</h2>
+              <div className="mt-3 grid grid-cols-6 gap-1">
+                {(activeTeam.board || Array(36).fill(null)).map(
+                  (cell, index) => (
+                    <div
+                      key={index}
+                      className={`aspect-square rounded-md border ${
+                        cell
+                          ? "border-cyan-400 bg-cyan-100"
+                          : "border-slate-200 bg-slate-50"
+                      }`}
+                      title={cell || "فارغ"}
+                    />
+                  ),
+                )}
+              </div>
+              {activeTeam.shield_active && (
+                <p className="mt-3 flex items-center gap-2 text-xs font-bold text-cyan-700">
+                  <Shield className="h-4 w-4" />
+                  الدرع مفعل للضربة القادمة
+                </p>
+              )}
+            </section>
+          </aside>
+        </div>
       </main>
     </div>
   );
@@ -1086,7 +1268,7 @@ export function AbandonedGameView({ room, onReturnHome }) {
   );
 }
 
-export function CombatEventModal({ event, onClose, autoCloseMs = 3000 }) {
+export function CombatEventModal({ event, onClose, autoCloseMs = 2000 }) {
   useEffect(() => {
     if (!event || event.event_type !== "strike") return undefined;
     const timeout = window.setTimeout(onClose, autoCloseMs);
@@ -1100,11 +1282,15 @@ export function CombatEventModal({ event, onClose, autoCloseMs = 3000 }) {
   const isBlocked = event.result === "blocked";
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/75 p-4 dir-rtl">
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/75 p-4 dir-rtl cursor-pointer"
+      onClick={onClose}
+    >
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-w-sm rounded-3xl bg-white p-7 text-center shadow-2xl"
+        className="w-full max-w-sm rounded-3xl bg-white p-7 text-center shadow-2xl cursor-default"
+        onClick={(e) => e.stopPropagation()}
       >
         {isHit ? (
           <CheckCircle className="h-14 w-14 mx-auto text-rose-500" />

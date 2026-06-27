@@ -95,6 +95,7 @@ export default function BattlePage() {
   const [holeConfirmPending, setHoleConfirmPending] = useState(false);
   const [lastPlacedCell, setLastPlacedCell] = useState(null);
   const lastActiveQuestionIdRef = useRef(null);
+  const questionStartedAtRef = useRef(null);
   const audioContextRef = useRef(null);
   const lastSoundEventIdRef = useRef(null);
   const deploymentTimerRef = useRef(null);
@@ -230,7 +231,12 @@ export default function BattlePage() {
     const previousQuestionId = lastActiveQuestionIdRef.current;
 
     if (currentQuestionId && currentQuestionId !== previousQuestionId) {
-      setQuestionSeconds(60);
+      const startMs = room?.updated_at
+        ? new Date(room.updated_at).getTime()
+        : Date.now();
+      questionStartedAtRef.current = startMs;
+      const elapsed = Math.floor((Date.now() - startMs) / 1000);
+      setQuestionSeconds(Math.max(0, 60 - elapsed));
     }
 
     if (previousQuestionId && !currentQuestionId) {
@@ -238,6 +244,7 @@ export default function BattlePage() {
       setHoleConfirmPending(false);
       setQuestionSeconds(60);
       if (holeActive) setHoleActive(false);
+      questionStartedAtRef.current = null;
     }
 
     lastActiveQuestionIdRef.current = currentQuestionId;
@@ -658,10 +665,14 @@ export default function BattlePage() {
       return;
     }
 
-    const currentBoard = Array.isArray(activeTeam.board)
-      ? [...activeTeam.board]
-      : Array(36).fill(null);
-    let currentPoints = activeTeam.points;
+    // Read from pendingBoardRef first to avoid stale state on rapid clicks
+    const pendingState = pendingBoardRef.current;
+    const currentBoard = pendingState
+      ? [...pendingState.board]
+      : Array.isArray(activeTeam.board)
+        ? [...activeTeam.board]
+        : Array(36).fill(null);
+    let currentPoints = pendingState ? pendingState.points : activeTeam.points;
 
     // A. Deletion Refund behavior if already populated
     if (currentBoard[cellIndex]) {
@@ -706,7 +717,8 @@ export default function BattlePage() {
     );
 
     // Debounce API call so rapid clicks don't queue multiple requests
-    pendingBoardRef.current = { board: currentBoard, points: currentPoints };
+    const snapshot = { board: currentBoard, points: currentPoints };
+    pendingBoardRef.current = snapshot;
     clearTimeout(deploymentTimerRef.current);
     deploymentTimerRef.current = setTimeout(async () => {
       const pending = pendingBoardRef.current;
@@ -717,11 +729,21 @@ export default function BattlePage() {
         p_board: pending.board,
         p_points: pending.points,
       });
-      if (error) {
-        showAlert(error.message, "error");
-        loadDatabaseData();
+      // Only touch pendingBoardRef/state if no newer click happened during this request
+      if (pendingBoardRef.current === pending) {
+        if (error) {
+          showAlert(error.message, "error");
+          // Silently resync team data without the full loading screen
+          supabase
+            .from("teams")
+            .select("*")
+            .eq("room_id", roomId)
+            .then(({ data }) => {
+              if (data) setTeams(data);
+            });
+        }
+        pendingBoardRef.current = null;
       }
-      pendingBoardRef.current = null;
     }, 350);
   };
 
@@ -782,6 +804,12 @@ export default function BattlePage() {
 
   const handleSelectQuestion = (question) =>
     runAction(async () => {
+      const unjoinedTeam = teams.find((t) => !t.joined);
+      if (unjoinedTeam) {
+        throw new Error(
+          `لا يمكن اختيار السؤال — ${unjoinedTeam.name} لم ينضم إلى اللعبة بعد.`,
+        );
+      }
       const { error } = await supabase.rpc("select_room_question", {
         p_room_id: roomId,
         p_question_id: question.id,
@@ -869,6 +897,50 @@ export default function BattlePage() {
       await finalizeRoomIfComplete();
       setActiveAnswer("");
     });
+
+  // Convert team's available strikes to points (200 pts per strike)
+  const handleConvertStrikesToPoints = () =>
+    runAction(async () => {
+      const myTeam = teams.find((t) => t.team_index === teamIndex);
+      if (!myTeam || myTeam.available_strikes === 0) return;
+      const strikesToConvert = myTeam.available_strikes;
+      const pointsGained = strikesToConvert * 200;
+      // Optimistic update: zero out strikes immediately so team can't attack
+      setTeams((prev) =>
+        prev.map((t) =>
+          t.team_index === teamIndex
+            ? { ...t, available_strikes: 0, score: t.score + pointsGained }
+            : t,
+        ),
+      );
+      const { error } = await supabase
+        .from("teams")
+        .update({
+          available_strikes: 0,
+          score: myTeam.score + pointsGained,
+        })
+        .eq("id", myTeam.id);
+      if (error) throw error;
+    });
+
+  // Soft exit: mark team as disconnected without destroying the room
+  const handleSoftExit = async () => {
+    try {
+      if (teamIndex) {
+        const activeTeam = teams.find((t) => t.team_index === teamIndex);
+        if (activeTeam) {
+          await supabase
+            .from("teams")
+            .update({ joined: false })
+            .eq("id", activeTeam.id);
+        }
+      }
+    } catch {
+      // non-blocking
+    }
+    window.localStorage.removeItem("sovereignty_active_battle_path");
+    window.location.assign("/");
+  };
 
   const handleStrike = (cellIndex) =>
     runAction(async () => {
@@ -1128,7 +1200,6 @@ export default function BattlePage() {
           questionSeconds={questionSeconds}
           onSelectQuestion={handleSelectQuestion}
           onResolveQuestion={handleResolveQuestion}
-          onResolveQuestionWithPoints={handleResolveQuestionWithPoints}
           onResolveDraw={handleResolveDraw}
           onExit={handleExitGame}
         />
@@ -1191,6 +1262,8 @@ export default function BattlePage() {
               showAlert("تم إلغاء الحفرة — الوسيلة استُهلكت", "warning");
             }}
             onExit={handleExitGame}
+            onSoftExit={handleSoftExit}
+            onConvertStrikes={handleConvertStrikesToPoints}
           />
           <CombatEventModal
             event={latestCombatEvent}
@@ -1306,7 +1379,7 @@ export default function BattlePage() {
 
         {/* Judge Header */}
         <header className="bg-white border-b border-slate-200 py-4 shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="max-w-[85rem] mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="bg-gradient-to-tr from-cyan-500 to-sky-400 text-white p-2.5 rounded-xl shadow-md">
                 <Crown className="w-6 h-6 animate-pulse" />
@@ -1344,7 +1417,7 @@ export default function BattlePage() {
           </div>
         </header>
 
-        <main className="max-w-7xl mx-auto px-4 mt-8 flex-grow grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <main className="max-w-[85rem] mx-auto px-4 mt-8 flex-grow grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left / Middle: Team cards & Deploy status */}
           <div className="lg:col-span-2 space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -1544,7 +1617,9 @@ export default function BattlePage() {
 
     // Compute current unit counts per type
     const unitCounts = Object.keys(unitSpecs).reduce((acc, key) => {
-      acc[key] = (activeTeam?.board || []).filter((cell) => cell === key).length;
+      acc[key] = (activeTeam?.board || []).filter(
+        (cell) => cell === key,
+      ).length;
       return acc;
     }, {});
 
@@ -1587,7 +1662,7 @@ export default function BattlePage() {
 
         {/* Player Header */}
         <header className="bg-white border-b border-slate-200 py-4 shadow-sm relative z-20">
-          <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="max-w-[85rem] mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="bg-gradient-to-tr from-cyan-500 to-sky-400 text-white p-2.5 rounded-xl shadow-md">
                 <Shield className="w-6 h-6" />
@@ -1636,7 +1711,7 @@ export default function BattlePage() {
         </header>
 
         {/* Main board deploy area */}
-        <main className="max-w-7xl mx-auto px-4 mt-8 flex-grow grid grid-cols-1 lg:grid-cols-3 gap-8 relative z-10">
+        <main className="max-w-[85rem] mx-auto px-4 mt-8 flex-grow grid grid-cols-1 lg:grid-cols-3 gap-8 relative z-10">
           {/* 6x6 Army Board Panel (Task 11) */}
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-md relative overflow-hidden">
@@ -1776,7 +1851,9 @@ export default function BattlePage() {
                           <span className="font-bold text-xs text-slate-900 block group-hover:text-cyan-600">
                             {unit.name}
                           </span>
-                          <span className={`text-[10px] leading-tight block font-bold ${isFull ? "text-rose-500" : "text-slate-400"}`}>
+                          <span
+                            className={`text-[10px] leading-tight block font-bold ${isFull ? "text-rose-500" : "text-slate-400"}`}
+                          >
                             {count} / {limit} {isFull ? "· اكتمل الحد" : ""}
                           </span>
                         </span>
