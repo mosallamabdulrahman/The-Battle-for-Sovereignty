@@ -406,6 +406,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     let active = true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     Promise.all([loadCategories(), loadQuestions()]).finally(() => {
       if (active) setLoading(false);
     });

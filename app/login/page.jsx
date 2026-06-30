@@ -1,5 +1,4 @@
 "use client";
-/* eslint-disable react-hooks/exhaustive-deps */
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
@@ -35,6 +34,7 @@ export default function QuickLoginPage() {
   // Check session + localStorage flag
   useEffect(() => {
     const flag = localStorage.getItem(WAS_HERE_KEY);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (flag) setWasRegistered(true);
 
     // If already logged in, go home
