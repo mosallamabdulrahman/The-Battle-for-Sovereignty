@@ -248,7 +248,7 @@ export default function BattlePage() {
     }
 
     lastActiveQuestionIdRef.current = currentQuestionId;
-  }, [room?.active_question_id, holeActive]);
+  }, [room?.active_question_id, room?.updated_at, holeActive]);
 
   useEffect(() => {
     if (!room?.active_question_id || room.status !== "playing")
