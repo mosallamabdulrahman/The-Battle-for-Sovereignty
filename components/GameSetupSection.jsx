@@ -332,18 +332,12 @@ export default function GameSetupSection() {
               <div className="flex-1 text-right text-xs leading-relaxed font-bold">
                 <p className="text-sm text-slate-200">{toast.message}</p>
                 {toast.type === "auth-error" && (
-                  <div className="mt-3 flex gap-2">
+                  <div className="mt-3">
                     <a
                       href="/login"
-                      className="px-3 py-1 bg-cyan-500 hover:bg-cyan-600 font-extrabold text-slate-950 text-[11px] rounded transition-colors"
+                      className="px-4 py-1.5 bg-cyan-500 hover:bg-cyan-600 font-extrabold text-slate-950 text-[11px] rounded transition-colors"
                     >
-                      تسجيل الدخول
-                    </a>
-                    <a
-                      href="/register"
-                      className="px-3 py-1 bg-white/20 hover:bg-white/30 text-white font-extrabold text-[11px] rounded transition-colors"
-                    >
-                      حساب عسكري جديد
+                      ⚡ الدخول السريع
                     </a>
                   </div>
                 )}

@@ -107,22 +107,22 @@ export default function BattlePage() {
   // Toast / Status banner
   const [alertMsg, setAlertMsg] = useState(null);
 
-  // Equipment pricing & icons list
+  // Equipment pricing & icons list (mines are free — hidden danger)
   const unitSpecs = {
-    infantry: { name: "جندي مشاة", cost: 10, emoji: "👥" },
-    tank: { name: "مدرعة دبابة", cost: 50, emoji: "🚜" },
-    aircraft: { name: "طائرة قتالية", cost: 100, emoji: "✈️" },
-    submarine: { name: "غواصة بحرية", cost: 200, emoji: "⛵" },
-    mine: { name: "لغم مغناطيسي", cost: 100, emoji: "💥" },
+    infantry:  { name: "جندي مشاة",    cost: 10,  emoji: "👥" },
+    tank:      { name: "مدرعة دبابة",   cost: 50,  emoji: "🚜" },
+    aircraft:  { name: "طائرة قتالية",  cost: 100, emoji: "✈️" },
+    submarine: { name: "غواصة بحرية",   cost: 200, emoji: "⛵" },
+    mine:      { name: "لغم مغناطيسي",  cost: 0,   emoji: "💥" },
   };
 
-  // Max units per type allowed per team
+  // Limits per type — totals to exactly 33 (board must have 33 occupied, 3 empty)
   const unitLimits = {
-    infantry: 10,
-    tank: 4,
-    aircraft: 3,
-    submarine: 2,
-    mine: 2,
+    infantry:  25,
+    tank:       3,
+    aircraft:   2,
+    submarine:  1,
+    mine:       2,
   };
 
   const getAudioContext = useCallback(() => {
@@ -753,21 +753,11 @@ export default function BattlePage() {
     const activeTeam = teams.find((t) => t.team_index === teamIndex);
     if (!activeTeam) return;
 
-    // Minimum check: must place at least 1 unit to start
+    // Grid rule: exactly 33 occupied cells, 3 empty
     const placedCount = (activeTeam.board || []).filter(Boolean).length;
-    if (placedCount === 0) {
+    if (placedCount !== 33) {
       showAlert(
-        "يرجى نشر وتعبئة وحدة واحدة على الأقل قبل إعلان الجهوزية.",
-        "error",
-      );
-      return;
-    }
-
-    // Must spend at least 700 points
-    const spentPoints = 1000 - activeTeam.points;
-    if (spentPoints < 700) {
-      showAlert(
-        `يجب إنفاق 700 نقطة على الأقل. المنفق حالياً: ${spentPoints}ن — تبقى ${700 - spentPoints}ن لإتمام التجهيز.`,
+        `يجب نشر 33 وحدة بالضبط قبل الإقفال (حالياً: ${placedCount}/33).`,
         "error",
       );
       return;
@@ -848,80 +838,31 @@ export default function BattlePage() {
       setActiveAnswer("");
     });
 
-  // Resolve question by giving points instead of strikes to the winner
-  const handleResolveQuestionWithPoints = (
-    questionId,
-    winnerTeamIndex,
-    questionPoints,
-  ) =>
+  // Draw: both teams answered correctly → both get strikes (p_winner_team_index=0)
+  const handleResolveDraw = (questionId) =>
     runAction(async () => {
       const { error } = await supabase.rpc("resolve_room_question", {
         p_room_id: roomId,
         p_question_id: questionId,
-        p_winner_team_index: null,
+        p_winner_team_index: 0,
       });
       if (error) throw error;
-
-      const winnerTeam = teams.find((t) => t.team_index === winnerTeamIndex);
-      if (winnerTeam && questionPoints > 0) {
-        const { error: scoreError } = await supabase
-          .from("teams")
-          .update({ score: winnerTeam.score + questionPoints })
-          .eq("id", winnerTeam.id);
-        if (scoreError) throw scoreError;
-      }
-
       await finalizeRoomIfComplete();
       setActiveAnswer("");
     });
 
-  // Resolve as draw: both teams answered correctly, give points to both
-  const handleResolveDraw = (questionId, questionPoints) =>
+  // Referee manually grants one extra strike to a specific team
+  const handleGrantExtraStrike = (grantTeamIndex) =>
     runAction(async () => {
-      const { error } = await supabase.rpc("resolve_room_question", {
-        p_room_id: roomId,
-        p_question_id: questionId,
-        p_winner_team_index: null,
-      });
-      if (error) throw error;
-
-      await Promise.all(
-        teams.map((team) =>
-          supabase
-            .from("teams")
-            .update({ score: team.score + (questionPoints || 0) })
-            .eq("id", team.id),
-        ),
-      );
-
-      await finalizeRoomIfComplete();
-      setActiveAnswer("");
-    });
-
-  // Convert team's available strikes to points (200 pts per strike)
-  const handleConvertStrikesToPoints = () =>
-    runAction(async () => {
-      const myTeam = teams.find((t) => t.team_index === teamIndex);
-      if (!myTeam || myTeam.available_strikes === 0) return;
-      const strikesToConvert = myTeam.available_strikes;
-      const pointsGained = strikesToConvert * 200;
-      // Optimistic update: zero out strikes immediately so team can't attack
-      setTeams((prev) =>
-        prev.map((t) =>
-          t.team_index === teamIndex
-            ? { ...t, available_strikes: 0, score: t.score + pointsGained }
-            : t,
-        ),
-      );
+      const team = teams.find((t) => t.team_index === grantTeamIndex);
+      if (!team) return;
       const { error } = await supabase
         .from("teams")
-        .update({
-          available_strikes: 0,
-          score: myTeam.score + pointsGained,
-        })
-        .eq("id", myTeam.id);
+        .update({ available_strikes: team.available_strikes + 1 })
+        .eq("id", team.id);
       if (error) throw error;
     });
+
 
   // Soft exit: mark team as disconnected without destroying the room
   const handleSoftExit = async () => {
@@ -956,6 +897,17 @@ export default function BattlePage() {
   const handleUseTool = (toolId, cellIndex) =>
     runAction(async () => {
       const activeTeam = teams.find((t) => t.team_index === teamIndex);
+
+      // Shield and Extra Strike must be activated BEFORE question reveal
+      if (
+        (toolId === "shield" || toolId === "extra_strike") &&
+        room?.active_question_id
+      ) {
+        throw new Error(
+          "يجب تفعيل هذه الوسيلة قبل كشف السؤال.",
+        );
+      }
+
       if (
         toolId === "extra_strike" &&
         (!activeTeam || activeTeam.available_strikes <= 0)
@@ -1045,21 +997,15 @@ export default function BattlePage() {
             بوابة المصادقة المطلوبة
           </h2>
           <p className="text-xs text-slate-500 mt-2 leading-relaxed font-semibold">
-            عذراً، يجب إنشاء حساب عسكري أو تسجيل الدخول أولاً قبل تولي تمركز
-            الجيش أو إدارة الغرفة الحربية المشتركة.
+            عذراً، يجب الدخول أولاً قبل تولي تمركز الجيش أو إدارة الغرفة
+            الحربية المشتركة. الدخول سريع بدون كلمة مرور!
           </p>
           <div className="mt-8 flex flex-col gap-3">
             <Link
               href={`/login?redirect=${encodeURIComponent(getCurrentBattlePath())}`}
-              className="w-full bg-gradient-to-r from-cyan-600 to-sky-500 hover:shadow-md py-3 rounded-xl font-bold text-white text-sm transition-all"
+              className="w-full bg-gradient-to-r from-cyan-600 to-sky-500 hover:shadow-md py-3 rounded-xl font-bold text-white text-sm transition-all flex items-center justify-center gap-2"
             >
-              تسجيل الدخول للقادة والمحكّمين
-            </Link>
-            <Link
-              href={`/register?redirect=${encodeURIComponent(getCurrentBattlePath())}`}
-              className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-xl font-bold text-sm transition-colors"
-            >
-              طلب رتبة جديدة مجاناً
+              ⚡ الدخول السريع
             </Link>
             <Link
               href="/"
@@ -1201,6 +1147,7 @@ export default function BattlePage() {
           onSelectQuestion={handleSelectQuestion}
           onResolveQuestion={handleResolveQuestion}
           onResolveDraw={handleResolveDraw}
+          onGrantExtraStrike={handleGrantExtraStrike}
           onExit={handleExitGame}
         />
         <CombatEventModal
@@ -1263,7 +1210,6 @@ export default function BattlePage() {
             }}
             onExit={handleExitGame}
             onSoftExit={handleSoftExit}
-            onConvertStrikes={handleConvertStrikesToPoints}
           />
           <CombatEventModal
             event={latestCombatEvent}

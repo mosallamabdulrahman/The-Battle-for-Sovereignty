@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   AlertTriangle,
@@ -12,9 +12,12 @@ import {
   RefreshCw,
   Shield,
   Sparkles,
+  Star,
   Target,
   Trophy,
+  Volume2,
   XCircle,
+  ZoomIn,
 } from "lucide-react";
 import { LIFELINE_TOOLS, TACTICAL_TOOL_DETAILS } from "../../lib/game-data";
 
@@ -34,26 +37,67 @@ const RESULT_LABELS = {
 const FALLBACK_CATEGORY_IMAGE =
   "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=360&q=80";
 
-function FinishedCelebration({
-  room,
-  teams,
-  activeTeam,
-  opponentTeam,
-  onExit,
-}) {
-  const winner = teams.find(
-    (team) => team.team_index === room.winner_team_index,
-  );
+const DIFFICULTY_STRIKE_LABEL = { easy: "سهل · ⚡", medium: "متوسط · ⚡⚡", hard: "صعب · ⚡⚡⚡" };
+
+// ── Media Player ───────────────────────────────────────────────
+function MediaPlayer({ mediaUrl, mediaType }) {
+  const [expanded, setExpanded] = useState(false);
+  if (!mediaUrl || !mediaType) return null;
+
+  if (mediaType === "image") {
+    return (
+      <div className="mt-4">
+        <div
+          className={`relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 cursor-pointer transition-all ${expanded ? "max-h-[600px]" : "max-h-48"}`}
+          onClick={() => setExpanded((v) => !v)}
+        >
+          <img
+            src={mediaUrl}
+            alt="وسائط السؤال"
+            className="w-full object-contain"
+            loading="lazy"
+          />
+          {!expanded && (
+            <div className="absolute inset-0 flex items-end justify-center bg-gradient-to-t from-black/30 to-transparent pb-2">
+              <span className="flex items-center gap-1 rounded-full bg-white/90 px-3 py-1 text-[10px] font-bold text-slate-700">
+                <ZoomIn className="h-3 w-3" /> اضغط للتكبير
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (mediaType === "audio") {
+    return (
+      <div className="mt-4 flex items-center gap-3 rounded-2xl border border-cyan-200 bg-cyan-50 p-4">
+        <Volume2 className="h-5 w-5 shrink-0 text-cyan-600" />
+        <audio controls src={mediaUrl} className="w-full h-8" />
+      </div>
+    );
+  }
+
+  return null;
+}
+
+// ── End Screen ─────────────────────────────────────────────────
+function FinishedCelebration({ room, teams, activeTeam, opponentTeam, onExit }) {
+  const winner = teams.find((t) => t.team_index === room.winner_team_index);
+  const isDraw = !room.winner_team_index;
   const didWin = activeTeam && room.winner_team_index === activeTeam.team_index;
+
   const title = activeTeam
     ? didWin
-      ? "فريقك انتصر في معركة السيادة"
-      : room.winner_team_index
-        ? `الفائز هو ${opponentTeam?.name || winner?.name || "الفريق المنافس"}`
-        : "انتهت المعركة بالتعادل"
-    : room.winner_team_index
-      ? `الفائز: ${winner?.name || `الفريق ${room.winner_team_index}`}`
-      : "انتهت المعركة بالتعادل";
+      ? "فريقك انتصر! 🏆"
+      : isDraw
+        ? "انتهت المعركة بالتعادل"
+        : `الفائز: ${opponentTeam?.name || winner?.name || "الخصم"}`
+    : isDraw
+      ? "انتهت المعركة بالتعادل"
+      : `الفائز: ${winner?.name || `الفريق ${room.winner_team_index}`}`;
+
+  const sorted = [...teams].sort((a, b) => b.score - a.score);
 
   return (
     <motion.div
@@ -61,36 +105,50 @@ function FinishedCelebration({
       animate={{ opacity: 1, y: 0, scale: 1 }}
       className="relative overflow-hidden rounded-[2rem] border border-amber-300 bg-gradient-to-br from-slate-950 via-cyan-950 to-slate-900 p-8 text-center text-white shadow-2xl"
     >
-      <div className="absolute inset-0 opacity-30">
-        {Array.from({ length: 18 }, (_, index) => (
+      {/* Confetti dots */}
+      <div className="absolute inset-0 opacity-25">
+        {Array.from({ length: 18 }, (_, i) => (
           <motion.span
-            key={index}
+            key={i}
             className="absolute h-2 w-2 rounded-full bg-amber-300"
-            style={{
-              top: `${(index * 31) % 90}%`,
-              right: `${(index * 47) % 95}%`,
-            }}
-            animate={{
-              y: [0, 18, 0],
-              opacity: [0.35, 1, 0.35],
-              scale: [1, 1.8, 1],
-            }}
-            transition={{
-              duration: 1.8 + (index % 4) * 0.25,
-              repeat: Infinity,
-            }}
+            style={{ top: `${(i * 31) % 90}%`, right: `${(i * 47) % 95}%` }}
+            animate={{ y: [0, 18, 0], opacity: [0.35, 1, 0.35], scale: [1, 1.8, 1] }}
+            transition={{ duration: 1.8 + (i % 4) * 0.25, repeat: Infinity }}
           />
         ))}
       </div>
-      <Trophy className="relative z-10 h-16 w-16 mx-auto text-amber-300 drop-shadow" />
+
+      <Trophy className="relative z-10 h-14 w-14 mx-auto text-amber-300 drop-shadow" />
       <h2 className="relative z-10 mt-4 text-2xl font-bold">{title}</h2>
-      <p className="relative z-10 mt-2 text-sm text-cyan-100">
-        انتهت المباراة. يمكن للحكم والفريقين الخروج والعودة للواجهة الرئيسية.
-      </p>
+
+      {/* Final Scores */}
+      <div className="relative z-10 mt-6 grid grid-cols-2 gap-3">
+        {sorted.map((team, i) => {
+          const isWinner = team.team_index === room.winner_team_index;
+          return (
+            <div
+              key={team.id}
+              className={`rounded-2xl border p-4 text-center ${
+                isWinner
+                  ? "border-amber-400 bg-amber-500/20"
+                  : "border-white/10 bg-white/5"
+              }`}
+            >
+              {isWinner && <Star className="h-4 w-4 text-amber-300 mx-auto mb-1" />}
+              <p className="text-xs font-bold text-white/60">{team.name}</p>
+              <p className={`text-3xl font-black mt-1 ${isWinner ? "text-amber-300" : "text-white/80"}`}>
+                {team.score}
+              </p>
+              <p className="text-[10px] text-white/40 mt-0.5">نقطة نهائية</p>
+            </div>
+          );
+        })}
+      </div>
+
       <button
         type="button"
         onClick={onExit}
-        className="relative z-10 mt-6 rounded-2xl bg-white px-6 py-3 text-sm font-bold text-slate-950 shadow-lg transition hover:bg-amber-100"
+        className="relative z-10 mt-6 rounded-2xl bg-white px-8 py-3 text-sm font-bold text-slate-950 shadow-lg transition hover:bg-amber-100"
       >
         خروج من اللعبة
       </button>
@@ -328,16 +386,16 @@ export function QuestionGrid({
                     type="button"
                     disabled={isDisabled}
                     onClick={() => onSelect(question)}
-                    className={`h-14 rounded-r-full rounded-l-2xl border text-center text-xl font-semibold transition-all ${
+                    className={`h-14 rounded-r-full rounded-l-2xl border text-center text-sm font-semibold transition-all ${
                       question.is_used
                         ? "border-slate-200 bg-slate-200 text-slate-400 line-through"
                         : isActive
                           ? "border-amber-400 bg-amber-100 text-amber-900 ring-2 ring-amber-300"
                           : "border-slate-200 bg-[#CDD2D2] text-rose-800 hover:border-cyan-400 hover:bg-cyan-50 disabled:cursor-not-allowed"
                     }`}
-                    title={`${DIFFICULTY_LABELS[question.difficulty]} - ${question.strikes} ضربة`}
+                    title={`${DIFFICULTY_LABELS[question.difficulty]} · ${question.strikes} ضربة`}
                   >
-                    {question.points}
+                    {DIFFICULTY_STRIKE_LABEL[question.difficulty] || question.difficulty}
                   </button>
                 );
               })}
@@ -366,16 +424,16 @@ export function QuestionGrid({
                     type="button"
                     disabled={isDisabled}
                     onClick={() => onSelect(question)}
-                    className={`h-14 rounded-l-full rounded-r-2xl border text-center text-xl font-semibold transition-all ${
+                    className={`h-14 rounded-l-full rounded-r-2xl border text-center text-sm font-semibold transition-all ${
                       question.is_used
                         ? "border-slate-200 bg-slate-200 text-slate-400 line-through"
                         : isActive
                           ? "border-amber-400 bg-amber-100 text-amber-900 ring-2 ring-amber-300"
                           : "border-slate-200 bg-slate-200 text-rose-800 hover:border-cyan-400 hover:bg-cyan-50 disabled:cursor-not-allowed"
                     }`}
-                    title={`${DIFFICULTY_LABELS[question.difficulty]} - ${question.strikes} ضربة`}
+                    title={`${DIFFICULTY_LABELS[question.difficulty]} · ${question.strikes} ضربة`}
                   >
-                    {question.points}
+                    {DIFFICULTY_STRIKE_LABEL[question.difficulty] || question.difficulty}
                   </button>
                 );
               })}
@@ -447,6 +505,7 @@ export function JudgeCombatDashboard({
   onSelectQuestion,
   onResolveQuestion,
   onResolveDraw,
+  onGrantExtraStrike,
   onExit,
 }) {
   const activeQuestion = questions.find(
@@ -507,33 +566,31 @@ export function JudgeCombatDashboard({
                 </h2>
               </div>
               <span className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-bold text-white">
-                {activeQuestion.points} نقطة · {activeQuestion.strikes} ضربة
+                {DIFFICULTY_STRIKE_LABEL[activeQuestion.difficulty] || activeQuestion.difficulty}
               </span>
             </div>
+
+            {/* Media */}
+            <MediaPlayer mediaUrl={activeQuestion.media_url} mediaType={activeQuestion.media_type} />
 
             <div className="mt-5">
               <CircularTimer seconds={questionSeconds} label="مؤقت السؤال" />
             </div>
 
             <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-              <span className="text-xs font-bold text-emerald-700">
-                الإجابة الصحيحة
-              </span>
+              <span className="text-xs font-bold text-emerald-700">الإجابة الصحيحة</span>
               <p className="mt-1 font-bold text-emerald-950">
                 {answer || "جاري تحميل الإجابة..."}
               </p>
             </div>
 
             <div className="mt-5 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-              {/* One button per team: correct answer → gives strikes automatically */}
               {teams.map((team) => (
                 <button
                   key={team.id}
                   type="button"
                   disabled={isBusy}
-                  onClick={() =>
-                    onResolveQuestion(activeQuestion.id, team.team_index)
-                  }
+                  onClick={() => onResolveQuestion(activeQuestion.id, team.team_index)}
                   className={`rounded-xl px-3 py-3 text-sm font-bold text-white flex items-center justify-center gap-2 transition-opacity disabled:opacity-60 ${
                     team.team_index === 1
                       ? "bg-cyan-600 hover:bg-cyan-700"
@@ -541,24 +598,20 @@ export function JudgeCombatDashboard({
                   }`}
                 >
                   <CheckCircle className="h-4 w-4" />
-                  إجابة {team.name} صحيحة
+                  {team.name} أصاب
                 </button>
               ))}
 
-              {/* Draw */}
               <button
                 type="button"
                 disabled={isBusy}
-                onClick={() =>
-                  onResolveDraw(activeQuestion.id, activeQuestion.points)
-                }
+                onClick={() => onResolveDraw(activeQuestion.id)}
                 className="rounded-xl bg-emerald-50 border border-emerald-300 px-3 py-3 text-sm font-bold text-emerald-900 flex items-center justify-center gap-2 hover:bg-emerald-100 transition-opacity disabled:opacity-60"
               >
                 <CheckCircle className="h-4 w-4" />
-                كلاهما صح (تعادل)
+                كلاهما صح
               </button>
 
-              {/* Both wrong */}
               <button
                 type="button"
                 disabled={isBusy}
@@ -576,6 +629,33 @@ export function JudgeCombatDashboard({
           <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-center text-sm font-bold text-amber-900">
             ينتظر النظام اختيار {currentTeam?.name} للسؤال. يستطيع الحكم اختيار
             السؤال نيابة عنه.
+          </div>
+        )}
+
+        {/* Grant Extra Strike — manual override by referee */}
+        {room.status === "playing" && (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+            <h3 className="font-bold text-amber-900 text-sm mb-3 flex items-center gap-2">
+              <Star className="h-4 w-4" />
+              منح ضربة إضافية يدوياً
+            </h3>
+            <div className="flex gap-2">
+              {teams.map((team) => (
+                <button
+                  key={team.id}
+                  type="button"
+                  disabled={isBusy}
+                  onClick={() => onGrantExtraStrike(team.team_index)}
+                  className={`flex-1 rounded-xl px-3 py-2.5 text-sm font-bold text-white flex items-center justify-center gap-2 transition-opacity disabled:opacity-60 ${
+                    team.team_index === 1
+                      ? "bg-cyan-600 hover:bg-cyan-700"
+                      : "bg-orange-600 hover:bg-orange-700"
+                  }`}
+                >
+                  ⚡ {team.name}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
@@ -620,9 +700,7 @@ export function TeamCombatDashboard({
   onCancelHole,
   onExit,
   onSoftExit,
-  onConvertStrikes,
 }) {
-  // Track which win event has been acknowledged (strikes-or-points modal)
   const [handledWinEventId, setHandledWinEventId] = useState(null);
   // Disconnect modal: dismiss collapses to a small banner
   const [disconnectDismissed, setDisconnectDismissed] = useState(false);
@@ -748,7 +826,7 @@ export function TeamCombatDashboard({
         )}
       </AnimatePresence>
 
-      {/* ── Win Modal: Choose strikes or points ── */}
+      {/* ── Win Modal: Use strikes on enemy map ── */}
       <AnimatePresence>
         {showWinModal && (
           <motion.div
@@ -764,35 +842,22 @@ export function TeamCombatDashboard({
               exit={{ scale: 0.85, opacity: 0 }}
               className="w-full max-w-sm rounded-3xl bg-gradient-to-br from-amber-900 via-slate-900 to-slate-900 border border-amber-500/40 p-7 text-center text-white shadow-2xl"
             >
-              <div className="text-4xl mb-3">🏆</div>
+              <div className="text-4xl mb-3">⚔️</div>
               <h2 className="text-xl font-bold text-amber-300">أجبت صحيحًا!</h2>
               <p className="mt-2 text-sm text-slate-300">
-                لديك {activeTeam.available_strikes}{" "}
-                {activeTeam.available_strikes === 1 ? "ضربة" : "ضربات"}. ماذا
-                تريد؟
+                لديك{" "}
+                <strong className="text-amber-300">{activeTeam.available_strikes}</strong>{" "}
+                {activeTeam.available_strikes === 1 ? "ضربة" : "ضربات"} — اضغط مربعًا في
+                خريطة الخصم أدناه.
               </p>
-              <div className="mt-6 grid grid-cols-1 gap-3">
-                <button
-                  type="button"
-                  disabled={isBusy}
-                  onClick={() => setHandledWinEventId(latestWinEvent?.id)}
-                  className="rounded-2xl bg-rose-600 py-3 text-sm font-bold text-white hover:bg-rose-500 transition disabled:opacity-60"
-                >
-                  ⚔️ استخدم الضربات على خريطة الخصم
-                </button>
-                <button
-                  type="button"
-                  disabled={isBusy}
-                  onClick={async () => {
-                    await onConvertStrikes?.();
-                    setHandledWinEventId(latestWinEvent?.id);
-                  }}
-                  className="rounded-2xl bg-amber-500 py-3 text-sm font-bold text-white hover:bg-amber-400 transition disabled:opacity-60"
-                >
-                  💰 حوّل الضربات إلى نقاط (+
-                  {activeTeam.available_strikes * 200})
-                </button>
-              </div>
+              <button
+                type="button"
+                disabled={isBusy}
+                onClick={() => setHandledWinEventId(latestWinEvent?.id)}
+                className="mt-6 w-full rounded-2xl bg-rose-600 py-3 text-sm font-bold text-white hover:bg-rose-500 transition disabled:opacity-60"
+              >
+                حسنًا — للهجوم!
+              </button>
             </motion.div>
           </motion.div>
         )}
@@ -890,168 +955,99 @@ export function TeamCombatDashboard({
       )}
 
       <main className="max-w-[85rem] mx-auto px-4 mt-6 space-y-6">
-        {/* ── ROW 1: Questions board (right) + Sidebar (left) ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* RIGHT col: score card + active question + questions board */}
-          <div className="lg:col-span-2 space-y-5">
-            {/* My team score card */}
-            <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="rounded-xl bg-gradient-to-tr from-cyan-500 to-sky-600 p-2 text-white">
-                    <Shield className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h2 className="font-bold text-slate-950">
-                      {activeTeam.name}
-                    </h2>
-                    <p className="text-[10px] text-slate-400">نتيجتك</p>
-                  </div>
-                </div>
-                <div className="text-left">
-                  <p className="text-[10px] text-slate-400">
-                    الخصم: {opponentTeam.name}
-                  </p>
-                  <p className="text-sm font-bold text-slate-600">
-                    {opponentTeam.score} نقطة
-                  </p>
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div className="rounded-2xl bg-gradient-to-b from-cyan-50 to-white border border-cyan-200 p-3 text-center">
-                  <p className="text-2xl font-bold text-slate-950">
-                    {activeTeam.score}
-                  </p>
-                  <p className="text-[10px] text-slate-500">النتيجة</p>
-                </div>
-                <div className="rounded-2xl bg-slate-50 border border-slate-200 p-3 text-center">
-                  <p className="text-2xl font-bold text-slate-950">
-                    {activeTeam.available_strikes}
-                  </p>
-                  <p className="text-[10px] text-slate-500">ضرباتي</p>
-                </div>
-                <div className="rounded-2xl bg-slate-50 border border-slate-200 p-3 text-center">
-                  <p className="text-2xl font-bold text-slate-950">
-                    {activeTeam.points}
-                  </p>
-                  <p className="text-[10px] text-slate-500">الرصيد</p>
-                </div>
-              </div>
-            </div>
+        {/* ── Layout: Active question/alerts (top) + Two-column maps + Power-ups ── */}
 
-            {room.status === "finished" && (
-              <FinishedCelebration
-                room={room}
-                teams={[activeTeam, opponentTeam]}
-                activeTeam={activeTeam}
-                opponentTeam={opponentTeam}
-                onExit={onExit}
-              />
-            )}
+        {room.status === "finished" && (
+          <FinishedCelebration
+            room={room}
+            teams={[activeTeam, opponentTeam]}
+            activeTeam={activeTeam}
+            opponentTeam={opponentTeam}
+            onExit={onExit}
+          />
+        )}
 
-            {holeActive && (
-              <div className="rounded-2xl border border-red-400 bg-red-900 px-5 py-3 text-center text-sm font-bold text-white animate-pulse">
-                تحذير: الحفرة نشطة — اختر سؤالك الآن
-              </div>
-            )}
+        {holeActive && (
+          <div className="rounded-2xl border border-red-400 bg-red-900 px-5 py-3 text-center text-sm font-bold text-white animate-pulse">
+            تحذير: الحفرة نشطة — اختر سؤالك الآن
+          </div>
+        )}
 
-            {lifelineActive && (
-              <CircularTimer
-                seconds={lifelineSeconds}
-                label="اتصال بصديق جارٍ الآن"
-                onDismiss={onDismissLifeline}
-              />
-            )}
+        {lifelineActive && (
+          <CircularTimer
+            seconds={lifelineSeconds}
+            label="اتصال بصديق جارٍ الآن"
+            onDismiss={onDismissLifeline}
+          />
+        )}
 
-            {/* Active question slides in above the board */}
-            <AnimatePresence mode="wait">
-              {activeQuestion && (
-                <motion.div
-                  key={activeQuestion.id}
-                  initial={{ opacity: 0, y: -16, scale: 0.97 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -16, scale: 0.97 }}
-                  transition={{ duration: 0.28, ease: "easeOut" }}
-                  className="rounded-3xl border-2 border-cyan-300 bg-white p-6 shadow-md"
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="rounded-full bg-cyan-100 px-3 py-1 text-xs font-bold text-cyan-700">
-                      {activeQuestion.category_name}
-                    </span>
-                    <span className="text-xs font-bold text-slate-400">
-                      {activeQuestion.points} نقطة
-                    </span>
-                  </div>
-                  <h2 className="text-lg font-bold text-slate-950 leading-relaxed">
-                    {activeQuestion.question_text}
-                  </h2>
-                  <div className="mt-4">
-                    <CircularTimer
-                      seconds={questionSeconds}
-                      label="مؤقت السؤال"
-                    />
-                  </div>
-                  {doubleChanceActive && (
-                    <div className="relative mt-4 overflow-hidden rounded-2xl border-2 border-amber-400 bg-amber-50 px-5 py-3">
-                      <motion.div
-                        aria-hidden="true"
-                        className="absolute inset-y-0 w-24 bg-white/50 blur-md"
-                        initial={{ right: "-35%" }}
-                        animate={{ right: ["-35%", "115%"] }}
-                        transition={{
-                          duration: 1.7,
-                          repeat: Infinity,
-                          ease: "easeInOut",
-                        }}
-                      />
-                      <span className="relative z-10 text-sm font-bold text-amber-800">
-                        لديك فرصتان للإجابة — أخبر الحكم
-                      </span>
-                    </div>
-                  )}
-                  <p className="mt-3 text-xs text-slate-400">
-                    أبلغ الحكم بإجابتك — الإجابة الصحيحة لا تظهر هنا
-                  </p>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {activeTeam.available_strikes > 0 && room.status === "playing" && (
-              <div className="rounded-2xl border border-rose-300 bg-rose-50 px-5 py-3 flex items-center gap-3">
-                <Target className="h-5 w-5 text-rose-600 shrink-0" />
-                <p className="font-bold text-rose-900 text-sm">
-                  لديك {activeTeam.available_strikes} ضربة — اختر مربعًا في
-                  خريطة {opponentTeam.name} أدناه
-                </p>
-              </div>
-            )}
-
-            {/* Questions board */}
-            <section className="rounded-3xl  border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="font-bold text-slate-950">لوحة الأسئلة</h2>
-                <span className="text-xs font-bold text-slate-400">
-                  {canChooseQuestion
-                    ? "دورك في اختيار السؤال"
-                    : "انتظر دورك أو نفّذ ضرباتك"}
+        {/* Active question */}
+        <AnimatePresence mode="wait">
+          {activeQuestion && (
+            <motion.div
+              key={activeQuestion.id}
+              initial={{ opacity: 0, y: -16, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -16, scale: 0.97 }}
+              transition={{ duration: 0.28, ease: "easeOut" }}
+              className="rounded-3xl border-2 border-cyan-300 bg-white p-6 shadow-md"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <span className="rounded-full bg-cyan-100 px-3 py-1 text-xs font-bold text-cyan-700">
+                  {activeQuestion.category_name}
+                </span>
+                <span className="rounded-xl bg-slate-900 px-3 py-1 text-xs font-bold text-white">
+                  {DIFFICULTY_STRIKE_LABEL[activeQuestion.difficulty] || activeQuestion.difficulty}
                 </span>
               </div>
-              <QuestionGrid
-                questions={questions}
-                activeQuestionId={room.active_question_id}
-                disabled={!canChooseQuestion}
-                onSelect={onSelectQuestion}
-              />
-            </section>
+              <h2 className="text-lg font-bold text-slate-950 leading-relaxed">
+                {activeQuestion.question_text}
+              </h2>
+              <MediaPlayer mediaUrl={activeQuestion.media_url} mediaType={activeQuestion.media_type} />
+              <div className="mt-4">
+                <CircularTimer seconds={questionSeconds} label="مؤقت السؤال" />
+              </div>
+              {doubleChanceActive && (
+                <div className="relative mt-4 overflow-hidden rounded-2xl border-2 border-amber-400 bg-amber-50 px-5 py-3">
+                  <motion.div
+                    aria-hidden="true"
+                    className="absolute inset-y-0 w-24 bg-white/50 blur-md"
+                    initial={{ right: "-35%" }}
+                    animate={{ right: ["-35%", "115%"] }}
+                    transition={{ duration: 1.7, repeat: Infinity, ease: "easeInOut" }}
+                  />
+                  <span className="relative z-10 text-sm font-bold text-amber-800">
+                    لديك فرصتان للإجابة — أخبر الحكم
+                  </span>
+                </div>
+              )}
+              <p className="mt-3 text-xs text-slate-400">
+                أبلغ الحكم بإجابتك — الإجابة الصحيحة لا تظهر هنا
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-            <section className="lg:col-span-1">
-              <EventFeed events={events} />
-            </section>
+        {activeTeam.available_strikes > 0 && room.status === "playing" && (
+          <div className="rounded-2xl border border-rose-300 bg-rose-50 px-5 py-3 flex items-center gap-3">
+            <Target className="h-5 w-5 text-rose-600 shrink-0" />
+            <p className="font-bold text-rose-900 text-sm">
+              لديك {activeTeam.available_strikes} ضربة — اختر مربعًا في خريطة{" "}
+              {opponentTeam.name} أدناه
+            </p>
+          </div>
+        )}
+
+        {/* Maps row */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Enemy map + own map stacked on left */}
+          <div className="lg:col-span-2 space-y-5">
+
           </div>
 
-          {/* LEFT sidebar: opponent map + tactical tools */}
+          {/* Power-ups sidebar */}
           <aside className="space-y-5">
-            {/* Opponent map — fills the sidebar column */}
+            {/* Opponent map */}
             <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <div>
@@ -1208,23 +1204,30 @@ export function TeamCombatDashboard({
                 })}
               </div>
             </section>
-            {/* ── ROW 2: Army state + Events ── */}
+            {/* Own army map */}
             <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-              <h2 className="font-bold text-slate-950">حالة جيشك</h2>
-              <div className="mt-3 grid grid-cols-6 gap-1">
-                {(activeTeam.board || Array(36).fill(null)).map(
-                  (cell, index) => (
+              <h2 className="font-bold text-slate-950 mb-1">خريطتك</h2>
+              <p className="text-[10px] text-slate-500 mb-3">وحداتك الحية</p>
+              <div className="grid grid-cols-6 gap-1">
+                {(activeTeam.board || Array(36).fill(null)).map((cell, index) => {
+                  const UNIT_EMOJI = {
+                    infantry: "👥", tank: "🚜", aircraft: "✈️",
+                    submarine: "⛵", mine: "💥",
+                  };
+                  return (
                     <div
                       key={index}
-                      className={`aspect-square rounded-md border ${
+                      className={`aspect-square rounded-md border flex items-center justify-center text-[11px] ${
                         cell
-                          ? "border-cyan-400 bg-cyan-100"
+                          ? "border-cyan-400 bg-cyan-50"
                           : "border-slate-200 bg-slate-50"
                       }`}
-                      title={cell || "فارغ"}
-                    />
-                  ),
-                )}
+                      title={cell || "فارغ أو مدمر"}
+                    >
+                      {cell ? UNIT_EMOJI[cell] || "•" : ""}
+                    </div>
+                  );
+                })}
               </div>
               {activeTeam.shield_active && (
                 <p className="mt-3 flex items-center gap-2 text-xs font-bold text-cyan-700">
