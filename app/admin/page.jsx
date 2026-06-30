@@ -378,7 +378,10 @@ export default function AdminPage() {
   const [catModal, setCatModal] = useState(null); // null | {} | category object
   const [qModal, setQModal] = useState(null);
 
-  const notify = (msg, type = "success") => setToast({ msg, type });
+  const notify = useCallback(
+    (msg, type = "success") => setToast({ msg, type }),
+    [],
+  );
   const closeToast = useCallback(() => setToast({ msg: "", type: "success" }), []);
 
   // ── Data loaders
@@ -389,7 +392,7 @@ export default function AdminPage() {
       .order("sort_order");
     if (error) { notify(error.message, "error"); return; }
     setCategories(data || []);
-  }, []);
+  }, [notify]);
 
   const loadQuestions = useCallback(async () => {
     const { data, error } = await supabase
@@ -399,12 +402,14 @@ export default function AdminPage() {
       .order("position");
     if (error) { notify(error.message, "error"); return; }
     setQuestions(data || []);
-  }, []);
+  }, [notify]);
 
   useEffect(() => {
-    Promise.all([loadCategories(), loadQuestions()]).finally(() =>
-      setLoading(false),
-    );
+    let active = true;
+    Promise.all([loadCategories(), loadQuestions()]).finally(() => {
+      if (active) setLoading(false);
+    });
+    return () => { active = false; };
   }, [loadCategories, loadQuestions]);
 
   // ── Categories CRUD
