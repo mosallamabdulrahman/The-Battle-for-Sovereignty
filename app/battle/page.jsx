@@ -83,6 +83,7 @@ export default function BattlePage() {
   const [teamAccessIssue, setTeamAccessIssue] = useState(null);
   const [activeAnswer, setActiveAnswer] = useState("");
   const [isActionBusy, setIsActionBusy] = useState(false);
+  const [isAutoFilling, setIsAutoFilling] = useState(false);
   const [latestCombatEvent, setLatestCombatEvent] = useState(null);
   const [radarCells, setRadarCells] = useState([]);
   const [radarMode, setRadarMode] = useState(false);
@@ -109,20 +110,20 @@ export default function BattlePage() {
 
   // Equipment pricing & icons list (mines are free — hidden danger)
   const unitSpecs = {
-    infantry:  { name: "جندي مشاة",    cost: 10,  emoji: "👥" },
-    tank:      { name: "مدرعة دبابة",   cost: 50,  emoji: "🚜" },
-    aircraft:  { name: "طائرة قتالية",  cost: 100, emoji: "✈️" },
-    submarine: { name: "غواصة بحرية",   cost: 200, emoji: "⛵" },
-    mine:      { name: "لغم مغناطيسي",  cost: 0,   emoji: "💥" },
+    infantry: { name: "جندي مشاة", cost: 10, emoji: "👥" },
+    tank: { name: "مدرعة دبابة", cost: 50, emoji: "🚜" },
+    aircraft: { name: "طائرة قتالية", cost: 100, emoji: "✈️" },
+    submarine: { name: "غواصة بحرية", cost: 200, emoji: "⛵" },
+    mine: { name: "لغم مغناطيسي", cost: 0, emoji: "💥" },
   };
 
   // Limits per type — totals to exactly 33 (board must have 33 occupied, 3 empty)
   const unitLimits = {
-    infantry:  25,
-    tank:       3,
-    aircraft:   2,
-    submarine:  1,
-    mine:       2,
+    infantry: 25,
+    tank: 3,
+    aircraft: 2,
+    submarine: 1,
+    mine: 2,
   };
 
   const getAudioContext = useCallback(() => {
@@ -231,12 +232,7 @@ export default function BattlePage() {
     const previousQuestionId = lastActiveQuestionIdRef.current;
 
     if (currentQuestionId && currentQuestionId !== previousQuestionId) {
-      const startMs = room?.updated_at
-        ? new Date(room.updated_at).getTime()
-        : Date.now();
-      questionStartedAtRef.current = startMs;
-      const elapsed = Math.floor((Date.now() - startMs) / 1000);
-      setQuestionSeconds(Math.max(0, 60 - elapsed));
+      setQuestionSeconds(60); // fallback — will be overridden by question_started_at sync below
     }
 
     if (previousQuestionId && !currentQuestionId) {
@@ -249,6 +245,15 @@ export default function BattlePage() {
 
     lastActiveQuestionIdRef.current = currentQuestionId;
   }, [room?.active_question_id, holeActive]);
+
+  // Sync all clients to the same countdown using server timestamp
+  useEffect(() => {
+    if (!room?.active_question_id || !room?.question_started_at) return;
+    const elapsed =
+      (Date.now() - new Date(room.question_started_at).getTime()) / 1000;
+    const remaining = Math.max(0, Math.floor(60 - elapsed));
+    setQuestionSeconds(remaining);
+  }, [room?.active_question_id, room?.question_started_at]);
 
   useEffect(() => {
     if (!room?.active_question_id || room.status !== "playing")
@@ -600,24 +605,6 @@ export default function BattlePage() {
           );
           if (payload.new.event_type === "strike") {
             setLatestCombatEvent(payload.new);
-            if (teamIndex && payload.new.target_team_index === teamIndex) {
-              supabase
-                .rpc("get_team_board", {
-                  p_room_id: roomId,
-                  p_team_index: teamIndex,
-                })
-                .then(({ data }) => {
-                  if (data) {
-                    setTeams((previous) =>
-                      previous.map((team) =>
-                        team.team_index === teamIndex
-                          ? { ...team, board: data }
-                          : team,
-                      ),
-                    );
-                  }
-                });
-            }
           }
         },
       )
@@ -667,11 +654,11 @@ export default function BattlePage() {
 
     // Read from pendingBoardRef first to avoid stale state on rapid clicks
     const pendingState = pendingBoardRef.current;
-    const currentBoard = pendingState
-      ? [...pendingState.board]
-      : Array.isArray(activeTeam.board)
-        ? [...activeTeam.board]
-        : Array(36).fill(null);
+    const rawBoard = pendingState
+      ? pendingState.board
+      : (activeTeam.board || []);
+    // Always ensure board is exactly 36 elements to match the 6×6 grid
+    const currentBoard = Array.from({ length: 36 }, (_, i) => rawBoard[i] ?? null);
     let currentPoints = pendingState ? pendingState.points : activeTeam.points;
 
     // A. Deletion Refund behavior if already populated
@@ -747,6 +734,57 @@ export default function BattlePage() {
     }, 350);
   };
 
+  // 6b. Random auto-fill: place all 33 units on random cells instantly
+  const handleAutoFill = async () => {
+    if (!teamIndex || isAutoFilling) return;
+    const activeTeam = teams.find((t) => t.team_index === teamIndex);
+    if (!activeTeam || activeTeam.is_ready) return;
+
+    const unitsToPlace = [
+      ...Array(25).fill("infantry"),
+      ...Array(3).fill("tank"),
+      ...Array(2).fill("aircraft"),
+      ...Array(1).fill("submarine"),
+      ...Array(2).fill("mine"),
+    ];
+
+    // Fisher-Yates shuffle on 36 positions, pick first 33
+    const positions = Array.from({ length: 36 }, (_, i) => i);
+    for (let i = positions.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [positions[i], positions[j]] = [positions[j], positions[i]];
+    }
+    const chosen = positions.slice(0, 33);
+
+    const newBoard = Array(36).fill(null);
+    chosen.forEach((pos, idx) => {
+      newBoard[pos] = unitsToPlace[idx];
+    });
+
+    // Optimistic UI update
+    setTeams((prev) =>
+      prev.map((t) =>
+        t.team_index === teamIndex ? { ...t, board: newBoard } : t,
+      ),
+    );
+
+    // Save to DB — block ready button until confirmed
+    setIsAutoFilling(true);
+    const { error } = await supabase.rpc("update_team_deployment", {
+      p_room_id: roomId,
+      p_team_index: teamIndex,
+      p_board: newBoard,
+      p_points: activeTeam.points ?? 0,
+    });
+    setIsAutoFilling(false);
+
+    if (error) {
+      showAlert(error.message, "error");
+    } else {
+      pendingBoardRef.current = null;
+    }
+  };
+
   // 7. Flag readiness to lock board deployment
   const handleSetTeamReady = async () => {
     if (!teamIndex) return;
@@ -806,6 +844,7 @@ export default function BattlePage() {
         p_team_index: role === "judge" ? null : teamIndex,
       });
       if (error) throw error;
+      // question_started_at is set automatically by DB trigger on game_rooms
     });
 
   const finalizeRoomIfComplete = async () => {
@@ -851,18 +890,20 @@ export default function BattlePage() {
       setActiveAnswer("");
     });
 
-  // Referee manually grants one extra strike to a specific team
-  const handleGrantExtraStrike = (grantTeamIndex) =>
+  // Referee manually grants extra strikes to a specific team (via SECURITY DEFINER RPC)
+  const handleGrantExtraStrike = (grantTeamIndex, count = 1) =>
     runAction(async () => {
-      const team = teams.find((t) => t.team_index === grantTeamIndex);
-      if (!team) return;
-      const { error } = await supabase
-        .from("teams")
-        .update({ available_strikes: team.available_strikes + 1 })
-        .eq("id", team.id);
+      const { error } = await supabase.rpc("grant_extra_strikes", {
+        p_room_id: roomId,
+        p_team_index: grantTeamIndex,
+        p_count: count,
+      });
       if (error) throw error;
+      const team = teams.find((t) => t.team_index === grantTeamIndex);
+      const label =
+        count === 1 ? "ضربة واحدة" : count === 2 ? "ضربتين" : `${count} ضربات`;
+      showAlert(`✓ تم منح ${label} لـ ${team?.name || "الفريق"}`, "success");
     });
-
 
   // Soft exit: mark team as disconnected without destroying the room
   const handleSoftExit = async () => {
@@ -903,9 +944,7 @@ export default function BattlePage() {
         (toolId === "shield" || toolId === "extra_strike") &&
         room?.active_question_id
       ) {
-        throw new Error(
-          "يجب تفعيل هذه الوسيلة قبل كشف السؤال.",
-        );
+        throw new Error("يجب تفعيل هذه الوسيلة قبل كشف السؤال.");
       }
 
       if (
@@ -997,8 +1036,8 @@ export default function BattlePage() {
             بوابة المصادقة المطلوبة
           </h2>
           <p className="text-xs text-slate-500 mt-2 leading-relaxed font-semibold">
-            عذراً، يجب الدخول أولاً قبل تولي تمركز الجيش أو إدارة الغرفة
-            الحربية المشتركة. الدخول سريع بدون كلمة مرور!
+            عذراً، يجب الدخول أولاً قبل تولي تمركز الجيش أو إدارة الغرفة الحربية
+            المشتركة. الدخول سريع بدون كلمة مرور!
           </p>
           <div className="mt-8 flex flex-col gap-3">
             <Link
@@ -1670,9 +1709,26 @@ export default function BattlePage() {
                     انقر على المربعات لتثبيت أو إخلاء الأسلحة
                   </p>
                 </div>
-                <div className="text-xs bg-slate-100 text-slate-600 font-bold px-3 py-1.5 rounded-lg">
-                  المربعات المشغولة:{" "}
-                  {(activeTeam.board || []).filter(Boolean).length} / ٣٦
+                <div className="flex items-center gap-2">
+                  <div className="text-xs bg-slate-100 text-slate-600 font-bold px-3 py-1.5 rounded-lg">
+                    {(activeTeam.board || []).filter(Boolean).length} / 33
+                  </div>
+                  {!activeTeam.is_ready && (
+                    <motion.button
+                      type="button"
+                      whileTap={!isAutoFilling ? { scale: 0.93 } : {}}
+                      onClick={handleAutoFill}
+                      disabled={isAutoFilling}
+                      className={`text-xs text-white font-bold px-4 py-1.5 rounded-lg shadow-sm transition-all flex items-center gap-1.5 ${
+                        isAutoFilling
+                          ? "bg-slate-400 cursor-not-allowed opacity-70"
+                          : "bg-gradient-to-r from-cyan-500 to-sky-500 hover:from-cyan-600 hover:to-sky-600"
+                      }`}
+                    >
+                      <RefreshCw className={`h-3 w-3 ${isAutoFilling ? "animate-spin" : ""}`} />
+                      {isAutoFilling ? "جارٍ الحفظ..." : "تعبئة عشوائية"}
+                    </motion.button>
+                  )}
                 </div>
               </div>
 
@@ -1854,12 +1910,24 @@ export default function BattlePage() {
                     (2). كل إلغاء يعيد النقاط.
                   </div>
                   <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={handleSetTeamReady}
-                    className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-sans font-bold text-sm py-4 rounded-2xl shadow-lg hover:shadow-emerald-500/25 cursor-pointer"
+                    whileHover={!isAutoFilling ? { scale: 1.02 } : {}}
+                    whileTap={!isAutoFilling ? { scale: 0.98 } : {}}
+                    onClick={isAutoFilling ? undefined : handleSetTeamReady}
+                    disabled={isAutoFilling}
+                    className={`w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-sans font-bold text-sm py-4 rounded-2xl shadow-lg transition-opacity ${
+                      isAutoFilling
+                        ? "opacity-50 cursor-not-allowed"
+                        : "hover:shadow-emerald-500/25 cursor-pointer"
+                    }`}
                   >
-                    تم ترحيل وتحصين بناء الجيش 🛡️
+                    {isAutoFilling ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <RefreshCw className="h-4 w-4 animate-spin" />
+                        جارٍ حفظ التعبئة...
+                      </span>
+                    ) : (
+                      "تم ترحيل وتحصين بناء الجيش 🛡️"
+                    )}
                   </motion.button>
                 </div>
               )}
