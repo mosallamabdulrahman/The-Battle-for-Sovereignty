@@ -14,8 +14,13 @@ import {
   Trash2,
   Upload,
   X,
+  Search,
+  Globe,
+  HelpCircle,
+  LayoutDashboard,
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
+import GameLogo from "../../components/GameLogo";
 
 // ─── helpers ───────────────────────────────────────────────────
 const DIFFICULTY_AR = { easy: "سهل", medium: "متوسط", hard: "صعب" };
@@ -57,7 +62,17 @@ function MediaUpload({ value, type, onChange }) {
     setUploading(true);
     try {
       const ext = file.name.split(".").pop().toLowerCase();
-      const allowed = ["jpg", "jpeg", "png", "gif", "webp", "mp3", "ogg", "wav", "m4a"];
+      const allowed = [
+        "jpg",
+        "jpeg",
+        "png",
+        "gif",
+        "webp",
+        "mp3",
+        "ogg",
+        "wav",
+        "m4a",
+      ];
       if (!allowed.includes(ext)) throw new Error("نوع الملف غير مدعوم.");
 
       const path = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
@@ -70,7 +85,9 @@ function MediaUpload({ value, type, onChange }) {
         data: { publicUrl },
       } = supabase.storage.from("question-media").getPublicUrl(data.path);
 
-      const mediaType = ["mp3", "ogg", "wav", "m4a"].includes(ext) ? "audio" : "image";
+      const mediaType = ["mp3", "ogg", "wav", "m4a"].includes(ext)
+        ? "audio"
+        : "image";
       onChange(publicUrl, mediaType);
     } catch (err) {
       setError(err.message || "فشل الرفع.");
@@ -88,7 +105,11 @@ function MediaUpload({ value, type, onChange }) {
           disabled={uploading}
           className="flex items-center gap-2 rounded-xl bg-cyan-600 px-4 py-2 text-sm font-bold text-white hover:bg-cyan-700 disabled:opacity-60"
         >
-          {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+          {uploading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Upload className="h-4 w-4" />
+          )}
           {uploading ? "جارٍ الرفع..." : "رفع ملف"}
         </button>
         {value && (
@@ -111,7 +132,11 @@ function MediaUpload({ value, type, onChange }) {
       />
       {error && <p className="text-[11px] text-rose-600">{error}</p>}
       {value && type === "image" && (
-        <img src={value} alt="preview" className="h-28 rounded-xl object-cover border border-slate-200" />
+        <img
+          src={value}
+          alt="preview"
+          className="h-28 rounded-xl object-cover border border-slate-200"
+        />
       )}
       {value && type === "audio" && (
         <audio controls src={value} className="w-full h-8" />
@@ -144,7 +169,14 @@ function MediaUpload({ value, type, onChange }) {
 // ─── Category Modal ─────────────────────────────────────────────
 function CategoryModal({ category, onSave, onClose, busy }) {
   const [form, setForm] = useState(
-    category || { name: "", description: "", emoji: "📌", image_url: "", sort_order: 0, is_active: true },
+    category || {
+      name: "",
+      description: "",
+      emoji: "📌",
+      image_url: "",
+      sort_order: 0,
+      is_active: true,
+    },
   );
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -152,13 +184,19 @@ function CategoryModal({ category, onSave, onClose, busy }) {
     <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/60 p-4">
       <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="font-bold text-slate-900">{category ? "تعديل تصنيف" : "تصنيف جديد"}</h2>
-          <button type="button" onClick={onClose}><X className="h-5 w-5 text-slate-400" /></button>
+          <h2 className="font-bold text-slate-900">
+            {category ? "تعديل تصنيف" : "تصنيف جديد"}
+          </h2>
+          <button type="button" onClick={onClose}>
+            <X className="h-5 w-5 text-slate-400" />
+          </button>
         </div>
 
         <div className="grid grid-cols-4 gap-3">
           <div>
-            <label className="text-[11px] font-bold text-slate-500">إيموجي</label>
+            <label className="text-[11px] font-bold text-slate-500">
+              إيموجي
+            </label>
             <input
               value={form.emoji}
               onChange={(e) => set("emoji", e.target.value)}
@@ -166,7 +204,9 @@ function CategoryModal({ category, onSave, onClose, busy }) {
             />
           </div>
           <div className="col-span-3">
-            <label className="text-[11px] font-bold text-slate-500">الاسم *</label>
+            <label className="text-[11px] font-bold text-slate-500">
+              الاسم *
+            </label>
             <input
               value={form.name}
               onChange={(e) => set("name", e.target.value)}
@@ -177,7 +217,9 @@ function CategoryModal({ category, onSave, onClose, busy }) {
         </div>
 
         <div>
-          <label className="text-[11px] font-bold text-slate-500">وصف (اختياري)</label>
+          <label className="text-[11px] font-bold text-slate-500">
+            وصف (اختياري)
+          </label>
           <input
             value={form.description || ""}
             onChange={(e) => set("description", e.target.value)}
@@ -188,7 +230,9 @@ function CategoryModal({ category, onSave, onClose, busy }) {
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-[11px] font-bold text-slate-500">صورة الغلاف (URL)</label>
+            <label className="text-[11px] font-bold text-slate-500">
+              صورة الغلاف (URL)
+            </label>
             <input
               value={form.image_url || ""}
               onChange={(e) => set("image_url", e.target.value)}
@@ -197,7 +241,9 @@ function CategoryModal({ category, onSave, onClose, busy }) {
             />
           </div>
           <div>
-            <label className="text-[11px] font-bold text-slate-500">الترتيب</label>
+            <label className="text-[11px] font-bold text-slate-500">
+              الترتيب
+            </label>
             <input
               type="number"
               value={form.sort_order}
@@ -214,7 +260,9 @@ function CategoryModal({ category, onSave, onClose, busy }) {
             onChange={(e) => set("is_active", e.target.checked)}
             className="rounded"
           />
-          <span className="text-sm font-bold text-slate-700">مفعّل (يظهر في الإعداد)</span>
+          <span className="text-sm font-bold text-slate-700">
+            مفعّل (يظهر في الإعداد)
+          </span>
         </label>
 
         <div className="flex gap-2 pt-2">
@@ -224,10 +272,18 @@ function CategoryModal({ category, onSave, onClose, busy }) {
             disabled={busy || !form.name.trim()}
             className="flex-1 flex items-center justify-center gap-2 rounded-2xl bg-cyan-600 py-3 text-sm font-bold text-white disabled:opacity-60 hover:bg-cyan-700"
           >
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            {busy ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="h-4 w-4" />
+            )}
             حفظ
           </button>
-          <button type="button" onClick={onClose} className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50"
+          >
             إلغاء
           </button>
         </div>
@@ -256,25 +312,35 @@ function QuestionModal({ question, categories, onSave, onClose, busy }) {
     <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/60 p-4 overflow-y-auto">
       <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl space-y-4 my-4">
         <div className="flex items-center justify-between">
-          <h2 className="font-bold text-slate-900">{question ? "تعديل سؤال" : "سؤال جديد"}</h2>
-          <button type="button" onClick={onClose}><X className="h-5 w-5 text-slate-400" /></button>
+          <h2 className="font-bold text-slate-900">
+            {question ? "تعديل سؤال" : "سؤال جديد"}
+          </h2>
+          <button type="button" onClick={onClose}>
+            <X className="h-5 w-5 text-slate-400" />
+          </button>
         </div>
 
         <div>
-          <label className="text-[11px] font-bold text-slate-500">التصنيف *</label>
+          <label className="text-[11px] font-bold text-slate-500">
+            التصنيف *
+          </label>
           <select
             value={form.category_id}
             onChange={(e) => set("category_id", e.target.value)}
             className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm bg-white"
           >
             {categories.map((c) => (
-              <option key={c.id} value={c.id}>{c.emoji} {c.name}</option>
+              <option key={c.id} value={c.id}>
+                {c.emoji} {c.name}
+              </option>
             ))}
           </select>
         </div>
 
         <div>
-          <label className="text-[11px] font-bold text-slate-500">نص السؤال *</label>
+          <label className="text-[11px] font-bold text-slate-500">
+            نص السؤال *
+          </label>
           <textarea
             value={form.question_text}
             onChange={(e) => set("question_text", e.target.value)}
@@ -285,7 +351,9 @@ function QuestionModal({ question, categories, onSave, onClose, busy }) {
         </div>
 
         <div>
-          <label className="text-[11px] font-bold text-slate-500">الإجابة الصحيحة *</label>
+          <label className="text-[11px] font-bold text-slate-500">
+            الإجابة الصحيحة *
+          </label>
           <input
             value={form.answer_text}
             onChange={(e) => set("answer_text", e.target.value)}
@@ -296,13 +364,18 @@ function QuestionModal({ question, categories, onSave, onClose, busy }) {
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-[11px] font-bold text-slate-500">الصعوبة</label>
+            <label className="text-[11px] font-bold text-slate-500">
+              الصعوبة
+            </label>
             <select
               value={form.difficulty}
               onChange={(e) => {
                 const d = e.target.value;
-                set("difficulty", d);
-                set("strikes", DIFFICULTY_STRIKES[d]);
+                setForm((f) => ({
+                  ...f,
+                  difficulty: d,
+                  strikes: DIFFICULTY_STRIKES[d],
+                }));
               }}
               className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm bg-white"
             >
@@ -312,7 +385,9 @@ function QuestionModal({ question, categories, onSave, onClose, busy }) {
             </select>
           </div>
           <div>
-            <label className="text-[11px] font-bold text-slate-500">الموضع (1-6)</label>
+            <label className="text-[11px] font-bold text-slate-500">
+              الموضع (1-6)
+            </label>
             <input
               type="number"
               min={1}
@@ -332,7 +407,9 @@ function QuestionModal({ question, categories, onSave, onClose, busy }) {
             <MediaUpload
               value={form.media_url || ""}
               type={form.media_type}
-              onChange={(url, type) => { set("media_url", url); set("media_type", type); }}
+              onChange={(url, type) => {
+                setForm((f) => ({ ...f, media_url: url, media_type: type }));
+              }}
             />
           </div>
         </div>
@@ -351,13 +428,23 @@ function QuestionModal({ question, categories, onSave, onClose, busy }) {
           <button
             type="button"
             onClick={() => onSave(form)}
-            disabled={busy || !form.question_text.trim() || !form.answer_text.trim()}
+            disabled={
+              busy || !form.question_text.trim() || !form.answer_text.trim()
+            }
             className="flex-1 flex items-center justify-center gap-2 rounded-2xl bg-cyan-600 py-3 text-sm font-bold text-white disabled:opacity-60 hover:bg-cyan-700"
           >
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            {busy ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="h-4 w-4" />
+            )}
             حفظ
           </button>
-          <button type="button" onClick={onClose} className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50"
+          >
             إلغاء
           </button>
         </div>
@@ -368,7 +455,8 @@ function QuestionModal({ question, categories, onSave, onClose, busy }) {
 
 // ─── Main Admin Page ────────────────────────────────────────────
 export default function AdminPage() {
-  const [tab, setTab] = useState("categories"); // "categories" | "questions"
+  const [tab, setTab] = useState("questions"); // "questions" | "categories"
+  const [searchQuery, setSearchQuery] = useState("");
   const [categories, setCategories] = useState([]);
   const [questions, setQuestions] = useState([]);
   const [filterCategory, setFilterCategory] = useState("");
@@ -382,7 +470,10 @@ export default function AdminPage() {
     (msg, type = "success") => setToast({ msg, type }),
     [],
   );
-  const closeToast = useCallback(() => setToast({ msg: "", type: "success" }), []);
+  const closeToast = useCallback(
+    () => setToast({ msg: "", type: "success" }),
+    [],
+  );
 
   // ── Data loaders
   const loadCategories = useCallback(async () => {
@@ -390,7 +481,10 @@ export default function AdminPage() {
       .from("question_categories")
       .select("*")
       .order("sort_order");
-    if (error) { notify(error.message, "error"); return; }
+    if (error) {
+      notify(error.message, "error");
+      return;
+    }
     setCategories(data || []);
   }, [notify]);
 
@@ -400,7 +494,10 @@ export default function AdminPage() {
       .select("*")
       .order("category_id")
       .order("position");
-    if (error) { notify(error.message, "error"); return; }
+    if (error) {
+      notify(error.message, "error");
+      return;
+    }
     setQuestions(data || []);
   }, [notify]);
 
@@ -409,30 +506,26 @@ export default function AdminPage() {
     Promise.all([loadCategories(), loadQuestions()]).finally(() => {
       if (active) setLoading(false);
     });
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [loadCategories, loadQuestions]);
 
   // ── Categories CRUD
   const saveCategory = async (form) => {
     setBusy(true);
     try {
-      const payload = {
-        name: form.name.trim(),
-        description: form.description?.trim() || null,
-        emoji: form.emoji || "📌",
-        image_url: form.image_url?.trim() || null,
-        sort_order: form.sort_order || 0,
-        is_active: form.is_active,
-      };
-      if (form.id) {
-        const { error } = await supabase.from("question_categories").update(payload).eq("id", form.id);
-        if (error) throw error;
-        notify("تم تحديث التصنيف.");
-      } else {
-        const { error } = await supabase.from("question_categories").insert(payload);
-        if (error) throw error;
-        notify("تم إضافة التصنيف.");
-      }
+      const { error } = await supabase.rpc("admin_save_category", {
+        p_id: form.id || null,
+        p_name: form.name.trim(),
+        p_description: form.description?.trim() || null,
+        p_emoji: form.emoji || "📌",
+        p_image_url: form.image_url?.trim() || null,
+        p_sort_order: form.sort_order || 0,
+        p_is_active: form.is_active,
+      });
+      if (error) throw error;
+      notify(form.id ? "تم تحديث التصنيف." : "تم إضافة التصنيف.");
       await loadCategories();
       setCatModal(null);
     } catch (err) {
@@ -446,8 +539,9 @@ export default function AdminPage() {
     if (!window.confirm("حذف هذا التصنيف وكل أسئلته؟")) return;
     setBusy(true);
     try {
-      await supabase.from("question_bank").delete().eq("category_id", id);
-      const { error } = await supabase.from("question_categories").delete().eq("id", id);
+      const { error } = await supabase.rpc("admin_delete_category", {
+        p_id: id,
+      });
       if (error) throw error;
       notify("تم الحذف.");
       await Promise.all([loadCategories(), loadQuestions()]);
@@ -462,26 +556,22 @@ export default function AdminPage() {
   const saveQuestion = async (form) => {
     setBusy(true);
     try {
-      const payload = {
-        category_id:   form.category_id,
-        question_text: form.question_text.trim(),
-        answer_text:   form.answer_text.trim(),
-        difficulty:    form.difficulty,
-        strikes:       DIFFICULTY_STRIKES[form.difficulty],
-        position:      form.position || 1,
-        is_active:     form.is_active,
-        media_url:     form.media_url?.trim() || null,
-        media_type:    form.media_url?.trim() ? (form.media_type || "image") : null,
-      };
-      if (form.id) {
-        const { error } = await supabase.from("question_bank").update(payload).eq("id", form.id);
-        if (error) throw error;
-        notify("تم تحديث السؤال.");
-      } else {
-        const { error } = await supabase.from("question_bank").insert(payload);
-        if (error) throw error;
-        notify("تم إضافة السؤال.");
-      }
+      const { error } = await supabase.rpc("admin_save_question", {
+        p_id: form.id || null,
+        p_category_id: form.category_id,
+        p_question_text: form.question_text.trim(),
+        p_answer_text: form.answer_text.trim(),
+        p_difficulty: form.difficulty,
+        p_strikes: DIFFICULTY_STRIKES[form.difficulty],
+        p_position: form.position || 1,
+        p_is_active: form.is_active,
+        p_media_url: form.media_url?.trim() || null,
+        p_media_type: form.media_url?.trim()
+          ? form.media_type || "image"
+          : null,
+      });
+      if (error) throw error;
+      notify(form.id ? "تم تحديث السؤال." : "تم إضافة السؤال.");
       await loadQuestions();
       setQModal(null);
     } catch (err) {
@@ -495,7 +585,9 @@ export default function AdminPage() {
     if (!window.confirm("حذف هذا السؤال؟")) return;
     setBusy(true);
     try {
-      const { error } = await supabase.from("question_bank").delete().eq("id", id);
+      const { error } = await supabase.rpc("admin_delete_question", {
+        p_id: id,
+      });
       if (error) throw error;
       notify("تم حذف السؤال.");
       await loadQuestions();
@@ -506,15 +598,29 @@ export default function AdminPage() {
     }
   };
 
-  const filteredQuestions = filterCategory
-    ? questions.filter((q) => q.category_id === filterCategory)
-    : questions;
+  const filteredQuestions = questions.filter((q) => {
+    const matchesCategory = filterCategory
+      ? q.category_id === filterCategory
+      : true;
+    const matchesSearch = searchQuery
+      ? q.question_text?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        q.answer_text?.toLowerCase().includes(searchQuery.toLowerCase())
+      : true;
+    return matchesCategory && matchesSearch;
+  });
+
+  const filteredCategories = categories.filter((c) => {
+    return searchQuery
+      ? c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          c.description?.toLowerCase().includes(searchQuery.toLowerCase())
+      : true;
+  });
 
   const categoryMap = Object.fromEntries(categories.map((c) => [c.id, c]));
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="flex items-center justify-center min-h-[60vh] flex-1">
         <Loader2 className="h-8 w-8 animate-spin text-cyan-600" />
       </div>
     );
@@ -541,198 +647,531 @@ export default function AdminPage() {
         />
       )}
 
-      <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
-        {/* Tabs */}
-        <div className="flex gap-2">
-          {[
-            { key: "categories", label: "التصنيفات", icon: Tag },
-            { key: "questions",  label: "الأسئلة",   icon: Edit2 },
-          ].map(({ key, label, icon: Icon }) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setTab(key)}
-              className={`flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-bold transition ${
-                tab === key
-                  ? "bg-cyan-600 text-white shadow"
-                  : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
-              }`}
-            >
-              <Icon className="h-4 w-4" />
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {/* ── Categories Tab ── */}
-        {tab === "categories" && (
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-              <h2 className="font-bold text-slate-900">التصنيفات ({categories.length})</h2>
-              <button
-                type="button"
-                onClick={() => setCatModal({})}
-                className="flex items-center gap-2 rounded-2xl bg-cyan-600 px-4 py-2 text-sm font-bold text-white hover:bg-cyan-700"
-              >
-                <Plus className="h-4 w-4" />
-                تصنيف جديد
-              </button>
+      <div className="flex flex-1 min-h-[calc(100vh-32px)]">
+        {/* Right Sidebar (WordPress-style) */}
+        <aside className="w-56 bg-[#2c3338] text-[#f0f0f1] select-none shrink-0 flex flex-col justify-between border-l border-[#1d2327] z-30">
+          <div>
+            {/* Logo/Header */}
+            <div className="p-4 border-b border-[#1c2226] bg-[#1d2327]/60 flex items-center gap-2">
+              <GameLogo className="w-16 h-16" />
+              <span className="font-bold text-sm text-white tracking-wide">
+                لوحة التحكم
+              </span>
             </div>
-            <div className="divide-y divide-slate-100">
-              {categories.length === 0 && (
-                <p className="px-6 py-8 text-center text-slate-400 text-sm">لا توجد تصنيفات بعد.</p>
+
+            {/* Sidebar Navigation */}
+            <nav className="mt-3 space-y-0.5">
+              {[
+                { key: "dashboard", label: "الرئيسية", icon: LayoutDashboard },
+                { key: "questions", label: "الأسئلة", icon: Edit2 },
+                { key: "categories", label: "تصنيفات الأسئلة", icon: Tag },
+              ].map(({ key, label, icon: Icon }) => {
+                const isActive = tab === key;
+                return (
+                  <button
+                    key={key}
+                    onClick={() => {
+                      setTab(key);
+                      setSearchQuery("");
+                    }}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-[14px] text-right transition-colors border-r-4 ${
+                      isActive
+                        ? "bg-[#2271b1] text-white border-cyan-400 font-bold"
+                        : "border-transparent text-[#f0f0f1] hover:bg-[#3c434a] hover:text-cyan-400"
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span>{label}</span>
+                  </button>
+                );
+              })}
+
+              <a
+                href="/"
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-[14px] text-right text-slate-400 hover:bg-[#3c434a] hover:text-cyan-400 transition-colors border-r-4 border-transparent"
+              >
+                <Globe className="w-4 h-4" />
+                <span>بطل الموقع الرئيسي</span>
+              </a>
+            </nav>
+          </div>
+
+          <div className="p-4 text-[11px] text-slate-500 border-t border-[#1c2226]">
+            نسخة حيلهم بينهم 1.0.0
+          </div>
+        </aside>
+
+        {/* Main Content Area */}
+        <main className="flex-1 bg-[#f0f0f1] p-6 text-[#2c3338] overflow-auto">
+          {/* WordPress Page Header Tools */}
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-normal text-[#1d2327]">
+                {tab === "dashboard" && "لوحة التحكم الرئيسة"}
+                {tab === "questions" && "الأسئلة"}
+                {tab === "categories" && "تصنيفات الأسئلة"}
+              </h1>
+
+              {tab === "questions" && (
+                <button
+                  onClick={() => setQModal({})}
+                  disabled={categories.length === 0}
+                  className="bg-[#f6f7f7] border border-[#2271b1] hover:bg-[#f0f0f1] text-[#2271b1] text-xs font-semibold px-2.5 py-1 rounded transition shadow-sm"
+                >
+                  أضف جديداً
+                </button>
               )}
-              {categories.map((cat) => (
-                <div key={cat.id} className="flex items-center gap-4 px-6 py-4">
-                  <span className="text-2xl">{cat.emoji}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-slate-900 text-sm">{cat.name}</p>
-                    {cat.description && (
-                      <p className="text-[11px] text-slate-500 truncate">{cat.description}</p>
-                    )}
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span
-                        className={`text-[10px] font-bold rounded-full px-2 py-0.5 ${
-                          cat.is_active
-                            ? "bg-emerald-100 text-emerald-700"
-                            : "bg-slate-100 text-slate-500"
-                        }`}
-                      >
-                        {cat.is_active ? "مفعّل" : "معطّل"}
-                      </span>
-                      <span className="text-[10px] text-slate-400">
-                        {questions.filter((q) => q.category_id === cat.id).length} سؤال
-                      </span>
-                    </div>
-                  </div>
-                  {cat.image_url && (
-                    <img
-                      src={cat.image_url}
-                      alt={cat.name}
-                      className="h-10 w-16 rounded-xl object-cover border border-slate-200"
-                    />
-                  )}
-                  <div className="flex gap-2">
+              {tab === "categories" && (
+                <button
+                  onClick={() => setCatModal({})}
+                  className="bg-[#f6f7f7] border border-[#2271b1] hover:bg-[#f0f0f1] text-[#2271b1] text-xs font-semibold px-2.5 py-1 rounded transition shadow-sm"
+                >
+                  أضف جديداً
+                </button>
+              )}
+            </div>
+
+            <div className="flex gap-2">
+              <div className="text-[12px] bg-white border border-slate-300 rounded px-2.5 py-1 text-slate-600 shadow-sm hover:bg-slate-50 cursor-pointer flex items-center gap-1 select-none">
+                <HelpCircle className="w-3.5 h-3.5" /> المساعدة
+              </div>
+            </div>
+          </div>
+
+          {/* ───────────────── TAB: Dashboard ───────────────── */}
+          {tab === "dashboard" && (
+            <div className="space-y-6">
+              {/* Welcome Panel */}
+              <div className="bg-white border border-[#ccd0d4] p-8 shadow-sm relative overflow-hidden">
+                <div className="max-w-2xl">
+                  <h2 className="text-3xl font-light text-[#1d2327] mb-2">
+                    هلا بيك في لوحة تحكم حيلهم بينهم!
+                  </h2>
+                  <p className="text-slate-600 text-sm mb-6 leading-relaxed">
+                    من هني تقدر تدير بنك الأسئلة والفئات وتعدل الصور والأصوات وتغير الصعوبة بكل سهولة وبسرعة.
+                  </p>
+                  <div className="flex gap-4">
                     <button
-                      type="button"
-                      onClick={() => setCatModal(cat)}
-                      className="rounded-xl border border-slate-200 bg-slate-50 p-2 hover:bg-cyan-50 hover:border-cyan-300"
+                      onClick={() => setTab("questions")}
+                      className="bg-[#2271b1] hover:bg-[#135e96] text-white text-sm font-semibold px-4 py-2 rounded shadow transition"
                     >
-                      <Edit2 className="h-4 w-4 text-slate-600" />
+                      إدارة الأسئلة الحالية
                     </button>
                     <button
-                      type="button"
-                      onClick={() => deleteCategory(cat.id)}
-                      disabled={busy}
-                      className="rounded-xl border border-rose-200 bg-rose-50 p-2 hover:bg-rose-100 disabled:opacity-50"
+                      onClick={() => setTab("categories")}
+                      className="bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-sm font-semibold px-4 py-2 rounded transition"
                     >
-                      <Trash2 className="h-4 w-4 text-rose-600" />
+                      تعديل تصنيفات اللعبة
                     </button>
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ── Questions Tab ── */}
-        {tab === "questions" && (
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4 border-b border-slate-100">
-              <div className="flex items-center gap-3">
-                <h2 className="font-bold text-slate-900">الأسئلة ({filteredQuestions.length})</h2>
-                <select
-                  value={filterCategory}
-                  onChange={(e) => setFilterCategory(e.target.value)}
-                  className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs bg-white"
-                >
-                  <option value="">كل التصنيفات</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>{c.emoji} {c.name}</option>
-                  ))}
-                </select>
               </div>
-              <button
-                type="button"
-                onClick={() => setQModal({})}
-                disabled={categories.length === 0}
-                className="flex items-center gap-2 rounded-2xl bg-cyan-600 px-4 py-2 text-sm font-bold text-white hover:bg-cyan-700 disabled:opacity-50"
-              >
-                <Plus className="h-4 w-4" />
-                سؤال جديد
-              </button>
-            </div>
-            <div className="divide-y divide-slate-100">
-              {filteredQuestions.length === 0 && (
-                <p className="px-6 py-8 text-center text-slate-400 text-sm">
-                  لا توجد أسئلة. أضف أسئلة أو اختر تصنيفًا آخر.
-                </p>
-              )}
-              {filteredQuestions.map((q) => {
-                const cat = categoryMap[q.category_id];
-                return (
-                  <div key={q.id} className="flex items-start gap-4 px-6 py-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        {cat && (
-                          <span className="text-[10px] font-bold rounded-full bg-cyan-100 text-cyan-700 px-2 py-0.5">
-                            {cat.emoji} {cat.name}
-                          </span>
-                        )}
-                        <span
-                          className={`text-[10px] font-bold rounded-full px-2 py-0.5 ${
-                            q.difficulty === "easy"
-                              ? "bg-emerald-100 text-emerald-700"
-                              : q.difficulty === "medium"
-                                ? "bg-amber-100 text-amber-700"
-                                : "bg-rose-100 text-rose-700"
-                          }`}
-                        >
-                          {DIFFICULTY_AR[q.difficulty]} · {q.strikes}⚡
-                        </span>
-                        <span className="text-[10px] text-slate-400">#{q.position}</span>
-                        {q.media_type === "image" && (
-                          <ImageIcon className="h-3 w-3 text-slate-400" />
-                        )}
-                        {q.media_type === "audio" && (
-                          <Music className="h-3 w-3 text-slate-400" />
-                        )}
-                        {!q.is_active && (
-                          <span className="text-[10px] font-bold rounded-full bg-slate-100 text-slate-500 px-2 py-0.5">
-                            معطّل
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm font-bold text-slate-900 leading-snug line-clamp-2">
-                        {q.question_text}
-                      </p>
-                      <p className="text-[11px] text-emerald-700 mt-0.5">
-                        ✓ {q.answer_text}
-                      </p>
-                    </div>
-                    <div className="flex gap-2 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => setQModal(q)}
-                        className="rounded-xl border border-slate-200 bg-slate-50 p-2 hover:bg-cyan-50 hover:border-cyan-300"
-                      >
-                        <Edit2 className="h-4 w-4 text-slate-600" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => deleteQuestion(q.id)}
-                        disabled={busy}
-                        className="rounded-xl border border-rose-200 bg-rose-50 p-2 hover:bg-rose-100 disabled:opacity-50"
-                      >
-                        <Trash2 className="h-4 w-4 text-rose-600" />
-                      </button>
-                    </div>
+
+              {/* Status Stats Widgets */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div className="bg-white border border-[#ccd0d4] p-5 shadow-sm">
+                  <h3 className="font-semibold text-slate-900 border-b pb-3 mb-3 text-sm">
+                    لمحة سريعة
+                  </h3>
+                  <div className="space-y-2 text-sm text-slate-600">
+                    <p>
+                      • إجمالي الأسئلة:{" "}
+                      <span className="font-bold text-cyan-600">
+                        {questions.length} سؤال
+                      </span>
+                    </p>
+                    <p>
+                      • إجمالي التصنيفات:{" "}
+                      <span className="font-bold text-cyan-600">
+                        {categories.length} تصنيف
+                      </span>
+                    </p>
+                    <p>
+                      • الأسئلة المفعّلة:{" "}
+                      <span className="font-bold text-emerald-600">
+                        {questions.filter((q) => q.is_active).length} سؤال
+                      </span>
+                    </p>
                   </div>
-                );
-              })}
+                </div>
+
+                <div className="bg-white border border-[#ccd0d4] p-5 shadow-sm">
+                  <h3 className="font-semibold text-slate-900 border-b pb-3 mb-3 text-sm">
+                    مستويات الصعوبة
+                  </h3>
+                  <div className="space-y-2 text-sm text-slate-600">
+                    <p>
+                      • سهل:{" "}
+                      <span className="font-bold text-emerald-600">
+                        {
+                          questions.filter((q) => q.difficulty === "easy")
+                            .length
+                        }{" "}
+                        سؤال
+                      </span>
+                    </p>
+                    <p>
+                      • متوسط:{" "}
+                      <span className="font-bold text-amber-600">
+                        {
+                          questions.filter((q) => q.difficulty === "medium")
+                            .length
+                        }{" "}
+                        سؤال
+                      </span>
+                    </p>
+                    <p>
+                      • صعب:{" "}
+                      <span className="font-bold text-rose-600">
+                        {
+                          questions.filter((q) => q.difficulty === "hard")
+                            .length
+                        }{" "}
+                        سؤال
+                      </span>
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-white border border-[#ccd0d4] p-5 shadow-sm">
+                  <h3 className="font-semibold text-slate-900 border-b pb-3 mb-3 text-sm">
+                    الوسائط والميديا
+                  </h3>
+                  <div className="space-y-2 text-sm text-slate-600">
+                    <p>
+                      • أسئلة تحتوي على صور:{" "}
+                      <span className="font-bold text-cyan-600">
+                        {
+                          questions.filter((q) => q.media_type === "image")
+                            .length
+                        }{" "}
+                        سؤال
+                      </span>
+                    </p>
+                    <p>
+                      • أسئلة تحتوي على أصوات:{" "}
+                      <span className="font-bold text-cyan-600">
+                        {
+                          questions.filter((q) => q.media_type === "audio")
+                            .length
+                        }{" "}
+                        سؤال
+                      </span>
+                    </p>
+                    <p>
+                      • أسئلة نصية فقط:{" "}
+                      <span className="font-bold text-slate-500">
+                        {questions.filter((q) => !q.media_url).length} سؤال
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+
+          {/* ───────────────── TAB: Questions ───────────────── */}
+          {tab === "questions" && (
+            <div className="space-y-4">
+              {/* Filter and Search Bar */}
+              <div className="flex flex-wrap justify-between items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <select
+                    value={filterCategory}
+                    onChange={(e) => setFilterCategory(e.target.value)}
+                    className="border border-[#ccd0d4] bg-white rounded px-2.5 py-1.5 text-sm text-slate-700 shadow-sm outline-none focus:border-[#2271b1]"
+                  >
+                    <option value="">كل التصنيفات</option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.emoji} {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Search Box */}
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="ابحث عن سؤال أو إجابة..."
+                    className="border border-[#ccd0d4] bg-white rounded px-3 py-1.5 pl-8 text-sm outline-none focus:border-[#2271b1] w-64 shadow-sm"
+                  />
+                  <Search className="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5" />
+                </div>
+              </div>
+
+              {/* WordPress-style Table */}
+              <div className="bg-white border border-[#ccd0d4] shadow-sm overflow-x-auto">
+                <table className="w-full text-right border-collapse text-[13px]">
+                  <thead>
+                    <tr className="bg-white border-b border-[#ccd0d4] select-none text-[#2c3338] font-bold text-[14px]">
+                      <th className="p-3 text-right">السؤال</th>
+                      <th className="p-3 text-right">التصنيف</th>
+                      <th className="p-3 text-right">الصعوبة</th>
+                      <th className="p-3 text-right">الموضع</th>
+                      <th className="p-3 text-right">الوسائط</th>
+                      <th className="p-3 text-right">الحالة</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#f0f0f1]">
+                    {filteredQuestions.length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan="6"
+                          className="p-8 text-center text-slate-400"
+                        >
+                          لا توجد أسئلة تطابق البحث أو التصنيف المختار.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredQuestions.map((q) => {
+                        const cat = categoryMap[q.category_id];
+                        return (
+                          <tr
+                            key={q.id}
+                            className="group hover:bg-[#f6f7f7] transition-colors"
+                          >
+                            <td className="p-3 max-w-sm">
+                              <div className="font-semibold text-[#1d2327] mb-1 line-clamp-2">
+                                {q.question_text}
+                              </div>
+                              <div className="text-[11px] text-emerald-700 font-bold mb-1">
+                                الإجابة: {q.answer_text}
+                              </div>
+                              {/* Inline Hover Actions */}
+                              <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 text-[11px] font-semibold mt-1">
+                                <button
+                                  onClick={() => setQModal(q)}
+                                  className="text-[#2271b1] hover:text-[#135e96]"
+                                >
+                                  تحرير
+                                </button>
+                                <span className="text-slate-300">|</span>
+                                <button
+                                  onClick={() => deleteQuestion(q.id)}
+                                  disabled={busy}
+                                  className="text-rose-600 hover:text-rose-800 disabled:opacity-50"
+                                >
+                                  حذف
+                                </button>
+                              </div>
+                            </td>
+                            <td className="p-3 text-slate-600">
+                              {cat ? (
+                                <span className="inline-flex items-center gap-1 bg-cyan-50 border border-cyan-200 text-cyan-800 px-2 py-0.5 rounded-full font-medium text-[11px]">
+                                  {cat.emoji} {cat.name}
+                                </span>
+                              ) : (
+                                <span className="text-slate-400">
+                                  غير معروف
+                                </span>
+                              )}
+                            </td>
+                            <td className="p-3">
+                              <span
+                                className={`inline-block font-semibold px-2 py-0.5 rounded text-[11px] ${
+                                  q.difficulty === "easy"
+                                    ? "bg-emerald-100 text-emerald-700"
+                                    : q.difficulty === "medium"
+                                      ? "bg-amber-100 text-amber-700"
+                                      : "bg-rose-100 text-rose-700"
+                                }`}
+                              >
+                                {DIFFICULTY_AR[q.difficulty]} ({q.strikes}⚡)
+                              </span>
+                            </td>
+                            <td className="p-3 text-slate-500 font-mono">
+                              #{q.position}
+                            </td>
+                            <td className="p-3">
+                              {q.media_url ? (
+                                <a
+                                  href={q.media_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 text-[#2271b1] hover:underline"
+                                >
+                                  {q.media_type === "image" ? (
+                                    <>
+                                      <img
+                                        src={q.media_url}
+                                        alt={q.media_type}
+                                        className="w-14 h-14"
+                                      />
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Music className="w-3.5 h-3.5" />
+                                      <span>صوت</span>
+                                    </>
+                                  )}
+                                </a>
+                              ) : (
+                                <span className="text-slate-400">—</span>
+                              )}
+                            </td>
+                            <td className="p-3">
+                              <span
+                                className={`inline-block font-semibold text-[11px] ${
+                                  q.is_active
+                                    ? "text-emerald-600"
+                                    : "text-slate-400"
+                                }`}
+                              >
+                                {q.is_active ? "مفعّل" : "معطّل"}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+                <div className="bg-[#f6f7f7] border-t border-[#ccd0d4] p-3 text-[12px] text-slate-500 text-left">
+                  إجمالي الأسئلة المفلترة: {filteredQuestions.length} من أصل{" "}
+                  {questions.length}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ───────────────── TAB: Categories ───────────────── */}
+          {tab === "categories" && (
+            <div className="space-y-4">
+              {/* Filter and Search Bar */}
+              <div className="flex justify-end items-center gap-3">
+                {/* Search Box */}
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="ابحث عن تصنيف..."
+                    className="border border-[#ccd0d4] bg-white rounded px-3 py-1.5 pl-8 text-sm outline-none focus:border-[#2271b1] w-64 shadow-sm"
+                  />
+                  <Search className="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5" />
+                </div>
+              </div>
+
+              {/* WordPress-style Table */}
+              <div className="bg-white border border-[#ccd0d4] shadow-sm overflow-x-auto">
+                <table className="w-full text-right border-collapse text-[13px]">
+                  <thead>
+                    <tr className="bg-white border-b border-[#ccd0d4] select-none text-[#2c3338] font-bold text-[14px]">
+                      <th className="p-3 text-right">الرمز والاسم</th>
+                      <th className="p-3 text-right">الوصف</th>
+                      <th className="p-3 text-right">الترتيب</th>
+                      <th className="p-3 text-right">صورة الغلاف</th>
+                      <th className="p-3 text-right">عدد الأسئلة</th>
+                      <th className="p-3 text-right">الحالة</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#f0f0f1]">
+                    {filteredCategories.length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan="6"
+                          className="p-8 text-center text-slate-400"
+                        >
+                          لا توجد تصنيفات تطابق البحث.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredCategories.map((cat) => {
+                        const catQuestionsCount = questions.filter(
+                          (q) => q.category_id === cat.id,
+                        ).length;
+                        return (
+                          <tr
+                            key={cat.id}
+                            className="group hover:bg-[#f6f7f7] transition-colors"
+                          >
+                            <td className="p-3 max-w-xs">
+                              <div className="font-semibold text-[#1d2327] mb-1 flex items-center gap-1.5">
+                                <span className="text-xl">{cat.emoji}</span>
+                                <span>{cat.name}</span>
+                              </div>
+                              {/* Inline Hover Actions */}
+                              <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 text-[11px] font-semibold mt-1">
+                                <button
+                                  onClick={() => setCatModal(cat)}
+                                  className="text-[#2271b1] hover:text-[#135e96]"
+                                >
+                                  تحرير
+                                </button>
+                                <span className="text-slate-300">|</span>
+                                <button
+                                  onClick={() => deleteCategory(cat.id)}
+                                  disabled={busy}
+                                  className="text-rose-600 hover:text-rose-800 disabled:opacity-50"
+                                >
+                                  حذف
+                                </button>
+                              </div>
+                            </td>
+                            <td className="p-3 text-slate-600">
+                              {cat.description ? (
+                                <p className="line-clamp-2 text-slate-500">
+                                  {cat.description}
+                                </p>
+                              ) : (
+                                <span className="text-slate-400 italic">
+                                  لا يوجد وصف
+                                </span>
+                              )}
+                            </td>
+                            <td className="p-3 text-slate-500 font-mono">
+                              #{cat.sort_order}
+                            </td>
+                            <td className="p-3">
+                              {cat.image_url ? (
+                                <a
+                                  href={cat.image_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="block w-16 h-10 rounded border border-slate-200 overflow-hidden hover:opacity-85 transition-opacity"
+                                >
+                                  <img
+                                    src={cat.image_url}
+                                    alt={cat.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </a>
+                              ) : (
+                                <span className="text-slate-400">—</span>
+                              )}
+                            </td>
+                            <td className="p-3 font-semibold text-slate-700">
+                              {catQuestionsCount} أسئلة
+                            </td>
+                            <td className="p-3">
+                              <span
+                                className={`inline-block font-semibold text-[11px] ${
+                                  cat.is_active
+                                    ? "text-emerald-600"
+                                    : "text-slate-400"
+                                }`}
+                              >
+                                {cat.is_active ? "مفعّل" : "معطّل"}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+                <div className="bg-[#f6f7f7] border-t border-[#ccd0d4] p-3 text-[12px] text-slate-500 text-left">
+                  إجمالي التصنيفات المفلترة: {filteredCategories.length} من أصل{" "}
+                  {categories.length}
+                </div>
+              </div>
+            </div>
+          )}
+        </main>
       </div>
     </>
   );

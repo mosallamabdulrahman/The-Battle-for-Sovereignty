@@ -15,57 +15,57 @@ import {
 export default function CategoriesSection() {
   const categories = [
     {
-      name: "أسئلة معارف عامة",
+      name: "معلومات عامة",
       description:
-        "اختبار الذكاء الشامل والمعلومات الموسوعية الأساسية المتفرقة.",
+        "اختبار الذكاء العام والمعلومات المتنوعة من كل مكان.",
       icon: Brain,
       color: "from-cyan-400 to-sky-500",
       iconColor: "bg-cyan-50 text-cyan-600",
-      tag: "شعبية كبيرة",
+      tag: "كل الناس تحبها",
     },
     {
-      name: "الجغرافيا والبلدان",
+      name: "الجغرافيا والدول",
       description:
-        "حقائق الدول، التضاريس والأنهار، العواصم ورايات الأمم المختلفة.",
+        "معلومات عن الدول، الجبال والأنهار، العواصم وأعلام الدول.",
       icon: Globe,
       color: "from-emerald-400 to-teal-500",
       iconColor: "bg-emerald-50 text-emerald-600",
-      tag: "تكتيكية وسهلة البدء",
+      tag: "سهلة وتكتيكية",
     },
     {
       name: "التاريخ والحضارات",
       description:
-        "رؤساء وقادتنا التاريخيين، المعارك الكبرى، والجوائز العالمية التاريخية.",
+        "القادة والملوك بالتاريخ، الحروب الكبيرة، والجوائز العالمية القديمة.",
       icon: Landmark,
       color: "from-amber-400 to-orange-500",
       iconColor: "bg-amber-50 text-amber-600",
-      tag: "تحالفات عريقة",
+      tag: "تاريخ عريق",
     },
     {
-      name: "التكنولوجيا والعلوم",
+      name: "العلوم والتكنولوجيا",
       description:
-        "عالم التقنيات والبرمجة الحديثة وعصر الذكاء الاصطناعي الحالي.",
+        "عالم التكنولوجيا، البرمجة الحديثة، والذكاء الاصطناعي مال اليوم.",
       icon: Code,
       color: "from-purple-400 to-indigo-500",
       iconColor: "bg-purple-50 text-purple-600",
-      tag: "قوة الغد",
+      tag: "قوة المستقبل",
     },
     {
-      name: "الرياضة وكرة القدم",
-      description: "أساطير المستطيل الأخضر، البطولات القارية، والكؤوس الكبرى.",
+      name: "الرياضة والكرة",
+      description: "أساطير كرة القدم، البطولات الكبيرة، والكؤوس العالمية.",
       icon: Trophy,
       color: "from-rose-400 to-pink-500",
       iconColor: "bg-rose-50 text-rose-600",
-      tag: "حماس جماهيري",
+      tag: "حماس وتشجيع",
     },
     {
       name: "الفيزياء والطبيعة",
       description:
-        "علوم الفلك والكواكب، القوانين الطبيعية واكتشافات نيوتن والعلماء.",
+        "علوم الفلك والكواكب، قوانين الطبيعة واكتشافات نيوتن والعلماء.",
       icon: Atom,
       color: "from-teal-400 to-cyan-500",
       iconColor: "bg-teal-50 text-teal-600",
-      tag: "حقائق علمية",
+      tag: "حقائق علمية صجية",
     },
   ];
 
@@ -76,14 +76,13 @@ export default function CategoriesSection() {
         <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-12 gap-6">
           <div className="text-right max-w-2xl">
             <span className="text-cyan-600 font-extrabold text-sm uppercase tracking-wider bg-cyan-100 px-4 py-1.5 rounded-full inline-block mb-4">
-              فئات الأسئلة العسكرية
+              فئات التحدي والأسئلة
             </span>
             <h2 className="text-3xl md:text-4xl font-bold text-slate-900 leading-tight">
-              اختر جبهتك وتخصص أسئلتك المفضلة
+              اختار تخصصك والأسئلة اللي تحبها
             </h2>
             <p className="text-slate-600 mt-3 text-lg">
-              اختر الفئات التي تشعر بقوتك فيها. كل فئة تحتوي على 6 أسئلة متدرجة
-              الصعوبة (سهل، متوسط، صعب).
+              اختار الفئات اللي تحس نفسك قوي فيها. كل فئة فيها 6 أسئلة تتدرج بالصعوبة (سهل، متوسط، صعب).
             </p>
           </div>
 
@@ -92,10 +91,10 @@ export default function CategoriesSection() {
             <Flame className="w-8 h-8 fill-amber-300 animate-bounce" />
             <div className="text-right">
               <p className="text-xs opacity-90 font-medium">
-                نظام نقاط الأسئلة والضربات:
+                حسبة النقاط والطقات:
               </p>
               <p className="text-sm font-bold mt-1">
-                سهل: +200ن (ضربة) | متوسط: +400ن (ضربتين) | صعب: +600ن (3 ضربات)
+                سهل: +200ن (طقة) | متوسط: +400ن (طقتين) | صعب: +600ن (3 طقات)
               </p>
             </div>
           </div>
@@ -139,9 +138,9 @@ export default function CategoriesSection() {
 
                 {/* Card footer details */}
                 <div className="border-t border-slate-100 mt-6 pt-4 flex items-center justify-between text-xs text-slate-400 font-bold">
-                  <span>6 أسئلة متوفرة</span>
+                  <span>6 أسئلة جاهزة</span>
                   <div className="flex items-center gap-1 text-cyan-600">
-                    <span>انطلق للمعركة</span>
+                    <span>بلش الحين</span>
                     <ArrowUpRight className="w-4 h-4" />
                   </div>
                 </div>

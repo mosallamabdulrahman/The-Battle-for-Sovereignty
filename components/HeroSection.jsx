@@ -53,7 +53,7 @@ export default function HeroSection() {
               className="inline-flex items-center gap-2 bg-cyan-100 text-cyan-800 font-bold px-4 py-1.5 rounded-full text-sm mb-6"
             >
               <Zap className="w-4 h-4 fill-cyan-700" />
-              <span>الموسم الأول من معركة سيادة مُتاح الآن!</span>
+              <span>الموسم الأول حق لعبة حيلهم بينهم نزل الحين!</span>
             </motion.div>
 
             <motion.h1
@@ -62,9 +62,9 @@ export default function HeroSection() {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="text-4xl sm:text-5xl md:text-6xl font-bold text-slate-900 leading-tight tracking-tight mb-6"
             >
-              القمّة تطلب سيادة المعرفة... <br />
+              القمة تبي قوة المعرفة... <br />
               <span className="bg-gradient-to-r from-cyan-600 to-sky-500 bg-clip-text text-transparent">
-                هل أنت مستعد للمعركة؟ّ
+                مستعد حق التحدي؟
               </span>
             </motion.h1>
 
@@ -74,10 +74,10 @@ export default function HeroSection() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="text-lg md:text-xl text-slate-600 leading-relaxed max-w-2xl mb-8"
             >
-              حوّل معلوماتك العامة وقدرتك الذهنية إلى عتاد حقيقي! ابنِ معسكرك
-              العسكري، وزّع وحداتك بذكاء وسريّة تامة على رقعة الإحداثيات، ثم
-              أطلق ضربات ساحقة على خارطة عدوك عبر حلّ الأسئلة الثقافية الصعبة
-              واستخدم وسائل المساعدة التكتيكية للسيطرة على ساحة السيادة.
+              حول معلوماتك العامة وذكائك حق عتاد صجي! ابنِ معسكرك، ووزع جنودك 
+              بذكاء وسرية تامة على الخريطة، وعقبها طق خصمك طقات قوية على 
+              خريطة الخصم لما تجاوب على الأسئلة الثقافية الصعبة، واستخدم الفزعات 
+              التكتيكية عشان تسيطر وتفوز باللعبة.
             </motion.p>
 
             <motion.div
@@ -91,14 +91,14 @@ export default function HeroSection() {
                 className="flex-1 sm:flex-initial flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-500 via-cyan-600 to-sky-500 text-white font-extrabold px-8 py-4 rounded-2xl shadow-lg shadow-cyan-600/20 hover:shadow-cyan-600/35 hover:-translate-y-0.5 transition-all duration-300 text-lg"
               >
                 <Swords className="w-5 h-5" />
-                ابدأ التحدي العسكري
+                بلش التحدي الحين
               </Link>
               <a
                 href="#how-to-play"
                 className="flex-1 sm:flex-initial flex items-center justify-center gap-2 bg-white text-slate-700 font-bold border-2 border-slate-200/80 hover:border-cyan-400 hover:text-cyan-600 px-8 py-4 rounded-2xl shadow-sm transition-all duration-300 text-lg"
               >
                 <Info className="w-5 h-5" />
-                طريقة اللعب
+                شلون تلعب؟
               </a>
             </motion.div>
           </div>
@@ -113,7 +113,7 @@ export default function HeroSection() {
             <div className="bg-white p-6 rounded-3xl shadow-xl border border-slate-100 w-full max-w-sm sm:max-w-md relative">
               <div className="absolute top-[-10px] right-2 bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1 shadow-md">
                 <ShieldAlert className="w-3.5 h-3.5" />
-                <span>شاشة توزيع الوحدات (6×6)</span>
+                <span>شاشة توزيع الجنود (6×6)</span>
               </div>
 
               {/* Grid board */}
@@ -149,9 +149,9 @@ export default function HeroSection() {
               {/* Bottom stats indicators */}
               <div className="mt-6 flex justify-between items-center bg-slate-50 p-3 rounded-2xl border border-slate-100">
                 <div className="flex flex-col text-right">
-                  <span className="text-xs text-slate-400">الرصيد المتاح</span>
+                  <span className="text-xs text-slate-400">النقاط المتوفرة</span>
                   <span className="text-sm font-bold text-slate-800">
-                    1000 نقطة الحرب
+                    1000 نقطة حرب
                   </span>
                 </div>
                 <div className="flex gap-2">

@@ -17,7 +17,6 @@ import {
   Trophy,
   Volume2,
   XCircle,
-  ZoomIn,
 } from "lucide-react";
 import { LIFELINE_TOOLS, TACTICAL_TOOL_DETAILS } from "../../lib/game-data";
 
@@ -28,47 +27,34 @@ const DIFFICULTY_LABELS = {
 };
 
 const RESULT_LABELS = {
-  hit: "إصابة مباشرة",
-  miss: "ضربة فارغة",
-  mine: "انفجار لغم",
-  blocked: "تم صد الضربة",
+  hit: "طقيت المربع صح",
+  miss: "طقة بالهوا",
+  mine: "لغم انفجر فيك",
+  blocked: "الدرع صده",
 };
 
 const FALLBACK_CATEGORY_IMAGE =
   "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=360&q=80";
 
 const DIFFICULTY_STRIKE_LABEL = {
-  easy: "ضربة",
-  medium: "ضربتين",
-  hard: "ثلاث ضربات",
+  easy: "طقة وحدة",
+  medium: "طقتين",
+  hard: "ثلاث طقات",
 };
 
 // ── Media Player ───────────────────────────────────────────────
 function MediaPlayer({ mediaUrl, mediaType }) {
-  const [expanded, setExpanded] = useState(false);
   if (!mediaUrl || !mediaType) return null;
 
   if (mediaType === "image") {
     return (
       <div className="mt-4">
-        <div
-          className={`relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 cursor-pointer transition-all ${expanded ? "max-h-[600px]" : "max-h-48"}`}
-          onClick={() => setExpanded((v) => !v)}
-        >
-          <img
-            src={mediaUrl}
-            alt="وسائط السؤال"
-            className="w-full object-contain"
-            loading="lazy"
-          />
-          {!expanded && (
-            <div className="absolute inset-0 flex items-end justify-center bg-gradient-to-t from-black/30 to-transparent pb-2">
-              <span className="flex items-center gap-1 rounded-full bg-white/90 px-3 py-1 text-[10px] font-bold text-slate-700">
-                <ZoomIn className="h-3 w-3" /> اضغط للتكبير
-              </span>
-            </div>
-          )}
-        </div>
+        <img
+          src={mediaUrl}
+          alt="وسائط السؤال"
+          className="w-full max-h-72 object-contain"
+          loading="lazy"
+        />
       </div>
     );
   }
@@ -99,12 +85,12 @@ function FinishedCelebration({
 
   const title = activeTeam
     ? didWin
-      ? "فريقك انتصر! 🏆"
+      ? "فريقك فاز! 🏆"
       : isDraw
-        ? "انتهت المعركة بالتعادل"
+        ? "انتهت اللعبة تعادل"
         : `الفائز: ${opponentTeam?.name || winner?.name || "الخصم"}`
     : isDraw
-      ? "انتهت المعركة بالتعادل"
+      ? "انتهت اللعبة تعادل"
       : `الفائز: ${winner?.name || `الفريق ${room.winner_team_index}`}`;
 
   const sorted = [...teams].sort((a, b) => b.score - a.score);
@@ -157,7 +143,7 @@ function FinishedCelebration({
               >
                 {team.score}
               </p>
-              <p className="text-[10px] text-white/40 mt-0.5">نقطة نهائية</p>
+              <p className="text-[10px] text-white/40 mt-0.5">نقاط</p>
             </div>
           );
         })}
@@ -168,7 +154,7 @@ function FinishedCelebration({
         onClick={onExit}
         className="relative z-10 mt-6 rounded-2xl bg-white px-8 py-3 text-sm font-bold text-slate-950 shadow-lg transition hover:bg-amber-100"
       >
-        خروج من اللعبة
+        اطلع من اللعبة
       </button>
     </motion.div>
   );
@@ -254,7 +240,7 @@ function ScoreCards({ teams }) {
                   />
                 </div>
                 <span className="block text-[10px] text-white/50 font-bold mt-0.5">
-                  الضربات
+                  الطقات
                 </span>
               </div>
             </div>
@@ -336,7 +322,7 @@ function CircularTimer({ seconds, label = "مؤقت السؤال", onDismiss }) 
               onClick={onDismiss}
               className="mt-4 rounded-2xl bg-slate-950 px-5 py-2.5 text-xs font-bold text-white transition hover:bg-cyan-700"
             >
-              انتهيت من الاتصال
+              انتهى الوقت
             </button>
           )}
         </div>
@@ -399,7 +385,7 @@ export function QuestionGrid({
                           ? "border-amber-400 bg-amber-100 text-amber-900 ring-2 ring-amber-300"
                           : "border-slate-200 bg-[#CDD2D2] text-rose-800 hover:border-cyan-400 hover:bg-cyan-50 disabled:cursor-not-allowed"
                     }`}
-                    title={`${DIFFICULTY_LABELS[question.difficulty]} · ${question.strikes} ضربة`}
+                    title={`${DIFFICULTY_LABELS[question.difficulty]} · ${question.strikes} طقة`}
                   >
                     {DIFFICULTY_STRIKE_LABEL[question.difficulty] ||
                       question.difficulty}
@@ -438,7 +424,7 @@ export function QuestionGrid({
                           ? "border-amber-400 bg-amber-100 text-amber-900 ring-2 ring-amber-300"
                           : "border-slate-200 bg-slate-200 text-rose-800 hover:border-cyan-400 hover:bg-cyan-50 disabled:cursor-not-allowed"
                     }`}
-                    title={`${DIFFICULTY_LABELS[question.difficulty]} · ${question.strikes} ضربة`}
+                    title={`${DIFFICULTY_LABELS[question.difficulty]} · ${question.strikes} طقة`}
                   >
                     {DIFFICULTY_STRIKE_LABEL[question.difficulty] ||
                       question.difficulty}
@@ -460,11 +446,11 @@ function EventFeed({ events }) {
 
   return (
     <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-      <h3 className="font-bold text-slate-900">آخر أحداث المعركة</h3>
+      <h3 className="font-bold text-slate-900">آخر الأحداث والطق</h3>
       <div className="mt-4 space-y-2">
         {visibleEvents.length === 0 && (
           <p className="text-xs text-slate-400">
-            لم تبدأ الأحداث القتالية بعد.
+            اللعب والطق للحين ما بدأ.
           </p>
         )}
         {visibleEvents.map((event) => (
@@ -474,7 +460,7 @@ function EventFeed({ events }) {
           >
             {event.event_type === "strike" ? (
               <span>
-                {teamLabel(event.actor_team_index)} نفذ ضربة على مربع{" "}
+                {teamLabel(event.actor_team_index)} طق المربع{" "}
                 {event.cell_index + 1} في أرض{" "}
                 {teamLabel(event.target_team_index)}:{" "}
                 <strong>
@@ -484,12 +470,12 @@ function EventFeed({ events }) {
             ) : event.event_type === "question_resolved" ? (
               <span>
                 {event.actor_team_index
-                  ? `${teamLabel(event.actor_team_index)} أجاب بشكل صحيح وحصل على ${event.metadata?.strikes || 0} ضربة`
-                  : "لم يحصل أي فريق على السؤال"}
+                  ? `${teamLabel(event.actor_team_index)} جاوب صح وحصل على ${event.metadata?.strikes || 0} طقة`
+                  : "ما حد جاوب صح"}
               </span>
             ) : event.event_type === "tool_used" ? (
               <span>
-                {teamLabel(event.actor_team_index)} استخدم وسيلة{" "}
+                {teamLabel(event.actor_team_index)} شغل فزعة{" "}
                 {TACTICAL_TOOL_DETAILS[event.result]?.name || "تكتيكية"}
               </span>
             ) : (
@@ -535,10 +521,10 @@ export function JudgeCombatDashboard({
             </div>
             <div>
               <h1 className="font-bold text-slate-950">
-                لوحة حكم معركة السيادة
+                لوحة حكم حيلهم بينهم
               </h1>
               <p className="text-[10px] text-slate-500">
-                الدور الحالي: {currentTeam?.name || "جارٍ التحديد"}
+                الدور الحين عند: {currentTeam?.name || "قاعدين نحدد"}
               </p>
             </div>
           </div>
@@ -548,7 +534,7 @@ export function JudgeCombatDashboard({
             className="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-bold text-rose-700"
           >
             <LogOut className="h-4 w-4" />
-            خروج من اللعبة
+            اطلع من اللعبة
           </button>
         </div>
       </header>
@@ -596,7 +582,7 @@ export function JudgeCombatDashboard({
                 الإجابة الصحيحة
               </span>
               <p className="mt-1 font-bold text-emerald-950">
-                {answer || "جاري تحميل الإجابة..."}
+                {answer || "قاعدين نحمل الإجابة..."}
               </p>
             </div>
 
@@ -616,7 +602,7 @@ export function JudgeCombatDashboard({
                   }`}
                 >
                   <CheckCircle className="h-4 w-4" />
-                  {team.name} أصاب
+                  {team.name} جاوب صح
                 </button>
               ))}
 
@@ -627,7 +613,7 @@ export function JudgeCombatDashboard({
                 className="rounded-xl bg-slate-700 px-3 py-3 text-sm font-bold text-white flex items-center justify-center gap-2 hover:bg-slate-600 transition-opacity disabled:opacity-60"
               >
                 <XCircle className="h-4 w-4" />
-                كلاهما أخطأ
+                اثنينهم أخطأوا
               </button>
             </div>
           </motion.section>
@@ -638,12 +624,12 @@ export function JudgeCombatDashboard({
           <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
             <h3 className="font-bold text-amber-900 text-sm mb-3 flex items-center gap-2">
               <Star className="h-4 w-4" />
-              منح ضربات إضافية يدوياً
+              عطهم طقات زيادة يدوياً
             </h3>
             {grantInput ? (
               <div className="space-y-3">
                 <p className="text-sm font-bold text-amber-800">
-                  منح ضربات لـ{" "}
+                  عط طقات حق{" "}
                   <span
                     className={
                       grantInput.teamIndex === 1
@@ -688,10 +674,10 @@ export function JudgeCombatDashboard({
                     </button>
                     <span className="text-sm text-amber-700 font-bold pr-1">
                       {grantInput.count === 1
-                        ? "ضربة"
+                        ? "طقة"
                         : grantInput.count === 2
-                          ? "ضربتين"
-                          : `${grantInput.count} ضربات`}
+                          ? "طقتين"
+                          : `${grantInput.count} طقات`}
                     </span>
                   </div>
                   <button
@@ -859,7 +845,7 @@ export function TeamCombatDashboard({
             <div>
               <h1 className="font-bold text-slate-950">{activeTeam.name}</h1>
               <p className="text-[10px] text-slate-500">
-                النتيجة {activeTeam.score} · الضربات المتاحة{" "}
+                النتيجة {activeTeam.score} · الطقات المتاحة{" "}
                 {activeTeam.available_strikes}
               </p>
             </div>
@@ -870,7 +856,7 @@ export function TeamCombatDashboard({
             className="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-bold text-rose-700"
           >
             <LogOut className="h-4 w-4" />
-            خروج من اللعبة
+            اطلع من اللعبة
           </button>
         </div>
       </header>
@@ -892,9 +878,9 @@ export function TeamCombatDashboard({
               className="w-full max-w-sm rounded-3xl bg-slate-900 border border-slate-700 p-7 text-center text-white shadow-2xl"
             >
               <LogOut className="w-10 h-10 mx-auto text-rose-400 mb-3" />
-              <h2 className="text-lg font-bold">مغادرة اللعبة؟</h2>
+              <h2 className="text-lg font-bold">تبي تطلع من اللعبة؟</h2>
               <p className="mt-2 text-sm text-slate-400">
-                سيُبلَّغ الفريق الآخر والحكم بمغادرتك. يمكنك العودة لاحقًا.
+                راح نبلغ الفريق الثاني والحكم إنك طلعت. تقدر ترجع بأي وقت.
               </p>
               <div className="mt-6 grid grid-cols-2 gap-3">
                 <button
@@ -905,14 +891,14 @@ export function TeamCombatDashboard({
                   }}
                   className="rounded-2xl bg-rose-600 py-3 text-sm font-bold text-white hover:bg-rose-500 transition"
                 >
-                  مغادرة
+                  أطلع
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowExitConfirm(false)}
                   className="rounded-2xl bg-slate-700 py-3 text-sm font-bold text-white hover:bg-slate-600 transition"
                 >
-                  البقاء
+                  أقعد
                 </button>
               </div>
             </motion.div>
@@ -937,14 +923,13 @@ export function TeamCombatDashboard({
               className="w-full max-w-sm rounded-3xl bg-gradient-to-br from-amber-900 via-slate-900 to-slate-900 border border-amber-500/40 p-7 text-center text-white shadow-2xl"
             >
               <div className="text-4xl mb-3">⚔️</div>
-              <h2 className="text-xl font-bold text-amber-300">أجبت صحيحًا!</h2>
+              <h2 className="text-xl font-bold text-amber-300">جاوبت صح!</h2>
               <p className="mt-2 text-sm text-slate-300">
-                لديك{" "}
+                عندك{" "}
                 <strong className="text-amber-300">
                   {activeTeam.available_strikes}
                 </strong>{" "}
-                {activeTeam.available_strikes === 1 ? "ضربة" : "ضربات"} — اضغط
-                مربعًا في خريطة الخصم أدناه.
+                {activeTeam.available_strikes === 1 ? "طقة" : "طقات"} — طق مربع بخريطة الخصم تحت.
               </p>
               <button
                 type="button"
@@ -952,7 +937,7 @@ export function TeamCombatDashboard({
                 onClick={() => setHandledWinEventId(latestWinEvent?.id)}
                 className="mt-6 w-full rounded-2xl bg-rose-600 py-3 text-sm font-bold text-white hover:bg-rose-500 transition disabled:opacity-60"
               >
-                حسنًا — للهجوم!
+                يلا — هجوم!
               </button>
             </motion.div>
           </motion.div>
@@ -977,32 +962,32 @@ export function TeamCombatDashboard({
             >
               <div className="text-5xl mb-3">⚡</div>
               <h2 className="text-xl font-bold text-emerald-300">
-                منحك الحكم ضربات!
+                الحكم عطاك طقات زيادة!
               </h2>
               <p className="mt-3 text-sm text-slate-300 leading-relaxed">
-                أضاف الحكم لك{" "}
+                الحكم زادك{" "}
                 <strong className="text-emerald-300 text-lg">
                   {latestGrantEvent?.metadata?.count === 1
-                    ? "ضربة واحدة"
+                    ? "طقة وحدة"
                     : latestGrantEvent?.metadata?.count === 2
-                      ? "ضربتين"
-                      : `${latestGrantEvent?.metadata?.count} ضربات`}
+                      ? "طقتين"
+                      : `${latestGrantEvent?.metadata?.count} طقات`}
                 </strong>{" "}
-                — قم بتنفيذها على العدو الآن!
+                — طق الخصم الحين!
               </p>
               <p className="mt-2 text-xs text-slate-400">
                 رصيدك الحالي:{" "}
                 <strong className="text-white">
                   {activeTeam.available_strikes}
                 </strong>{" "}
-                {activeTeam.available_strikes === 1 ? "ضربة" : "ضربات"}
+                {activeTeam.available_strikes === 1 ? "طقة" : "طقات"}
               </p>
               <button
                 type="button"
                 onClick={() => setHandledGrantEventId(latestGrantEvent?.id)}
                 className="mt-6 w-full rounded-2xl bg-emerald-600 py-3 text-sm font-bold text-white hover:bg-emerald-500 transition"
               >
-                حسنًا — للهجوم! ⚔️
+                يلا — هجوم! ⚔️
               </button>
             </motion.div>
           </motion.div>
@@ -1027,10 +1012,10 @@ export function TeamCombatDashboard({
             >
               <div className="text-4xl mb-3">⚠️</div>
               <h2 className="text-lg font-bold text-amber-300">
-                {opponentTeam.name} غادر اللعبة
+                {opponentTeam.name} طلع من اللعبة
               </h2>
               <p className="mt-2 text-sm text-slate-400">
-                يمكنك الانتظار حتى يعود، أو إنهاء اللعبة.
+                تقدر تنطره لين يرجع، أو تسكر اللعبة.
               </p>
               <div className="mt-6 grid grid-cols-2 gap-3">
                 <button
@@ -1038,14 +1023,14 @@ export function TeamCombatDashboard({
                   onClick={() => setDisconnectDismissed(true)}
                   className="rounded-2xl bg-slate-700 py-3 text-sm font-bold text-white hover:bg-slate-600 transition"
                 >
-                  انتظار العودة
+                  انطره يرجع
                 </button>
                 <button
                   type="button"
                   onClick={onExit}
                   className="rounded-2xl bg-rose-600 py-3 text-sm font-bold text-white hover:bg-rose-500 transition"
                 >
-                  إنهاء اللعبة
+                  أطلع من اللعبة
                 </button>
               </div>
             </motion.div>
@@ -1056,13 +1041,13 @@ export function TeamCombatDashboard({
       {/* Small banner when disconnect dismissed but opponent still offline */}
       {opponentDisconnected && disconnectDismissed && (
         <div className="bg-amber-50 border-b border-amber-300 px-4 py-2 text-center text-xs font-bold text-amber-800">
-          {opponentTeam.name} غير متصل حاليًا —{" "}
+          {opponentTeam.name} مو داش الغرفة الحين —{" "}
           <button
             type="button"
             className="underline"
             onClick={() => setDisconnectDismissed(false)}
           >
-            إنهاء اللعبة
+            أطلع من اللعبة
           </button>
         </div>
       )}
@@ -1075,10 +1060,9 @@ export function TeamCombatDashboard({
             className="w-full max-w-md rounded-3xl border border-red-500 bg-slate-900 p-8 text-center text-white shadow-2xl"
           >
             <p className="text-4xl mb-3">تحذير</p>
-            <h2 className="text-xl font-bold text-amber-300">الحفرة نشطة!</h2>
+            <h2 className="text-xl font-bold text-amber-300">الحفرة اشتغلت!</h2>
             <p className="mt-3 text-sm leading-relaxed text-slate-300">
-              اختر سؤالك الآن. إذا أجبت صحيحًا تحصل على ضربة إضافية. إذا أجبت
-              خطأً، الوسيلة تضيع.
+              اختار سؤالك الحين. إذا جاوبت صح تاخذ طقة زيادة. وإذا جاوبت غلط تروح عليك الفزعة.
             </p>
             <div className="mt-7 grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button
@@ -1086,7 +1070,7 @@ export function TeamCombatDashboard({
                 onClick={onConfirmHole}
                 className="rounded-2xl bg-red-600 py-3 text-sm font-bold text-white transition hover:bg-red-500"
               >
-                تفعيل الحفرة والمتابعة
+                شغل الحفرة وابدأ
               </button>
               <button
                 type="button"
@@ -1115,14 +1099,14 @@ export function TeamCombatDashboard({
 
         {holeActive && (
           <div className="rounded-2xl border border-red-400 bg-red-900 px-5 py-3 text-center text-sm font-bold text-white animate-pulse">
-            تحذير: الحفرة نشطة — اختر سؤالك الآن
+            تحذير: الحفرة شغال الحين — اختار سؤالك
           </div>
         )}
 
         {lifelineActive && (
           <CircularTimer
             seconds={lifelineSeconds}
-            label="اتصال بصديق جارٍ الآن"
+            label="قاعدين نتصل بصديق الحين"
             onDismiss={onDismissLifeline}
           />
         )}
@@ -1171,12 +1155,12 @@ export function TeamCombatDashboard({
                     }}
                   />
                   <span className="relative z-10 text-sm font-bold text-amber-800">
-                    لديك فرصتان للإجابة — أخبر الحكم
+                    عندك فرصتين عشان تجاوب — قول حق الحكم
                   </span>
                 </div>
               )}
               <p className="mt-3 text-xs text-slate-400">
-                أبلغ الحكم بإجابتك — الإجابة الصحيحة لا تظهر هنا
+                قول حق الحكم إجابتك — الإجابة الصح ما تطلع هني
               </p>
             </motion.div>
           )}
@@ -1186,7 +1170,7 @@ export function TeamCombatDashboard({
           <div className="rounded-2xl border border-rose-300 bg-rose-50 px-5 py-3 flex items-center gap-3">
             <Target className="h-5 w-5 text-rose-600 shrink-0" />
             <p className="font-bold text-rose-900 text-sm">
-              لديك {activeTeam.available_strikes} ضربة — اختر مربعًا في خريطة{" "}
+              عندك {activeTeam.available_strikes} طقة — اختار مربع بخريطة{" "}
               {opponentTeam.name} أدناه
             </p>
           </div>
@@ -1202,7 +1186,7 @@ export function TeamCombatDashboard({
                   خريطة {opponentTeam.name}
                 </h2>
                 <p className="text-[10px] text-slate-500">
-                  {radarMode ? "اختر مركز مسح الرادار" : "اضغط مربعًا للضرب"}
+                  {radarMode ? "اختار وين تبي تمسح بالرادار" : "طق على المربع عشان تطق"}
                 </p>
               </div>
               <Target className="h-5 w-5 text-rose-500" />
@@ -1264,16 +1248,16 @@ export function TeamCombatDashboard({
             {opponentTeam.shield_active && (
               <p className="mt-3 flex items-center gap-1.5 text-xs font-bold text-cyan-700">
                 <Shield className="h-3.5 w-3.5" />
-                الخصم لديه درع مفعل
+                الخصم مشغل الدرع
               </p>
             )}
           </section>
 
           {/* Tactical tools */}
           <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="font-bold text-slate-950">الأدوات التكتيكية</h2>
+            <h2 className="font-bold text-slate-950">الفزعات المتاحة</h2>
             <p className="text-[10px] text-slate-500 mt-1">
-              كل أداة تستخدم مرة واحدة أثناء القتال.
+              كل فزعة تقدر تستخدمها مرة وحدة باللعبة.
             </p>
             <div className="mt-4 space-y-2.5">
               {availableTools.map((toolId) => {
@@ -1334,12 +1318,12 @@ export function TeamCombatDashboard({
                         <Sparkles className="h-3.5 w-3.5" />
                       )}
                       {lifelineActive && toolId === "lifeline_call"
-                        ? "جارٍ الاتصال..."
+                        ? "قاعدين نتصل..."
                         : tool?.name || toolId}
                     </span>
                     <span className="mt-0.5 block text-[10px] leading-relaxed opacity-70">
                       {detectorLocked
-                        ? "تظهر بعد نصف الأسئلة"
+                        ? "تطلع بعد نص الأسئلة"
                         : tool?.description}
                     </span>
                   </button>
@@ -1350,7 +1334,7 @@ export function TeamCombatDashboard({
           {/* Own army map */}
           <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
             <h2 className="font-bold text-slate-950 mb-1">خريطتك</h2>
-            <p className="text-[10px] text-slate-500 mb-3">وحداتك الحية</p>
+            <p className="text-[10px] text-slate-500 mb-3">جنودك اللي صاحين</p>
             <div className="grid grid-cols-6 gap-1">
               {(activeTeam.board || Array(36).fill(null)).map((cell, index) => {
                 const UNIT_EMOJI = {
@@ -1368,7 +1352,7 @@ export function TeamCombatDashboard({
                         ? "border-cyan-400 bg-cyan-50"
                         : "border-slate-200 bg-slate-50"
                     }`}
-                    title={cell || "فارغ أو مدمر"}
+                    title={cell || "خالي أو تفجر"}
                   >
                     {cell ? UNIT_EMOJI[cell] || "•" : ""}
                   </div>
@@ -1378,7 +1362,7 @@ export function TeamCombatDashboard({
             {activeTeam.shield_active && (
               <p className="mt-3 flex items-center gap-2 text-xs font-bold text-cyan-700">
                 <Shield className="h-4 w-4" />
-                الدرع مفعل للضربة القادمة
+                الدرع شغال حق الطقة الياية
               </p>
             )}
           </section>
@@ -1402,14 +1386,14 @@ export function AbandonedGameView({ room, onReturnHome }) {
     <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 dir-rtl">
       <div className="w-full max-w-md rounded-3xl border border-rose-900 bg-slate-900 p-8 text-center text-white shadow-2xl">
         <AlertTriangle className="h-14 w-14 mx-auto text-rose-400" />
-        <h1 className="mt-4 text-2xl font-bold">تم إنهاء اللعبة</h1>
-        <p className="mt-3 text-sm text-slate-300">{actor} خرج من اللعبة.</p>
+        <h1 className="mt-4 text-2xl font-bold">تسكرت اللعبة</h1>
+        <p className="mt-3 text-sm text-slate-300">{actor} طلع من اللعبة.</p>
         <button
           type="button"
           onClick={onReturnHome}
           className="mt-7 rounded-xl bg-white px-6 py-3 font-bold text-slate-950"
         >
-          العودة للرئيسية
+          ارجع للرئيسية
         </button>
       </div>
     </div>
@@ -1453,15 +1437,15 @@ export function CombatEventModal({ event, onClose, autoCloseMs = 2000 }) {
           {RESULT_LABELS[event.result] || event.result}
         </h2>
         <p className="mt-2 text-sm text-slate-500">
-          الضربة على المربع {event.cell_index + 1}
-          {event.points_delta ? ` · تأثير النقاط ${event.points_delta}` : ""}
+          الطقة على المربع {event.cell_index + 1}
+          {event.points_delta ? ` · النقاط ${event.points_delta}` : ""}
         </p>
         <button
           type="button"
           onClick={onClose}
           className="mt-6 rounded-xl bg-slate-950 px-6 py-3 font-bold text-white"
         >
-          متابعة المعركة
+          كمل اللعب
         </button>
       </motion.div>
     </div>

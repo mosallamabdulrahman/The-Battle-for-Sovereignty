@@ -4,7 +4,6 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  Shield,
   Mail,
   ArrowRight,
   Loader2,
@@ -13,6 +12,7 @@ import {
   UserCheck,
 } from "lucide-react";
 import Link from "next/link";
+import GameLogo from "../../components/GameLogo";
 import { supabase } from "../../lib/supabase";
 import { getSafeRedirect, normalizeEmail } from "../../lib/auth";
 
@@ -73,7 +73,7 @@ export default function QuickLoginPage() {
     const cleanEmail = normalizeEmail(email);
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
       setIsError(true);
-      setMsg("يرجى إدخال بريد إلكتروني صحيح.");
+      setMsg("اكتب إيميل صح لو سمحت.");
       return;
     }
 
@@ -99,7 +99,7 @@ export default function QuickLoginPage() {
 
       if (!isUserNotFoundError(checkResult.error.message)) {
         setIsError(true);
-        setMsg(`تعذر الإرسال: ${checkResult.error.message}`);
+        setMsg(`ما قدرنا نطرش: ${checkResult.error.message}`);
         return;
       }
 
@@ -114,7 +114,7 @@ export default function QuickLoginPage() {
 
       if (error) {
         setIsError(true);
-        setMsg(`تعذر الإرسال: ${error.message}`);
+        setMsg(`ما قدرنا نطرش: ${error.message}`);
         return;
       }
 
@@ -122,7 +122,7 @@ export default function QuickLoginPage() {
       setSent(true);
     } catch (err) {
       setIsError(true);
-      setMsg(err.message || "حدث خطأ غير متوقع. حاول مرة أخرى.");
+      setMsg(err.message || "صار خطأ مو متوقع. جرب مرة ثانية.");
     } finally {
       setIsLoading(false);
     }
@@ -133,7 +133,7 @@ export default function QuickLoginPage() {
     const cleanEmail = normalizeEmail(email);
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
       setIsError(true);
-      setMsg("يرجى إدخال بريد إلكتروني صحيح.");
+      setMsg("اكتب إيميل صح لو سمحت.");
       return;
     }
 
@@ -153,9 +153,9 @@ export default function QuickLoginPage() {
       if (error) {
         setIsError(true);
         if (isUserNotFoundError(error.message)) {
-          setMsg("لا يوجد حساب مسجل بهذا البريد. استخدم زر 'تسجيل جديد' بالأسفل.");
+          setMsg("ماكو حساب مسجل بهالإيميل. طق على زر 'سجل من هني' تحت.");
         } else {
-          setMsg(`تعذر تسجيل الدخول: ${error.message}`);
+          setMsg(`ما قدرنا ندش: ${error.message}`);
         }
         return;
       }
@@ -181,7 +181,7 @@ export default function QuickLoginPage() {
           className="flex items-center gap-1.5 text-sm font-bold text-slate-500 hover:text-cyan-600 transition-colors bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-xl border border-slate-200/60"
         >
           <ArrowRight className="w-4 h-4" />
-          العودة للرئيسية
+          ارجع للرئيسية
         </Link>
       </div>
 
@@ -191,9 +191,9 @@ export default function QuickLoginPage() {
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.5, type: "spring" }}
-            className="bg-gradient-to-tr from-cyan-500 to-sky-400 text-white p-4 rounded-2xl shadow-lg shadow-cyan-500/20"
+            className="bg-white p-3 rounded-2xl shadow-lg border border-slate-200"
           >
-            <Shield className="w-9 h-9" />
+            <GameLogo className="w-14 h-14" />
           </motion.div>
         </div>
         <motion.h1
@@ -202,7 +202,7 @@ export default function QuickLoginPage() {
           transition={{ delay: 0.1, duration: 0.5 }}
           className="mt-6 text-center text-3xl font-extrabold text-slate-900 tracking-tight"
         >
-          {wasRegistered ? "مرحباً بعودتك" : "الدخول للمعركة"}
+          {wasRegistered ? "يا هلا فيك" : "دش اللعبة"}
         </motion.h1>
       </div>
 
@@ -232,21 +232,21 @@ export default function QuickLoginPage() {
                 <div>
                   <h2 className="text-xl font-extrabold text-slate-900 mb-2">
                     {successMode === "already-registered"
-                      ? "أنت مسجّل بالفعل ✅"
-                      : "تحقق من بريدك!"}
+                      ? "أنت مسجل عندنا من قبل ✅"
+                      : "شيك على إيميلك!"}
                   </h2>
                   <p className="text-sm text-slate-500 font-medium">
                     {successMode === "already-registered"
-                      ? "هذا البريد مسجّل من قبل — أرسلنا لك رابط تسجيل الدخول إلى"
+                      ? "هذا الإيميل مسجل عندنا — طرشنا لك رابط الدخول على إيميلك"
                       : successMode === "login"
-                        ? "أرسلنا رابط تسجيل الدخول إلى"
-                        : "أرسلنا رابط التسجيل إلى"}
+                        ? "طرشنا رابط الدخول حق"
+                        : "طرشنا رابط التسجيل حق"}
                   </p>
                   <p className="text-sm font-bold text-cyan-700 mt-1 break-all" dir="ltr">
                     {email}
                   </p>
                   <p className="text-xs text-slate-400 mt-3 font-medium leading-relaxed">
-                    افتح الإيميل واضغط على الرابط — ستدخل المعركة تلقائياً بدون أي خطوات إضافية
+                    بطل إيميلك واضغط على الرابط — راح تدش اللعبة سيدة بدون أي لوية
                   </p>
                 </div>
                 <button
@@ -258,7 +258,7 @@ export default function QuickLoginPage() {
                   }}
                   className="w-full flex items-center justify-center gap-2 py-3 px-4 border-2 border-slate-200 rounded-xl text-sm font-bold text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300 transition-all cursor-pointer"
                 >
-                  تغيير البريد أو إعادة الإرسال
+                  غير الإيميل أو طرشه مرة ثانية
                 </button>
               </motion.div>
             ) : wasRegistered && !showLoginForm ? (
@@ -277,10 +277,10 @@ export default function QuickLoginPage() {
                   </div>
                   <div>
                     <p className="text-lg font-extrabold text-slate-900">
-                      أنت مسجّل بالفعل في المعركة
+                      أنت مسجل باللعبة من قبل
                     </p>
                     <p className="text-sm text-slate-500 mt-1 font-medium">
-                      اضغط الزر أدناه وأدخل بريدك لتسجيل الدخول
+                      اضغط الزر تحت واكتب إيميلك عشان تدش
                     </p>
                   </div>
                 </div>
@@ -300,7 +300,7 @@ export default function QuickLoginPage() {
                     onClick={() => setWasRegistered(false)}
                     className="text-xs text-slate-400 hover:text-cyan-600 font-bold transition-colors cursor-pointer"
                   >
-                    حساب جديد؟ التسجيل من هنا
+                    تبي حساب جديد؟ سجل من هني
                   </button>
                 </div>
               </motion.div>
@@ -335,7 +335,7 @@ export default function QuickLoginPage() {
                       htmlFor="email"
                       className="block text-sm font-bold text-slate-700 mb-2"
                     >
-                      البريد الإلكتروني
+                      الإيميل
                     </label>
                     <div className="relative rounded-xl shadow-sm">
                       <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
@@ -354,7 +354,7 @@ export default function QuickLoginPage() {
                       />
                     </div>
                     <p className="text-[11px] text-slate-400 mt-1.5 font-medium">
-                      سيصلك رابط في الإيميل — اضغط عليه وادخل مباشرة
+                      راح يوصلك رابط على إيميلك — اضغط عليه وتدش سيدة
                     </p>
                   </div>
 
@@ -380,12 +380,12 @@ export default function QuickLoginPage() {
                     {isLoading ? (
                       <>
                         <Loader2 className="w-5 h-5 animate-spin" />
-                        جاري الإرسال...
+                        قاعدين نطرش...
                       </>
                     ) : (
                       <>
                         <Mail className="w-5 h-5" />
-                        تسجيل جديد
+                        سجل جديد
                       </>
                     )}
                   </button>
@@ -410,7 +410,7 @@ export default function QuickLoginPage() {
                   className="w-full flex items-center justify-center gap-2.5 py-3 px-4 border-2 border-slate-200 rounded-xl text-sm font-bold text-slate-700 bg-white hover:bg-slate-50 hover:border-cyan-300 hover:text-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   <LogIn className="w-5 h-5" />
-                  لدي حساب بالفعل — تسجيل الدخول
+                  عندي حساب — سجل دخول
                 </button>
               </motion.div>
             )}

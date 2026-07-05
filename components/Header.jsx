@@ -7,6 +7,8 @@ import Link from "next/link";
 import { supabase } from "../lib/supabase";
 import { getUserDisplayName } from "../lib/auth";
 
+import GameLogo from "./GameLogo";
+
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -45,6 +47,7 @@ export default function Header() {
     { name: "الرئيسية", href: "#hero" },
     { name: "طريقة اللعب", href: "#how-to-play" },
     { name: "التصنيفات", href: "#categories" },
+    { name: "باقات الشحن", href: "#payment-gate" },
   ];
 
   return (
@@ -59,13 +62,8 @@ export default function Header() {
       <div className="max-w-[85rem] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="bg-gradient-to-tr from-sky-400 to-cyan-500 text-white p-2 rounded-xl shadow-md group-hover:scale-105 transition-transform duration-300">
-              <Shield className="w-6 h-6" />
-            </div>
-            <span className="font-sans font-bold text-2xl tracking-tight bg-gradient-to-r from-slate-900 via-cyan-600 to-sky-500 bg-clip-text text-transparent">
-              معركة سيادة
-            </span>
+          <Link href="/" className="flex items-center gap-3 group">
+            <GameLogo className="w-20 h-20 group-hover:scale-105 transition-transform duration-300" />
           </Link>
 
           {/* Desktop Navigation */}

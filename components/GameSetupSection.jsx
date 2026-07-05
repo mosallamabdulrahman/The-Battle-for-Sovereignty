@@ -106,7 +106,7 @@ export default function GameSetupSection() {
           if (payload.new.status === "abandoned") {
             window.localStorage.removeItem("sovereignty_active_room");
             setToast({
-              message: "خرج الفريق الآخر أو الحكم من اللعبة، وتم إنهاء الغرفة.",
+              message: "الحكم أو الخصم طلع من اللعبة، وتسكرت الغرفة.",
               type: "error",
             });
           }
@@ -133,7 +133,7 @@ export default function GameSetupSection() {
 
       if (!result.fromSupabase) {
         triggerToast(
-          "لم يتم العثور على بنك الأسئلة في Supabase. شغّل ملف SUPABASE_QUESTION_BANK.sql أولاً.",
+          "ما لقينا بنك الأسئلة في Supabase. شغل ملف SUPABASE_QUESTION_BANK.sql أول شي.",
           "warning",
         );
       }
@@ -153,7 +153,7 @@ export default function GameSetupSection() {
     } else {
       if (selectedCategories.length >= 6) {
         triggerToast(
-          "لا يمكنك اختيار أكثر من 6 تصنيفات للبطولة العسكرية.",
+          "ما تقدر تختار أكثر من 6 فئات حق اللعبة.",
           "warning",
         );
         return;
@@ -167,7 +167,7 @@ export default function GameSetupSection() {
     // 1. Auth Validation
     if (!user) {
       triggerToast(
-        "يجب إنشاء حساب أو تسجيل الدخول أولاً قبل بدء اللعبة.",
+        "لازم تسوي حساب أو تسجل دخولك أول قبل لا تبدأ اللعب.",
         "auth-error",
       );
       return;
@@ -176,7 +176,7 @@ export default function GameSetupSection() {
     // 2. Setup Step Validations in sequence
     if (selectedCategories.length !== 6) {
       triggerToast(
-        "يجب اختيار تصنيفات الأسئلة أولاً قبل إكمال باقي الإعدادات.",
+        "لازم تختار فئات الأسئلة أول شي قبل لا تكمل الباقي.",
         "error",
       );
       return;
@@ -184,14 +184,14 @@ export default function GameSetupSection() {
 
     if (!questionSourceReady) {
       triggerToast(
-        "جاري تحميل بنك الأسئلة من قاعدة البيانات، حاول مرة أخرى بعد لحظات.",
+        "قاعدين نحمل الأسئلة، انطر شوي ورد جرب.",
         "warning",
       );
       return;
     }
 
     if (!team1Name.trim() || !team2Name.trim()) {
-      triggerToast("يرجى إدخال اسم الفريق الأول واسم الفريق الثاني.", "error");
+      triggerToast("لو سمحت اكتب اسم الفريق الأول واسم الفريق الثاني.", "error");
       return;
     }
 
@@ -207,7 +207,7 @@ export default function GameSetupSection() {
 
       if (questions.length !== 36) {
         throw new Error(
-          "كل تصنيف مختار يجب أن يحتوي على 6 أسئلة مفعلة داخل بنك الأسئلة.",
+          "لازم كل فئة تختارها يكون فيها 6 أسئلة شغالة ببنك الأسئلة.",
         );
       }
 
@@ -234,13 +234,13 @@ export default function GameSetupSection() {
       setCreatedRoom(room);
       window.localStorage.setItem("sovereignty_active_room", room.id);
       triggerToast(
-        "تم تجهيز الغرفة العسكرية وتوليد شيفرات الانضمام بنجاح!",
+        "جهزنا الغرفة وطلعنا روابط الانضمام بنجاح!",
         "success",
       );
     } catch (err) {
       console.error(err);
       triggerToast(
-        `حدث خطأ أثناء حجز الغرفة: ${err.message || "يرجى مراجعة الصلاحيات RLS."}`,
+        `صار خطأ وإحنا نجهز الغرفة: ${err.message || "يرجى مراجعة الصلاحيات RLS."}`,
         "error",
       );
     } finally {
@@ -272,18 +272,18 @@ export default function GameSetupSection() {
     });
 
     if (error) {
-      triggerToast(`تعذر الخروج من الغرفة: ${error.message}`, "error");
+      triggerToast(`ما قدرنا نطلع من الغرفة: ${error.message}`, "error");
       return;
     }
 
     window.localStorage.removeItem("sovereignty_active_room");
     setCreatedRoom(null);
-    triggerToast("تم إنهاء الغرفة والخروج من اللعبة.", "success");
+    triggerToast("تسكرت الغرفة وطلعنا من اللعبة.", "success");
   };
 
   const copyLinkToClip = (url, label) => {
     navigator.clipboard.writeText(url);
-    triggerToast(`تم نسخ رابط ${label} إلى حافظة جهازك!`, "success");
+    triggerToast(`نسخنا الرابط حق ${label} لجهازك!`, "success");
   };
 
   return (
@@ -300,14 +300,13 @@ export default function GameSetupSection() {
         <div className="text-center max-w-3xl mx-auto mb-16">
           <div className="inline-flex items-center gap-2 bg-cyan-50 border border-cyan-100 text-cyan-800 px-4 py-1.5 rounded-full text-xs font-bold mb-4">
             <Crown className="w-4 h-4 text-cyan-600 animate-pulse" />
-            منصة تكتيك وإدارة الحروب الثقافية
+            إدارة وتجهيز اللعب والتحدي
           </div>
           <h2 className="text-3xl md:text-4xl font-bold text-slate-950 tracking-tight leading-tight">
-            تهيئة وتحضير المعمعة الحربية
+            تجهيز وضبط اللعبة
           </h2>
           <p className="text-sm md:text-md text-slate-600 mt-2.5 max-w-xl mx-auto leading-relaxed font-semibold">
-            بصفتك حكماً عسكرياً، حدد تصنيفات الأسئلة وقادة الصفوف ووسائل الدعم
-            اللوجيستي، ثم ولّد الروابط الميدانية لمسح الرموز.
+            بصفتك الحكم، اختار فئات الأسئلة وأسماء الفرق، وعقبها طلع الروابط والـ QR كود عشان يدشون معاك باللعبة.
           </p>
         </div>
 
@@ -351,7 +350,7 @@ export default function GameSetupSection() {
           <div className="space-y-16">
             {createdRoom?.status === "abandoned" && (
               <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-center text-sm font-bold text-rose-800">
-                خرج أحد أطراف اللعبة وتم إنهاء الغرفة. يمكنك إنشاء غرفة جديدة.
+                واحد من اللاعبين طلع وتسكرت الغرفة. تقدر تسوي غرفة جديدة.
               </div>
             )}
 
@@ -364,22 +363,21 @@ export default function GameSetupSection() {
                   </span>
                   <div>
                     <h3 className="text-lg font-bold text-slate-900">
-                      الخطوة الأولى: تحديد جبهات وساحات الأسئلة
+                      الخطوة الأولى: اختار فئات الأسئلة
                     </h3>
                     <p className="text-xs text-slate-500">
-                      يتعين عليك تفعيل بالضبط 6 مناطق ثقافية للمبارزة
+                      لازم تختار 6 فئات بالضبط حق التحدي
                     </p>
                   </div>
                 </div>
                 <div className="bg-slate-200/80 px-4 py-1.5 rounded-xl text-xs font-bold text-slate-700">
-                  تم اختيار {selectedCategories.length} من 6
+                  اخترت {selectedCategories.length} من 6
                 </div>
               </div>
 
               {questionSourceReady && categoriesList.length === 0 && (
                 <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-center text-sm font-bold text-amber-900">
-                  لا توجد تصنيفات محملة من Supabase. شغّل ملف
-                  SUPABASE_QUESTION_BANK.sql من SQL Editor ثم حدّث الصفحة.
+                  ماكو فئات محملة من Supabase. شغل ملف SUPABASE_QUESTION_BANK.sql تالي حدث الصفحة.
                 </div>
               )}
 
@@ -441,10 +439,10 @@ export default function GameSetupSection() {
                 </span>
                 <div>
                   <h3 className="text-lg font-bold text-slate-900">
-                    الخطوة الثانية: تعميد أسماء الجبهات المتقاتلة
+                    الخطوة الثانية: سمي الفرق اللي بتلعب
                   </h3>
                   <p className="text-xs text-slate-500">
-                    أدخل الأسماء الرمزية للفريق الأول والفريق الثاني
+                    اكتب أسامي الفرق (الفريق الأول والثاني)
                   </p>
                 </div>
               </div>
@@ -454,7 +452,7 @@ export default function GameSetupSection() {
                 onClick={() => {
                   if (selectedCategories.length !== 6) {
                     triggerToast(
-                      "يجب اختيار تصنيفات الأسئلة أولاً قبل إكمال باقي الإعدادات.",
+                      "لازم تختار فئات الأسئلة أول شي قبل لا تكمل الباقي.",
                       "error",
                     );
                   }
@@ -463,13 +461,13 @@ export default function GameSetupSection() {
                 {/* Team A */}
                 <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm relative">
                   <div className="absolute top-4 left-4 bg-cyan-500/10 text-cyan-600 px-3 py-1 rounded-full text-[10px] font-bold">
-                    الفريق الأزرق المهاجم
+                    الفريق الأزرق
                   </div>
                   <label
                     htmlFor="team1"
                     className="block text-sm font-bold text-slate-800 mb-2"
                   >
-                    اسم الفوج العسكري الأول
+                    اسم الفريق الأول
                   </label>
                   <input
                     id="team1"
@@ -477,24 +475,24 @@ export default function GameSetupSection() {
                     disabled={selectedCategories.length !== 6}
                     value={team1Name}
                     onChange={(e) => setTeam1Name(e.target.value)}
-                    placeholder="مثال: كتائب الفرسان"
+                    placeholder="مثال: كتيبة الفرسان"
                     className="block w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 text-sm font-bold text-slate-800 focus:outline-none transition-all"
                   />
                   <p className="text-[10px] text-slate-400 mt-1 ml-1 font-semibold">
-                    سيتم تمثيله باللون الأزرق الحربي بقلعة الدفاع الأساسية
+                    راح يكون لونه أزرق باللعبة
                   </p>
                 </div>
 
                 {/* Team B */}
                 <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm relative">
                   <div className="absolute top-4 left-4 bg-orange-500/10 text-orange-600 px-3 py-1 rounded-full text-[10px] font-bold">
-                    الفريق الأحمر الحربي
+                    الفريق الأحمر
                   </div>
                   <label
                     htmlFor="team2"
                     className="block text-sm font-bold text-slate-800 mb-2"
                   >
-                    اسم الفوج العسكري الثاني
+                    اسم الفريق الثاني
                   </label>
                   <input
                     id="team2"
@@ -506,7 +504,7 @@ export default function GameSetupSection() {
                     className="block w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 text-sm font-bold text-slate-800 focus:outline-none transition-all"
                   />
                   <p className="text-[10px] text-slate-400 mt-1 ml-1 font-semibold">
-                    سيتم تمثيله باللون الأحمر الناري بجبهات الدخول والموانئ
+                    راح يكون لونه أحمر باللعبة
                   </p>
                 </div>
               </div>
@@ -524,11 +522,10 @@ export default function GameSetupSection() {
                 </span>
                 <div>
                   <h3 className="text-lg font-bold text-slate-900">
-                    الخطوة الثالثة: الأدوات التكتيكية الثابتة
+                    الخطوة الثالثة: الفزعات والمساعدات
                   </h3>
                   <p className="text-xs text-slate-500">
-                    يحصل الفريقان تلقائيًا على الأدوات نفسها، ولا تظهر للاستخدام
-                    إلا بعد بدء القتال.
+                    الفريقين راح يحصلون على نفس الفزعات، وما تقدرون تستخدمونها إلا لما يبدأ اللعب.
                   </p>
                 </div>
               </div>
@@ -536,8 +533,7 @@ export default function GameSetupSection() {
               <div className="rounded-2xl border border-cyan-200 bg-cyan-50 p-5 flex items-center gap-3">
                 <Zap className="w-5 h-5 text-cyan-600 shrink-0" />
                 <p className="text-xs font-bold text-cyan-900 leading-relaxed">
-                  سيحصل الفريقان تلقائيًا على ثلاث أدوات متساوية. تبقى الأدوات
-                  مخفية ولا يمكن استخدامها قبل انتقال الغرفة إلى مرحلة القتال.
+                  كل فريق راح ياخذ 3 فزعات متساوية. الفزعات تكون مخشوشة وما تقدرون تستخدمونها إلا لما يبدأ اللعب والطق.
                 </p>
               </div>
             </div>
@@ -553,12 +549,11 @@ export default function GameSetupSection() {
               >
                 <Play className="w-5 h-5 fill-white" />
                 {isSubmitting
-                  ? "جاري تأسيس رصد الغرف الحربية..."
-                  : "تعبئة الجبهة والبدء الآن"}
+                  ? "قاعدين نجهز الغرفة..."
+                  : "ابدأ اللعب الحين"}
               </motion.button>
               <p className="text-xs text-slate-400 mt-3 font-semibold">
-                ستقوم الغرفة بتوليد QR كود للمسح الفوري وإدخال الأجهزة اللوحية
-                كجيوش حية
+                الغرفة راح تطلع لك QR كود عشان تمسحه وتلعب من تلفونك أو أي جهاز ثاني
               </p>
             </div>
           </div>
@@ -576,11 +571,10 @@ export default function GameSetupSection() {
               </div>
               <div className="text-right">
                 <h3 className="font-sans font-bold text-base">
-                  تم تأسيس ساحة القتال بنجاح!
+                  جهزنا الغرفة واللعبة بنجاح!
                 </h3>
                 <p className="text-xs text-emerald-700/85 mt-0.5 font-bold">
-                  تتنصت الغرفة وسيرفرات معركة سيادة على تواجد وتعبئة الجيوش
-                  العتادية في هذه الأثناء.
+                  الغرفة ناطرة الحين دخول اللاعبين عشان تبدون الطق واللعب.
                 </p>
               </div>
             </div>
@@ -589,7 +583,7 @@ export default function GameSetupSection() {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 bg-slate-50 p-6 rounded-2xl border border-slate-100 mb-8 text-right">
               <div>
                 <span className="text-[10px] text-slate-400 font-bold block">
-                  رقم تعريف الغرفة
+                  كود الغرفة
                 </span>
                 <span className="text-xs font-bold text-slate-700 select-all">
                   {createdRoom.id.slice(0, 8)}...
@@ -651,7 +645,7 @@ export default function GameSetupSection() {
                     className="flex-1 bg-cyan-600 hover:bg-cyan-705 text-white py-1.5 px-3 rounded-lg flex items-center justify-center gap-1.5 text-[11px] font-bold transition-colors"
                   >
                     <Smartphone className="w-3.5 h-3.5" />
-                    فتح كلاعب
+                    ادش كلاعب
                   </a>
                 </div>
               </div>
@@ -692,26 +686,24 @@ export default function GameSetupSection() {
                     className="flex-1 bg-orange-600 hover:bg-orange-705 text-white py-1.5 px-3 rounded-lg flex items-center justify-center gap-1.5 text-[11px] font-bold transition-colors"
                   >
                     <Smartphone className="w-3.5 h-3.5" />
-                    فتح كلاعب
+                    ادش كلاعب
                   </a>
                 </div>
               </div>
             </div>
 
             <div className="mb-8 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-center text-xs font-bold leading-relaxed text-amber-900">
-              لا تفتح رابط الفريق بنفس حساب الحكم. انسخ كل رابط وافتحه في نافذة
-              خاصة أو جهاز آخر، ثم سجل الدخول بحساب مختلف لكل فريق.
+              لا تفتح رابط الفريق بنفس حساب الحكم. انسخ الرابط وافتحه بجهاز ثاني أو بصفحة خفية، وسجل دخول بحساب ثاني حق كل فريق.
             </div>
 
             {/* Launch Referee view */}
             <div className="border-t border-slate-100 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="text-right">
                 <h5 className="font-bold text-sm text-slate-850">
-                  غرفة المتابعة وشاشة الحكم الحية
+                  صفحة الحكم وشاشة المتابعة
                 </h5>
                 <p className="text-xs text-slate-400 font-semibold mt-0.5">
-                  أنت تمتلك الرمز التعريفي لهذه المعركة. تفضل بمراقبة تمركز
-                  الجيوش.
+                  أنت الحكم الحين. تقدر تراقب اللعب وتشوف توزيع الفرق.
                 </p>
               </div>
               <div className="flex gap-3 shrink-0">
@@ -720,14 +712,14 @@ export default function GameSetupSection() {
                   onClick={handleExitCreatedRoom}
                   className="px-5 py-2.5 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 text-xs font-bold rounded-xl transition-all cursor-pointer"
                 >
-                  خروج من اللعبة
+                  اطلع من اللعبة
                 </button>
                 <a
                   href={masterJudgeUrl}
                   className="px-6 py-2.5 bg-gradient-to-r from-cyan-600 to-sky-500 hover:scale-[1.02] text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center gap-1.5"
                 >
                   <Crown className="w-4 h-4 fill-white animate-bounce" />
-                  دخول شاشة الحكم والمراقبة
+                  ادش شاشة الحكم والمتابعة
                 </a>
               </div>
             </div>

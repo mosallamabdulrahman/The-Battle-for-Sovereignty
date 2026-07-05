@@ -1,8 +1,8 @@
 import './globals.css';
 
 export const metadata = {
-  title: 'معركة سيادة - اللعبة الاستراتيجية الثقافية',
-  description: 'معركة سيادة هي لعبة أسئلة وتحديات عسكرية استراتيجية تنافسية بين فريقين.',
+  title: 'حيلهم بينهم - اللعبة الاستراتيجية الثقافية',
+  description: 'حيلهم بينهم اهي لعبة أسئلة وتحديات استراتيجية تنافسية بين فريقين.',
 };
 
 export default function RootLayout({ children }) {

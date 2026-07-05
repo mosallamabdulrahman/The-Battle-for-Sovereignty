@@ -111,10 +111,10 @@ export default function BattlePage() {
   // Equipment pricing & icons list (mines are free — hidden danger)
   const unitSpecs = {
     infantry: { name: "جندي مشاة", cost: 10, emoji: "👥" },
-    tank: { name: "مدرعة دبابة", cost: 50, emoji: "🚜" },
-    aircraft: { name: "طائرة قتالية", cost: 100, emoji: "✈️" },
-    submarine: { name: "غواصة بحرية", cost: 200, emoji: "⛵" },
-    mine: { name: "لغم مغناطيسي", cost: 0, emoji: "💥" },
+    tank: { name: "دبابة", cost: 50, emoji: "🚜" },
+    aircraft: { name: "طيارة قتالية", cost: 100, emoji: "✈️" },
+    submarine: { name: "غواصة", cost: 200, emoji: "⛵" },
+    mine: { name: "لغم", cost: 0, emoji: "💥" },
   };
 
   // Limits per type — totals to exactly 33 (board must have 33 occupied, 3 empty)
@@ -425,8 +425,8 @@ export default function BattlePage() {
             setTeamAccessIssue({
               type: "occupied",
               message: claimError.message?.includes("already assigned")
-                ? "هذا الفريق محجوز بالفعل بحساب لاعب آخر."
-                : claimError.message || "تعذر الانضمام إلى هذا الفريق.",
+                ? "الفريق هذا محجوز حق لاعب ثاني."
+                : claimError.message || "ما قدرنا ننضم حق هالفريق.",
             });
           } else {
             const { data: claimedTeams, error: claimedTeamsError } =
@@ -516,7 +516,7 @@ export default function BattlePage() {
     } catch (err) {
       console.error(err);
       setDbError(
-        err.message || "فشل تحميل بيانات معركة سيادة من الخادم الريادي القديم.",
+        err.message || "ما قدرنا نحمل بيانات حيلهم بينهم.",
       );
     } finally {
       setDbLoading(false);
@@ -627,7 +627,7 @@ export default function BattlePage() {
       });
 
       if (error) {
-        showAlert(`تعذر تحميل الإجابة: ${error.message}`, "error");
+        showAlert(`ما قدرنا نحمل الإجابة: ${error.message}`, "error");
         return;
       }
 
@@ -646,7 +646,7 @@ export default function BattlePage() {
 
     if (activeTeam.is_ready) {
       showAlert(
-        "تم تشفير وإقفال الترسانة مسبقاً، يرجى انتظار اللواء الآخر.",
+        "قفلنا توزيعك وخشينا جنودك، انطر الفريق الثاني يخلص.",
         "warning",
       );
       return;
@@ -672,7 +672,7 @@ export default function BattlePage() {
     else {
       const cost = unitSpecs[selectedUnit].cost;
       if (currentPoints < cost) {
-        showAlert("رصيد الفريق غير كافٍ لإضافة هذه الوحدة العسكرية.", "error");
+        showAlert("ما عندك نقاط كافية عشان تضيف هالجنود.", "error");
         return;
       }
 
@@ -683,7 +683,7 @@ export default function BattlePage() {
       const maxAllowed = unitLimits[selectedUnit];
       if (currentUnitCount >= maxAllowed) {
         showAlert(
-          `الحد الأقصى لـ"${unitSpecs[selectedUnit].name}" هو ${maxAllowed} وحدة في الساحة.`,
+          `الحد الأقصى حق "${unitSpecs[selectedUnit].name}" هو ${maxAllowed} بالخريطة.`,
           "error",
         );
         return;
@@ -795,7 +795,7 @@ export default function BattlePage() {
     const placedCount = (activeTeam.board || []).filter(Boolean).length;
     if (placedCount !== 33) {
       showAlert(
-        `يجب نشر 33 وحدة بالضبط قبل الإقفال (حالياً: ${placedCount}/33).`,
+        `لازم توزع 33 جندي بالضبط قبل لا تقفل (الحين حاط: ${placedCount}/33).`,
         "error",
       );
       return;
@@ -824,7 +824,7 @@ export default function BattlePage() {
     try {
       await action();
     } catch (error) {
-      showAlert(error.message || "تعذر تنفيذ العملية.", "error");
+      showAlert(error.message || "ما قدرنا نسوي هالعملية.", "error");
     } finally {
       setIsActionBusy(false);
     }
@@ -835,7 +835,7 @@ export default function BattlePage() {
       const unjoinedTeam = teams.find((t) => !t.joined);
       if (unjoinedTeam) {
         throw new Error(
-          `لا يمكن اختيار السؤال — ${unjoinedTeam.name} لم ينضم إلى اللعبة بعد.`,
+          `ما تقدر تختار السؤال — ${unjoinedTeam.name} للحين ما دش اللعبة.`,
         );
       }
       const { error } = await supabase.rpc("select_room_question", {
@@ -901,8 +901,8 @@ export default function BattlePage() {
       if (error) throw error;
       const team = teams.find((t) => t.team_index === grantTeamIndex);
       const label =
-        count === 1 ? "ضربة واحدة" : count === 2 ? "ضربتين" : `${count} ضربات`;
-      showAlert(`✓ تم منح ${label} لـ ${team?.name || "الفريق"}`, "success");
+        count === 1 ? "طقة وحدة" : count === 2 ? "طقتين" : `${count} طقات`;
+      showAlert(`✓ عطينا ${label} حق ${team?.name || "الفريق"}`, "success");
     });
 
   // Soft exit: mark team as disconnected without destroying the room
@@ -944,7 +944,7 @@ export default function BattlePage() {
         (toolId === "shield" || toolId === "extra_strike") &&
         room?.active_question_id
       ) {
-        throw new Error("يجب تفعيل هذه الوسيلة قبل كشف السؤال.");
+        throw new Error("لازم تشغل هالفزعة قبل لا تبطل السؤال.");
       }
 
       if (
@@ -952,7 +952,7 @@ export default function BattlePage() {
         (!activeTeam || activeTeam.available_strikes <= 0)
       ) {
         throw new Error(
-          "يمكنك استخدام الضربة الإضافية فقط عندما يكون لديك ضربات متاحة للضرب.",
+          "تقدر تستخدم طقة زيادة بس لما يكون عندك طقات جاهزة للطق.",
         );
       }
 
@@ -1013,7 +1013,7 @@ export default function BattlePage() {
         <div className="text-center">
           <RefreshCw className="w-10 h-10 animate-spin text-cyan-600 mx-auto" />
           <h3 className="text-sm font-bold text-slate-800 mt-4">
-            جاري فحص تصاريح المرور والمصادقة...
+            قاعدين نشيك على حسابك وتصاريح الدخول...
           </h3>
         </div>
       </div>
@@ -1033,24 +1033,23 @@ export default function BattlePage() {
             <LockKeyhole className="w-12 h-12" />
           </div>
           <h2 className="text-2xl font-bold text-slate-900 leading-tight">
-            بوابة المصادقة المطلوبة
+            لازم تسجل دخولك أول
           </h2>
           <p className="text-xs text-slate-500 mt-2 leading-relaxed font-semibold">
-            عذراً، يجب الدخول أولاً قبل تولي تمركز الجيش أو إدارة الغرفة الحربية
-            المشتركة. الدخول سريع بدون كلمة مرور!
+            عفواً، لازم تسجل دخولك أول شي عشان تقدر توزع فريقك أو تدير الغرفة. الدخول وايد سريع بدون باسورد!
           </p>
           <div className="mt-8 flex flex-col gap-3">
             <Link
               href={`/login?redirect=${encodeURIComponent(getCurrentBattlePath())}`}
               className="w-full bg-gradient-to-r from-cyan-600 to-sky-500 hover:shadow-md py-3 rounded-xl font-bold text-white text-sm transition-all flex items-center justify-center gap-2"
             >
-              ⚡ الدخول السريع
+              ⚡ دخول سريع
             </Link>
             <Link
               href="/"
               className="text-xs font-bold text-slate-400 hover:text-cyan-600 transition-colors mt-2 block"
             >
-              ← العودة للواجهة الرئيسية للدليل
+              ← ارجع للرئيسية
             </Link>
           </div>
         </motion.div>
@@ -1064,7 +1063,7 @@ export default function BattlePage() {
         <div className="text-center">
           <RefreshCw className="w-8 h-8 animate-spin text-cyan-500 mx-auto" />
           <p className="text-xs font-bold text-slate-700 mt-4">
-            جاري تفريغ بروتوكولات الميدان واستدعاء الحلفاء لربط الجبهات...
+            قاعدين نربط الجبهات وننطر باجي ربعنا يدشون...
           </p>
         </div>
       </div>
@@ -1077,7 +1076,7 @@ export default function BattlePage() {
         <div className="bg-white p-8 rounded-2xl border border-rose-100 shadow-lg text-center max-w-sm">
           <AlertTriangle className="w-12 h-12 text-rose-500 mx-auto animate-bounce" />
           <h3 className="text-lg font-bold text-slate-900 mt-4">
-            خلل في الاتصال بالشبكة
+            صار خلل بالاتصال بالنت
           </h3>
           <p className="text-xs text-slate-500 mt-2 leading-relaxed">
             {dbError}
@@ -1087,8 +1086,31 @@ export default function BattlePage() {
             onClick={() => window.location.reload()}
             className="mt-6 font-bold bg-cyan-600 text-white px-5 py-2 rounded-xl text-xs"
           >
-            تحديث الاتصال
+            جرب مرة ثانية
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (roomId && room && role === "judge" && room.judge_id !== user?.id) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 dir-rtl">
+        <div className="w-full max-w-md rounded-3xl border border-rose-100 bg-white p-8 text-center shadow-lg">
+          <Lock className="w-12 h-12 text-rose-500 mx-auto" />
+          <h2 className="mt-4 text-xl font-bold text-slate-950">
+            هالشاشة بس حق حكم الغرفة
+          </h2>
+          <p className="mt-3 text-xs leading-relaxed text-slate-400">
+            الحساب المسجّل حالياً لا يتطابق مع معرف الحكم الذي أنشأ هذه الغرفة.
+          </p>
+
+          <Link
+            href="/"
+            className="mt-7 block w-full rounded-xl bg-gradient-to-r from-cyan-600 to-sky-500 py-3 font-bold text-white text-xs"
+          >
+            ارجع للرئيسية
+          </Link>
         </div>
       </div>
     );
@@ -1101,8 +1123,8 @@ export default function BattlePage() {
           <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto" />
           <h2 className="mt-4 text-xl font-bold text-slate-950">
             {teamAccessIssue.type === "referee"
-              ? "حساب الحكم لا يمكنه حجز فريق"
-              : "تعذر الانضمام إلى الفريق"}
+              ? "حساب الحكم ما يقدر يحجز فريق"
+              : "ما قدرنا ننضم للفريق"}
           </h2>
           <p className="mt-3 text-sm leading-relaxed text-slate-600">
             {teamAccessIssue.message}
@@ -1114,7 +1136,7 @@ export default function BattlePage() {
                 href={`/battle?room_id=${roomId}&role=judge`}
                 className="block w-full rounded-xl bg-gradient-to-r from-cyan-600 to-sky-500 px-5 py-3 font-bold text-white"
               >
-                العودة إلى شاشة الحكم
+                ارجع لشاشة الحكم
               </Link>
             )}
             <button
@@ -1122,11 +1144,10 @@ export default function BattlePage() {
               onClick={handleSwitchToTeamAccount}
               className="w-full rounded-xl border border-slate-200 bg-slate-100 px-5 py-3 font-bold text-slate-800"
             >
-              تسجيل الخروج والدخول بحساب الفريق
+              اطلع وسجل دخول بحساب الفريق
             </button>
             <p className="text-[11px] leading-relaxed text-slate-400">
-              يمكنك أيضًا فتح رابط الفريق في نافذة خاصة Incognito أو على جهاز
-              آخر ثم تسجيل حساب مختلف.
+              تقدر بعد تبطل رابط الفريق بصفحة خفية أو بجهاز ثاني وتدش بحساب ثاني.
             </p>
           </div>
         </div>
@@ -1159,13 +1180,13 @@ export default function BattlePage() {
           <div className="rounded-3xl border border-rose-200 bg-white p-8 text-center shadow-xl">
             <AlertTriangle className="w-12 h-12 text-rose-500 mx-auto" />
             <h2 className="mt-4 font-bold text-slate-950">
-              هذه الشاشة مخصصة لحكم الغرفة فقط
+              هالشاشة بس حق حكم الغرفة
             </h2>
             <Link
               href="/"
               className="mt-5 inline-block text-sm font-bold text-cyan-600"
             >
-              العودة للرئيسية
+              ارجع للرئيسية
             </Link>
           </div>
         </div>
@@ -1268,10 +1289,10 @@ export default function BattlePage() {
             <Shield className="w-10 h-10" />
           </div>
           <h2 className="text-2xl font-bold text-slate-950 leading-tight">
-            بوابة العبور العسكرية للمعركة
+            بوابة الدخول للتحدي
           </h2>
           <p className="text-xs text-slate-500 mt-1 pb-6 border-b border-slate-100 font-semibold">
-            حدد هويتك العسكرية وموقع تمركزك للتموضع وتعبئة الصفوف فوراً
+            اختار منو أنت الحين وحدد مكانك عشان تبدأ اللعب سيدة
           </p>
 
           <div className="mt-8 space-y-4">
@@ -1281,10 +1302,10 @@ export default function BattlePage() {
             >
               <div>
                 <span className="font-extrabold text-sm text-cyan-900 block">
-                  الدخول كفريق: {room.team_1_name}
+                  دش كفريق: {room.team_1_name}
                 </span>
                 <span className="text-[10px] text-cyan-600 font-medium">
-                  التحكم في قلعة الدفاع وبناء ترسانة الأسلحة
+                  تحكم بفريقك ووزع جنودك
                 </span>
               </div>
               <Gamepad2 className="w-5 h-5 text-cyan-500 group-hover:scale-110 transition-transform" />
@@ -1296,10 +1317,10 @@ export default function BattlePage() {
             >
               <div>
                 <span className="font-extrabold text-sm text-orange-900 block">
-                  الدخول كفريق: {room.team_2_name}
+                  دش كفريق: {room.team_2_name}
                 </span>
                 <span className="text-[10px] text-orange-600 font-medium">
-                  التحكم في هجوم الجسر وبناء الجيش الداعم
+                  تحكم بفريقك ووزع جنودك
                 </span>
               </div>
               <Gamepad2 className="w-5 h-5 text-orange-500 group-hover:scale-110 transition-transform" />
@@ -1313,10 +1334,10 @@ export default function BattlePage() {
                 >
                   <div>
                     <span className="font-extrabold text-sm text-slate-800 block">
-                      الدخول كحكم المباراة (شاشة المتابعة)
+                      دش كحكم حق المباراة (شاشة المتابعة)
                     </span>
                     <span className="text-[10px] text-slate-500 font-medium">
-                      إدارة التلغرافات، رصد ضربات الرادار وتتبع المؤشرات
+                      تتبع اللعب، شوف طقات الرادار وراقب المؤشرات
                     </span>
                   </div>
                   <Crown className="w-5 h-5 text-slate-600 group-hover:scale-110 transition-transform" />
@@ -1326,7 +1347,7 @@ export default function BattlePage() {
                   onClick={handleExitGame}
                   className="w-full rounded-2xl border border-rose-200 bg-rose-50 p-3 text-sm font-bold text-rose-700"
                 >
-                  خروج من اللعبة وإنهاء الغرفة
+                  اطلع من اللعبة وسكر الغرفة
                 </button>
               </>
             )}
@@ -1371,10 +1392,10 @@ export default function BattlePage() {
               </div>
               <div className="text-right">
                 <h1 className="font-sans font-bold text-lg text-slate-950">
-                  شاشة الحكم العسكري الحية لتتبع المعركة
+                  شاشة الحكم الحية لمتابعة اللعب
                 </h1>
                 <p className="text-[10px] text-slate-400 font-semibold mt-0.5">
-                  غرفة المتابعة وتوليد الإشارات رقم: {room.id}
+                  غرفة المتابعة.. كود اللعبة: {room.id}
                 </p>
               </div>
             </div>
@@ -1385,18 +1406,18 @@ export default function BattlePage() {
                 className="px-4 py-2 border border-rose-200 bg-rose-50 hover:bg-rose-100 font-bold rounded-xl text-xs transition-colors text-rose-700 flex items-center gap-1.5"
               >
                 <LogOut className="w-4 h-4" />
-                خروج من اللعبة
+                اطلع من اللعبة
               </button>
               <Link
                 href="/"
                 className="px-4 py-2 border border-slate-200 hover:bg-slate-50 font-bold rounded-xl text-xs transition-colors text-slate-600"
               >
-                العودة للرئيسية
+                ارجع للرئيسية
               </Link>
               <span
                 className={`px-3.5 py-1.5 rounded-full text-[10px] font-bold ${"bg-amber-100 text-amber-700"}`}
               >
-                ● جاري تهيئة التعبئة العسكرية
+                ● ناطرين تجهيز الجيوش
               </span>
             </div>
           </div>
@@ -1416,7 +1437,7 @@ export default function BattlePage() {
                 <div className="mt-5 space-y-4 flex-1">
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-slate-400 font-medium">
-                      حالة الدخول للغرفة:
+                      حالة دخول الغرفة:
                     </span>
                     <span
                       className={`px-2.5 py-1 rounded-lg font-bold text-[10px] ${
@@ -1426,14 +1447,14 @@ export default function BattlePage() {
                       }`}
                     >
                       {team1Obj?.joined
-                        ? "✓ متصل بالرصيف"
-                        : "○ في انتظار قائد الكتيبة"}
+                        ? "✓ دش الغرفة"
+                        : "○ ناطرين الفريق يدش"}
                     </span>
                   </div>
 
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-slate-400 font-medium">
-                      تجهيز الجيش والتموضع:
+                      توزيع الجنود والتموضع:
                     </span>
                     <span
                       className={`px-2.5 py-1 rounded-lg font-bold text-[10px] ${
@@ -1443,14 +1464,14 @@ export default function BattlePage() {
                       }`}
                     >
                       {team1Obj?.is_ready
-                        ? "✓ تم بناء القوات بنجاح"
-                        : "○ جاري نشر الوحدات"}
+                        ? "✓ وزع جنوده وخلص"
+                        : "○ قاعد يوزع جنوده"}
                     </span>
                   </div>
 
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-slate-400 font-medium">
-                      الوحدات الحاضرة بالقلعة:
+                      الجنود اللي بالخريطة:
                     </span>
                     <span className="font-bold text-slate-700">
                       {(team1Obj?.board || []).filter(Boolean).length} من ٣٦
@@ -1463,18 +1484,18 @@ export default function BattlePage() {
                       <QRCodeSVG value={getTeamUrl(room.id, 1)} size={110} />
                     </div>
                     <span className="text-[10px] text-slate-400 font-bold mt-2">
-                      رابط تعبئة {room.team_1_name}
+                      رابط دخول {room.team_1_name}
                     </span>
                     <button
                       type="button"
                       onClick={() => {
                         navigator.clipboard.writeText(getTeamUrl(room.id, 1));
-                        showAlert("تم نسخ رابط الفريق الأول بنجاح!", "success");
+                        showAlert("نسخنا رابط الفريق الأول بنجاح!", "success");
                       }}
                       className="mt-2.5 text-[9px] font-bold text-cyan-600 bg-cyan-50 px-3 py-1.5 rounded-lg flex items-center gap-1 cursor-pointer hover:bg-cyan-100"
                     >
                       <Share2 className="w-3 h-3" />
-                      نسخ الرابط العسكري من الميدان
+                      نسخ رابط الدخول
                     </button>
                   </div>
                 </div>
@@ -1490,7 +1511,7 @@ export default function BattlePage() {
                 <div className="mt-5 space-y-4 flex-1">
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-slate-400 font-medium">
-                      حالة الدخول للغرفة:
+                      حالة دخول الغرفة:
                     </span>
                     <span
                       className={`px-2.5 py-1 rounded-lg font-bold text-[10px] ${
@@ -1500,14 +1521,14 @@ export default function BattlePage() {
                       }`}
                     >
                       {team2Obj?.joined
-                        ? "✓ متصل بالرصيف"
-                        : "○ في انتظار قائد الكتيبة"}
+                        ? "✓ دش الغرفة"
+                        : "○ ناطرين الفريق يدش"}
                     </span>
                   </div>
 
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-slate-400 font-medium">
-                      تجهيز الجيش والتموضع:
+                      توزيع الجنود والتموضع:
                     </span>
                     <span
                       className={`px-2.5 py-1 rounded-lg font-bold text-[10px] ${
@@ -1517,14 +1538,14 @@ export default function BattlePage() {
                       }`}
                     >
                       {team2Obj?.is_ready
-                        ? "✓ تم بناء القوات بنجاح"
-                        : "○ جاري نشر الوحدات"}
+                        ? "✓ وزع جنوده وخلص"
+                        : "○ قاعد يوزع جنوده"}
                     </span>
                   </div>
 
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-slate-400 font-medium">
-                      الوحدات الحاضرة بالقلعة:
+                      الجنود اللي بالخريطة:
                     </span>
                     <span className="font-bold text-slate-700">
                       {(team2Obj?.board || []).filter(Boolean).length} من ٣٦
@@ -1537,21 +1558,21 @@ export default function BattlePage() {
                       <QRCodeSVG value={getTeamUrl(room.id, 2)} size={110} />
                     </div>
                     <span className="text-[10px] text-slate-400 font-bold mt-2">
-                      رابط تعبئة {room.team_2_name}
+                      رابط دخول {room.team_2_name}
                     </span>
                     <button
                       type="button"
                       onClick={() => {
                         navigator.clipboard.writeText(getTeamUrl(room.id, 2));
                         showAlert(
-                          "تم نسخ رابط الفريق الثاني بنجاح!",
+                          "نسخنا رابط الفريق الثاني بنجاح!",
                           "success",
                         );
                       }}
                       className="mt-2.5 text-[9px] font-bold text-orange-600 bg-orange-50 px-3 py-1.5 rounded-lg flex items-center gap-1 cursor-pointer hover:bg-orange-100"
                     >
                       <Share2 className="w-3 h-3" />
-                      نسخ الرابط العسكري من الميدان
+                      نسخ رابط الدخول
                     </button>
                   </div>
                 </div>
@@ -1563,14 +1584,14 @@ export default function BattlePage() {
           <div className="space-y-6">
             <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-md">
               <h4 className="font-sans font-bold text-xs text-slate-500 uppercase tracking-wider mb-4">
-                كشف الإعدادات المشتركة المصادق عليها
+                كشف إعدادات الغرفة واللعب
               </h4>
 
               {/* Categories listed */}
               <div className="space-y-4">
                 <div>
                   <span className="text-[10px] text-slate-400 font-bold block mb-2">
-                    الأقاليم والجبهات المفعلة (6 مناطق):
+                    فئات الأسئلة المفتوحة (6 فئات):
                   </span>
                   <div className="flex flex-wrap gap-1.5">
                     {room.selected_categories.map((catId, idx) => (
@@ -1585,7 +1606,7 @@ export default function BattlePage() {
                 </div>
 
                 <div className="pt-4 border-t border-slate-100 text-[10px] font-bold text-slate-500">
-                  الأدوات التكتيكية مخفية حتى تبدأ مرحلة القتال.
+                  الفزعات مخشوشة للحين لين يبدأ اللعب والطق.
                 </div>
               </div>
             </div>
@@ -1614,7 +1635,7 @@ export default function BattlePage() {
           <div className="text-center">
             <RefreshCw className="w-8 h-8 animate-spin text-cyan-600 mx-auto" />
             <p className="text-xs font-bold text-slate-700 mt-4">
-              جاري توليد صفحة تموضع الكتائب...
+              قاعدين نجهز صفحة توزيع الجنود...
             </p>
           </div>
         </div>
@@ -1654,10 +1675,10 @@ export default function BattlePage() {
               </div>
               <div className="text-right">
                 <h1 className="font-sans font-bold text-base text-slate-950">
-                  لوحة انتشار لواء: {activeTeam.name}
+                  لوحة توزيع فريق: {activeTeam.name}
                 </h1>
                 <p className="text-[10px] text-slate-400 font-semibold mt-0.5">
-                  غرفة الحرب الثقافية رقم: {room.id.slice(0, 8)}
+                  كود الغرفة: {room.id.slice(0, 8)}
                 </p>
               </div>
             </div>
@@ -1669,11 +1690,11 @@ export default function BattlePage() {
                 className="px-3 py-2 border border-rose-200 bg-rose-50 hover:bg-rose-100 font-bold rounded-xl text-[10px] transition-colors text-rose-700 flex items-center gap-1.5"
               >
                 <LogOut className="w-3.5 h-3.5" />
-                خروج من اللعبة
+                اطلع من اللعبة
               </button>
               <div className="text-right">
                 <span className="text-[9px] text-slate-400 block font-bold">
-                  باقي نقاط الحرب للتسليح
+                  النقاط الباقية لتسليح جنودك
                 </span>
                 <span className="text-base font-bold text-cyan-600">
                   {activeTeam.points}ن
@@ -1688,8 +1709,8 @@ export default function BattlePage() {
                 }`}
               >
                 {activeTeam.is_ready
-                  ? "✓ جاهز تماماً"
-                  : "● جاري بناء التعبئة العسكرية"}
+                  ? "✓ جاهز"
+                  : "● قاعد يوزع الجنود"}
               </span>
             </div>
           </div>
@@ -1703,10 +1724,10 @@ export default function BattlePage() {
               <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-6">
                 <div>
                   <h3 className="text-sm font-bold text-slate-900">
-                    أرض المعركة الخاصة بك (6×6 تموضع)
+                    خريطتك وتوزيعك (6×6 مربعات)
                   </h3>
                   <p className="text-[10px] text-slate-400 mt-0.5">
-                    انقر على المربعات لتثبيت أو إخلاء الأسلحة
+                    طق على المربع عشان تحط جندي أو تشيله
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -1726,7 +1747,7 @@ export default function BattlePage() {
                       }`}
                     >
                       <RefreshCw className={`h-3 w-3 ${isAutoFilling ? "animate-spin" : ""}`} />
-                      {isAutoFilling ? "جارٍ الحفظ..." : "تعبئة عشوائية"}
+                      {isAutoFilling ? "قاعدين نحفظ..." : "توزيع عشوائي"}
                     </motion.button>
                   )}
                 </div>
@@ -1803,11 +1824,10 @@ export default function BattlePage() {
                       <Lock className="w-10 h-10 fill-slate-950" />
                     </div>
                     <h4 className="font-sans font-bold text-lg text-emerald-400">
-                      تم إغلاق أرض المعركة حتى تبدأ الجولة
+                      قفلنا خريطة اللعب لين تبدون
                     </h4>
                     <p className="text-xs text-slate-300 max-w-xs mt-2 leading-relaxed">
-                      تم تعمية وتغطية وتأمين انتشار لشكريكتك بنجاح! لا يمكن
-                      للعدو أو الحلفاء تسريب المواقع الموزعة سلفاً.
+                      وزعنا جنودك وخشيناهم بنجاح! ما حد يقدر يشوف توزيعك الحين لا ربعك ولا خصمك.
                     </p>
                   </motion.div>
                 )}
@@ -1824,7 +1844,7 @@ export default function BattlePage() {
               }`}
             >
               <h3 className="font-sans font-bold text-xs text-slate-500 uppercase tracking-wider mb-4">
-                ترسانة الوحدات العسكرية المنتشرة
+                الجنود المتاحين للتوزيع
               </h3>
 
               <div className="grid grid-cols-1 gap-3.5">
@@ -1856,7 +1876,7 @@ export default function BattlePage() {
                           <span
                             className={`text-[10px] leading-tight block font-bold ${isFull ? "text-rose-500" : "text-slate-400"}`}
                           >
-                            {count} / {limit} {isFull ? "· اكتمل الحد" : ""}
+                            {count} / {limit} {isFull ? "· خلصت أعدادهم" : ""}
                           </span>
                         </span>
                       </span>
@@ -1875,16 +1895,15 @@ export default function BattlePage() {
                 <div className="space-y-3">
                   <CheckCircle className="w-10 h-10 text-emerald-500 mx-auto animate-bounce" />
                   <h4 className="font-sans font-bold text-sm text-slate-800">
-                    تم بناء وتحصين جيشك بنجاح!
+                    وزعت جنودك وجهزت فريقك بنجاح!
                   </h4>
                   <p className="text-xs text-slate-400 font-semibold leading-relaxed">
-                    مرحى! تم إشهار حالة القتال. في انتظار إعلان جهوزية اللواء
-                    الآخر لإنزال الشفرة وبدء المبارزة...
+                    يا سلام! الحين ناطرين الفريق الثاني يخلص توزيع جنوده عشان تبدون اللعب والطق...
                   </p>
                   {opponentTeam && (
                     <div className="mt-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
                       <span className="text-[9px] text-slate-400 block font-bold">
-                        حالة فيلق العدو:
+                        حالة الخصم:
                       </span>
                       <span
                         className={`text-[10.5px] font-bold mt-1 block ${
@@ -1894,8 +1913,8 @@ export default function BattlePage() {
                         }`}
                       >
                         {opponentTeam.is_ready
-                          ? "● جاهز للاشتباك المباشر"
-                          : "● ما زال يجهز صفوفه في الخفاء"}
+                          ? "● جاهز للطق واللعب"
+                          : "● للحين قاعد يوزع جنوده"}
                       </span>
                     </div>
                   )}
@@ -1903,11 +1922,11 @@ export default function BattlePage() {
               ) : (
                 <div className="space-y-4">
                   <div className="text-right bg-slate-50 p-4 rounded-2xl border border-slate-100 text-xs font-bold leading-relaxed text-slate-500">
-                    تبدأ بـ <strong className="text-slate-800">1000ن</strong> ·
-                    يجب إنفاق{" "}
-                    <strong className="text-cyan-700">700ن على الأقل</strong>.
+                    تبدأ بـ <strong className="text-slate-800">1000 نقطة</strong> ·
+                    لازم تصرف{" "}
+                    <strong className="text-cyan-700">700 نقطة على الأقل</strong>.
                     الحدود: جندي (10) · دبابة (4) · طائرة (3) · غواصة (2) · لغم
-                    (2). كل إلغاء يعيد النقاط.
+                    (2). إذا شلت جندي ترجع لك نقاطه.
                   </div>
                   <motion.button
                     whileHover={!isAutoFilling ? { scale: 1.02 } : {}}
@@ -1923,10 +1942,10 @@ export default function BattlePage() {
                     {isAutoFilling ? (
                       <span className="flex items-center justify-center gap-2">
                         <RefreshCw className="h-4 w-4 animate-spin" />
-                        جارٍ حفظ التعبئة...
+                        قاعدين نحفظ التوزيع...
                       </span>
                     ) : (
-                      "تم ترحيل وتحصين بناء الجيش 🛡️"
+                      "خلصت توزيع جنودي 🛡️"
                     )}
                   </motion.button>
                 </div>
@@ -1946,12 +1965,10 @@ export default function BattlePage() {
           <Gamepad2 className="w-10 h-10" />
         </div>
         <h2 className="text-xl md:text-2xl font-bold text-slate-950">
-          ميدان معركة سيادة
+          لعبة حيلهم بينهم
         </h2>
         <p className="text-xs text-slate-500 mt-2.5 leading-relaxed font-semibold">
-          مرحباً بك أيها القائد العسكري! للبدء وخوض المباراة، يرجى التوجه لتأسيس
-          غرفة المعركة وتحديد التصنيفات بالدليل الميداني على الصفحة الرئيسية
-          أولاً.
+          يا هلا فيك! عشان تبدأ اللعب وتتحدى ربعك، لازم تسوي غرفة جديدة وتختار فئات الأسئلة من الصفحة الرئيسية أول شي.
         </p>
 
         <div className="mt-8 space-y-3">
@@ -1959,13 +1976,13 @@ export default function BattlePage() {
             href="/#game-setup"
             className="w-full bg-gradient-to-br from-cyan-500 to-sky-500 text-white font-bold text-sm py-3.5 px-6 rounded-xl shadow-md hover:shadow-lg transition-all block text-center"
           >
-            ← تأسيس وتصميم معركة جديدة
+            ← سوي غرفة جديدة وابدأ اللعب الحين
           </Link>
           <Link
             href="/"
             className="w-full bg-slate-100 hover:bg-slate-150 text-slate-700 font-bold text-xs py-3 rounded-xl transition-all block text-center border border-slate-200"
           >
-            دليل طريقة اللعب والقواعد
+            شلون تلعب وقواعد اللعبة
           </Link>
         </div>
       </div>
