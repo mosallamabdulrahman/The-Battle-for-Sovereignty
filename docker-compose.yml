@@ -1,0 +1,59 @@
+networks:
+  proxy:
+    name: proxy
+    external: true
+    driver_opts:
+      com.docker.network.driver.mtu: 1400
+
+  the-battle-internal:
+    driver: bridge
+    driver_opts:
+      com.docker.network.driver.mtu: 1400
+    ipam:
+      config:
+        - subnet: 10.61.0.0/24
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: the-battle-for-sovereignty:latest
+    container_name: the-battle-for-sovereignty
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./.env:/app/.env
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\"",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - proxy
+      - the-battle-internal
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: proxy
+
+      # HTTP Router (redirect to HTTPS)
+      traefik.http.routers.the-battle-http.entrypoints: http
+      traefik.http.routers.the-battle-http.rule: Host(`thebattle.mosalam.com`)
+      traefik.http.routers.the-battle-http.middlewares: https-redirectscheme@file
+      traefik.http.routers.the-battle-http.service: the-battle
+
+      # HTTPS Router
+      traefik.http.routers.the-battle-https.entrypoints: https
+      traefik.http.routers.the-battle-https.rule: Host(`thebattle.mosalam.com`)
+      traefik.http.routers.the-battle-https.tls: "true"
+      traefik.http.routers.the-battle-https.tls.certresolver: le
+      traefik.http.routers.the-battle-https.service: the-battle
+
+      # Service load balancer port
+      traefik.http.services.the-battle.loadbalancer.server.port: "3000"
