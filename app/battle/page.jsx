@@ -22,9 +22,9 @@ import Link from "next/link";
 import {
   AbandonedGameView,
   CombatEventModal,
-  JudgeCombatDashboard,
-  TeamCombatDashboard,
-} from "../../components/battle/CombatViews";
+} from "../../components/battle/CombatShared";
+import { JudgeCombatDashboard } from "../../components/battle/JudgeCombatDashboard";
+import { TeamCombatDashboard } from "../../components/battle/TeamCombatDashboard";
 
 const TEAM_PUBLIC_COLUMNS = [
   "id",
@@ -125,6 +125,8 @@ export default function BattlePage() {
     submarine: 1,
     mine: 2,
   };
+
+  const STARTING_POINTS = 1000;
 
   const getAudioContext = useCallback(() => {
     if (typeof window === "undefined") return null;
@@ -761,10 +763,22 @@ export default function BattlePage() {
       newBoard[pos] = unitsToPlace[idx];
     });
 
+    // Random fill always replaces the whole board with this fixed unit
+    // distribution, so points must be recomputed from the starting total —
+    // reusing the team's current (possibly already-spent) points here caused
+    // a board/points mismatch that the server rejected.
+    const totalCost = unitsToPlace.reduce(
+      (sum, unit) => sum + (unitSpecs[unit]?.cost || 0),
+      0,
+    );
+    const newPoints = STARTING_POINTS - totalCost;
+
     // Optimistic UI update
     setTeams((prev) =>
       prev.map((t) =>
-        t.team_index === teamIndex ? { ...t, board: newBoard } : t,
+        t.team_index === teamIndex
+          ? { ...t, board: newBoard, points: newPoints }
+          : t,
       ),
     );
 
@@ -774,7 +788,7 @@ export default function BattlePage() {
       p_room_id: roomId,
       p_team_index: teamIndex,
       p_board: newBoard,
-      p_points: activeTeam.points ?? 0,
+      p_points: newPoints,
     });
     setIsAutoFilling(false);
 
@@ -995,6 +1009,9 @@ export default function BattlePage() {
 
       window.localStorage.removeItem("sovereignty_active_room");
       window.localStorage.removeItem("sovereignty_active_battle_path");
+      // Notifies the other team + the judge via realtime (room flips to
+      // "abandoned"); the actor doesn't need to wait for that round trip.
+      window.location.assign("/");
     });
 
   const handleSwitchToTeamAccount = async () => {

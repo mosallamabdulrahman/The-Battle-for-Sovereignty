@@ -205,9 +205,9 @@ export default function GameSetupSection() {
         questionRows,
       );
 
-      if (questions.length !== 36) {
+      if (questions.length === 0) {
         throw new Error(
-          "لازم كل فئة تختارها يكون فيها 6 أسئلة شغالة ببنك الأسئلة.",
+          "التصنيفات المختارة مفيهاش أي أسئلة فعّالة ببنك الأسئلة.",
         );
       }
 

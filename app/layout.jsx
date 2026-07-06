@@ -1,13 +1,22 @@
-import './globals.css';
+import "./globals.css";
 
 export const metadata = {
-  title: 'حيلهم بينهم - اللعبة الاستراتيجية الثقافية',
-  description: 'حيلهم بينهم اهي لعبة أسئلة وتحديات استراتيجية تنافسية بين فريقين.',
+  title: "حيلهم بينهم - اللعبة الاستراتيجية الثقافية",
+  description:
+    "حيلهم بينهم اهي لعبة أسئلة وتحديات استراتيجية تنافسية بين فريقين.",
+  icons: {
+    icon: "/images/logo.png",
+  },
 };
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="ar" dir="rtl" className="scroll-smooth" suppressHydrationWarning>
+    <html
+      lang="ar"
+      dir="rtl"
+      className="scroll-smooth"
+      suppressHydrationWarning
+    >
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -62,11 +71,14 @@ export default function RootLayout({ children }) {
                   };
                 }
               })();
-            `
+            `,
           }}
         />
       </head>
-      <body className="bg-slate-50 text-slate-800 font-sans min-h-screen antialiased selection:bg-cyan-500/20 selection:text-cyan-900" suppressHydrationWarning>
+      <body
+        className="bg-slate-50 text-slate-800 font-sans min-h-screen antialiased selection:bg-cyan-500/20 selection:text-cyan-900"
+        suppressHydrationWarning
+      >
         {children}
       </body>
     </html>

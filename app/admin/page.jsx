@@ -180,97 +180,110 @@ function CategoryModal({ category, onSave, onClose, busy }) {
   );
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
   return (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl space-y-4">
-        <div className="flex items-center justify-between">
+    <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/60 p-4 animate-fade-in">
+      <div className="w-full max-w-md max-h-[85vh] rounded-3xl bg-white shadow-2xl flex flex-col animate-scale-up">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-slate-100">
           <h2 className="font-bold text-slate-900">
             {category ? "تعديل تصنيف" : "تصنيف جديد"}
           </h2>
-          <button type="button" onClick={onClose}>
+          <button type="button" onClick={onClose} className="p-1 rounded-lg hover:bg-slate-100 transition-colors">
             <X className="h-5 w-5 text-slate-400" />
           </button>
         </div>
 
-        <div className="grid grid-cols-4 gap-3">
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-4 text-right">
+          <div className="grid grid-cols-4 gap-3">
+            <div>
+              <label className="text-[11px] font-bold text-slate-500">
+                إيموجي
+              </label>
+              <input
+                value={form.emoji}
+                onChange={(e) => set("emoji", e.target.value)}
+                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-center text-2xl focus:border-cyan-500 outline-none transition-colors"
+              />
+            </div>
+            <div className="col-span-3">
+              <label className="text-[11px] font-bold text-slate-500">
+                الاسم *
+              </label>
+              <input
+                value={form.name}
+                onChange={(e) => set("name", e.target.value)}
+                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-cyan-500 outline-none transition-colors"
+                placeholder="اسم التصنيف"
+              />
+            </div>
+          </div>
+
           <div>
             <label className="text-[11px] font-bold text-slate-500">
-              إيموجي
+              وصف (اختياري)
             </label>
             <input
-              value={form.emoji}
-              onChange={(e) => set("emoji", e.target.value)}
-              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-center text-2xl"
+              value={form.description || ""}
+              onChange={(e) => set("description", e.target.value)}
+              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-cyan-500 outline-none transition-colors"
+              placeholder="وصف مختصر"
             />
           </div>
-          <div className="col-span-3">
-            <label className="text-[11px] font-bold text-slate-500">
-              الاسم *
-            </label>
-            <input
-              value={form.name}
-              onChange={(e) => set("name", e.target.value)}
-              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
-              placeholder="اسم التصنيف"
-            />
-          </div>
-        </div>
 
-        <div>
-          <label className="text-[11px] font-bold text-slate-500">
-            وصف (اختياري)
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-[11px] font-bold text-slate-500">
+                صورة الغلاف (URL)
+              </label>
+              <input
+                value={form.image_url || ""}
+                onChange={(e) => set("image_url", e.target.value)}
+                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-[11px] font-mono focus:border-cyan-500 outline-none transition-colors"
+                placeholder="https://..."
+              />
+            </div>
+            <div>
+              <label className="text-[11px] font-bold text-slate-500">
+                الترتيب
+              </label>
+              <input
+                type="number"
+                value={form.sort_order}
+                onChange={(e) => set("sort_order", Number(e.target.value))}
+                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-cyan-500 outline-none transition-colors"
+              />
+            </div>
+          </div>
+
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={form.is_active}
+              onChange={(e) => set("is_active", e.target.checked)}
+              className="rounded text-cyan-600 focus:ring-cyan-500 h-4 w-4 border-slate-300"
+            />
+            <span className="text-sm font-bold text-slate-700">
+              مفعّل (يظهر في الإعداد)
+            </span>
           </label>
-          <input
-            value={form.description || ""}
-            onChange={(e) => set("description", e.target.value)}
-            className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
-            placeholder="وصف مختصر"
-          />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="text-[11px] font-bold text-slate-500">
-              صورة الغلاف (URL)
-            </label>
-            <input
-              value={form.image_url || ""}
-              onChange={(e) => set("image_url", e.target.value)}
-              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-[11px] font-mono"
-              placeholder="https://..."
-            />
-          </div>
-          <div>
-            <label className="text-[11px] font-bold text-slate-500">
-              الترتيب
-            </label>
-            <input
-              type="number"
-              value={form.sort_order}
-              onChange={(e) => set("sort_order", Number(e.target.value))}
-              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
-            />
-          </div>
-        </div>
-
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={form.is_active}
-            onChange={(e) => set("is_active", e.target.checked)}
-            className="rounded"
-          />
-          <span className="text-sm font-bold text-slate-700">
-            مفعّل (يظهر في الإعداد)
-          </span>
-        </label>
-
-        <div className="flex gap-2 pt-2">
+        {/* Footer */}
+        <div className="flex gap-2 p-6 border-t border-slate-100 bg-slate-50 rounded-b-3xl">
           <button
             type="button"
             onClick={() => onSave(form)}
             disabled={busy || !form.name.trim()}
-            className="flex-1 flex items-center justify-center gap-2 rounded-2xl bg-cyan-600 py-3 text-sm font-bold text-white disabled:opacity-60 hover:bg-cyan-700"
+            className="flex-1 flex items-center justify-center gap-2 rounded-2xl bg-cyan-600 py-3 text-sm font-bold text-white disabled:opacity-60 hover:bg-cyan-700 transition-all duration-200 shadow-md hover:shadow-lg active:scale-[0.98]"
           >
             {busy ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -282,7 +295,7 @@ function CategoryModal({ category, onSave, onClose, busy }) {
           <button
             type="button"
             onClick={onClose}
-            className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50"
+            className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all duration-200 active:scale-[0.98]"
           >
             إلغاء
           </button>
@@ -293,145 +306,199 @@ function CategoryModal({ category, onSave, onClose, busy }) {
 }
 
 // ─── Question Modal ─────────────────────────────────────────────
-function QuestionModal({ question, categories, onSave, onClose, busy }) {
-  const [form, setForm] = useState(
-    question || {
-      category_id: categories[0]?.id || "",
+// A category can hold any number of questions — the game randomly picks 6
+// of them per room. "position" is just a display/ordering value, so a new
+// question is appended after the current highest position in its category.
+const nextPosition = (questions, categoryId, excludeId) => {
+  const used = (questions || [])
+    .filter((q) => q.category_id === categoryId && q.id !== excludeId)
+    .map((q) => q.position);
+  return used.length ? Math.max(...used) + 1 : 1;
+};
+
+function QuestionModal({ question, categories, questions, onSave, onClose, busy }) {
+  const [form, setForm] = useState(() => {
+    if (question) return question;
+    const initialCategoryId = categories[0]?.id || "";
+    return {
+      category_id: initialCategoryId,
       question_text: "",
       answer_text: "",
       difficulty: "easy",
-      position: 1,
+      position: nextPosition(questions, initialCategoryId),
       is_active: true,
       media_url: "",
       media_type: null,
-    },
-  );
+    };
+  });
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
+  const usedPositions = new Set(
+    (questions || [])
+      .filter((q) => q.category_id === form.category_id && q.id !== form.id)
+      .map((q) => q.position),
+  );
+  const positionTaken = usedPositions.has(form.position);
+
+  // New question, category changed: jump the position past that category's
+  // current highest slot instead of leaving it on whatever the previous
+  // category last had (avoids colliding with an already-used position).
+  const handleCategoryChange = (categoryId) => {
+    if (question) {
+      set("category_id", categoryId);
+      return;
+    }
+    setForm((f) => ({
+      ...f,
+      category_id: categoryId,
+      position: nextPosition(questions, categoryId),
+    }));
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
   return (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/60 p-4 overflow-y-auto">
-      <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl space-y-4 my-4">
-        <div className="flex items-center justify-between">
+    <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/60 p-4 animate-fade-in">
+      <div className="w-full max-w-lg max-h-[85vh] rounded-3xl bg-white shadow-2xl flex flex-col animate-scale-up">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-slate-100">
           <h2 className="font-bold text-slate-900">
             {question ? "تعديل سؤال" : "سؤال جديد"}
           </h2>
-          <button type="button" onClick={onClose}>
+          <button type="button" onClick={onClose} className="p-1 rounded-lg hover:bg-slate-100 transition-colors">
             <X className="h-5 w-5 text-slate-400" />
           </button>
         </div>
 
-        <div>
-          <label className="text-[11px] font-bold text-slate-500">
-            التصنيف *
-          </label>
-          <select
-            value={form.category_id}
-            onChange={(e) => set("category_id", e.target.value)}
-            className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm bg-white"
-          >
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.emoji} {c.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className="text-[11px] font-bold text-slate-500">
-            نص السؤال *
-          </label>
-          <textarea
-            value={form.question_text}
-            onChange={(e) => set("question_text", e.target.value)}
-            rows={3}
-            className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm resize-none"
-            placeholder="اكتب السؤال هنا..."
-          />
-        </div>
-
-        <div>
-          <label className="text-[11px] font-bold text-slate-500">
-            الإجابة الصحيحة *
-          </label>
-          <input
-            value={form.answer_text}
-            onChange={(e) => set("answer_text", e.target.value)}
-            className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
-            placeholder="الإجابة"
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-4 text-right">
           <div>
             <label className="text-[11px] font-bold text-slate-500">
-              الصعوبة
+              التصنيف *
             </label>
             <select
-              value={form.difficulty}
-              onChange={(e) => {
-                const d = e.target.value;
-                setForm((f) => ({
-                  ...f,
-                  difficulty: d,
-                  strikes: DIFFICULTY_STRIKES[d],
-                }));
-              }}
-              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm bg-white"
+              value={form.category_id}
+              onChange={(e) => handleCategoryChange(e.target.value)}
+              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm bg-white focus:border-cyan-500 outline-none transition-colors"
             >
-              <option value="easy">سهل (1 ضربة)</option>
-              <option value="medium">متوسط (2 ضربة)</option>
-              <option value="hard">صعب (3 ضربات)</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.emoji} {c.name}
+                </option>
+              ))}
             </select>
           </div>
+
           <div>
             <label className="text-[11px] font-bold text-slate-500">
-              الموضع (1-6)
+              نص السؤال *
+            </label>
+            <textarea
+              value={form.question_text}
+              onChange={(e) => set("question_text", e.target.value)}
+              rows={3}
+              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm resize-none focus:border-cyan-500 outline-none transition-colors"
+              placeholder="اكتب السؤال هنا..."
+            />
+          </div>
+
+          <div>
+            <label className="text-[11px] font-bold text-slate-500">
+              الإجابة الصحيحة *
             </label>
             <input
-              type="number"
-              min={1}
-              max={6}
-              value={form.position}
-              onChange={(e) => set("position", Number(e.target.value))}
-              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+              value={form.answer_text}
+              onChange={(e) => set("answer_text", e.target.value)}
+              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-cyan-500 outline-none transition-colors"
+              placeholder="الإجابة"
             />
           </div>
-        </div>
 
-        <div>
-          <label className="text-[11px] font-bold text-slate-500 flex items-center gap-1">
-            <ImageIcon className="h-3 w-3" /> وسائط (صورة أو صوت — اختياري)
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-[11px] font-bold text-slate-500">
+                الصعوبة
+              </label>
+              <select
+                value={form.difficulty}
+                onChange={(e) => {
+                  const d = e.target.value;
+                  setForm((f) => ({
+                    ...f,
+                    difficulty: d,
+                    strikes: DIFFICULTY_STRIKES[d],
+                  }));
+                }}
+                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm bg-white focus:border-cyan-500 outline-none transition-colors"
+              >
+                <option value="easy">سهل (1 ضربة)</option>
+                <option value="medium">متوسط (2 ضربة)</option>
+                <option value="hard">صعب (3 ضربات)</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-[11px] font-bold text-slate-500">
+                ترتيب العرض
+              </label>
+              <input
+                type="number"
+                min={1}
+                value={form.position}
+                onChange={(e) => set("position", Number(e.target.value))}
+                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-cyan-500 outline-none transition-colors"
+              />
+              {positionTaken && (
+                <p className="mt-1 text-[10px] font-bold text-rose-600">
+                  الموضع ده متاخد بسؤال ثاني في نفس التصنيف — اختار موضع فاضي.
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <label className="text-[11px] font-bold text-slate-500 flex items-center gap-1">
+              <ImageIcon className="h-3 w-3" /> وسائط (صورة أو صوت — اختياري)
+            </label>
+            <div className="mt-1">
+              <MediaUpload
+                value={form.media_url || ""}
+                type={form.media_type}
+                onChange={(url, type) => {
+                  setForm((f) => ({ ...f, media_url: url, media_type: type }));
+                }}
+              />
+            </div>
+          </div>
+
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={form.is_active}
+              onChange={(e) => set("is_active", e.target.checked)}
+              className="rounded text-cyan-600 focus:ring-cyan-500 h-4 w-4 border-slate-300"
+            />
+            <span className="text-sm font-bold text-slate-700">مفعّل</span>
           </label>
-          <div className="mt-1">
-            <MediaUpload
-              value={form.media_url || ""}
-              type={form.media_type}
-              onChange={(url, type) => {
-                setForm((f) => ({ ...f, media_url: url, media_type: type }));
-              }}
-            />
-          </div>
         </div>
 
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={form.is_active}
-            onChange={(e) => set("is_active", e.target.checked)}
-            className="rounded"
-          />
-          <span className="text-sm font-bold text-slate-700">مفعّل</span>
-        </label>
-
-        <div className="flex gap-2 pt-2">
+        {/* Footer */}
+        <div className="flex gap-2 p-6 border-t border-slate-100 bg-slate-50 rounded-b-3xl">
           <button
             type="button"
             onClick={() => onSave(form)}
             disabled={
-              busy || !form.question_text.trim() || !form.answer_text.trim()
+              busy ||
+              !form.question_text.trim() ||
+              !form.answer_text.trim() ||
+              positionTaken
             }
-            className="flex-1 flex items-center justify-center gap-2 rounded-2xl bg-cyan-600 py-3 text-sm font-bold text-white disabled:opacity-60 hover:bg-cyan-700"
+            className="flex-1 flex items-center justify-center gap-2 rounded-2xl bg-cyan-600 py-3 text-sm font-bold text-white disabled:opacity-60 hover:bg-cyan-700 transition-all duration-200 shadow-md hover:shadow-lg active:scale-[0.98]"
           >
             {busy ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -443,7 +510,7 @@ function QuestionModal({ question, categories, onSave, onClose, busy }) {
           <button
             type="button"
             onClick={onClose}
-            className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50"
+            className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all duration-200 active:scale-[0.98]"
           >
             إلغاء
           </button>
@@ -641,6 +708,7 @@ export default function AdminPage() {
         <QuestionModal
           question={qModal.id ? qModal : null}
           categories={categories}
+          questions={questions}
           onSave={saveQuestion}
           onClose={() => setQModal(null)}
           busy={busy}

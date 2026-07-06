@@ -48,9 +48,6 @@ export default function AdminLayout({ children }) {
       <div className="h-8 bg-[#1d2327] text-[#c3c4c7] text-[13px] flex items-center justify-between px-4 select-none z-[190] shrink-0 border-b border-[#2c3338]">
         {/* Right side (RTL) - Brand & Visit Site */}
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 hover:bg-[#2c3338] hover:text-[#72aee6] h-8 px-2 cursor-pointer transition">
-            <GameLogo className="w-11 h-11" />
-          </div>
           <Link
             href="/"
             className="flex items-center gap-1.5 hover:bg-[#2c3338] hover:text-[#72aee6] h-8 px-2 transition"
