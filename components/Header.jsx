@@ -18,8 +18,9 @@ export default function Header() {
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
+      setIsScrolled(window.scrollY > 0);
     };
+    handleScroll(); // Check scroll position immediately on page load/reload
     window.addEventListener("scroll", handleScroll);
 
     // Use onAuthStateChange as the single source of truth.
@@ -54,8 +55,8 @@ export default function Header() {
     <header
       suppressHydrationWarning
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled
-          ? "bg-white/90 backdrop-blur-md shadow-md border-b border-slate-200/80 py-3"
+        isScrolled || isMobileMenuOpen
+          ? "bg-white/95 backdrop-blur-md shadow-md border-b border-slate-200/80 py-3"
           : "bg-transparent py-5"
       }`}
     >
@@ -146,7 +147,7 @@ export default function Header() {
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3 }}
-            className="md:hidden bg-white/95 backdrop-blur-md border-b border-slate-200 overflow-hidden"
+            className="md:hidden bg-white/95 backdrop-blur-md overflow-hidden"
           >
             <div className="px-4 pt-2 pb-6 space-y-4">
               {navLinks.map((link) => {

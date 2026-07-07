@@ -74,9 +74,9 @@ export default function HeroSection() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="text-lg md:text-xl text-slate-600 leading-relaxed max-w-2xl mb-8"
             >
-              حول معلوماتك العامة وذكائك حق عتاد صجي! ابنِ معسكرك، ووزع جنودك 
-              بذكاء وسرية تامة على الخريطة، وعقبها طق خصمك طقات قوية على 
-              خريطة الخصم لما تجاوب على الأسئلة الثقافية الصعبة، واستخدم الفزعات 
+              حول معلوماتك العامة وذكائك حق عتاد صجي! ابنِ معسكرك، ووزع جنودك
+              بذكاء وسرية تامة على الخريطة، وعقبها طق خصمك طقات قوية على خريطة
+              الخصم لما تجاوب على الأسئلة الثقافية الصعبة، واستخدم الفزعات
               التكتيكية عشان تسيطر وتفوز باللعبة.
             </motion.p>
 
@@ -88,14 +88,14 @@ export default function HeroSection() {
             >
               <Link
                 href="/battle"
-                className="flex-1 sm:flex-initial flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-500 via-cyan-600 to-sky-500 text-white font-extrabold px-8 py-4 rounded-2xl shadow-lg shadow-cyan-600/20 hover:shadow-cyan-600/35 hover:-translate-y-0.5 transition-all duration-300 text-lg"
+                className="flex-1 sm:flex-initial flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-500 via-cyan-600 to-sky-500 text-white font-extrabold px-4  sm:px-8 py-2 sm:py-4 rounded-2xl shadow-lg shadow-cyan-600/20 hover:shadow-cyan-600/35 hover:-translate-y-0.5 transition-all duration-300 text-base sm:text-xl"
               >
                 <Swords className="w-5 h-5" />
                 بلش التحدي الحين
               </Link>
               <a
                 href="#how-to-play"
-                className="flex-1 sm:flex-initial flex items-center justify-center gap-2 bg-white text-slate-700 font-bold border-2 border-slate-200/80 hover:border-cyan-400 hover:text-cyan-600 px-8 py-4 rounded-2xl shadow-sm transition-all duration-300 text-lg"
+                className="flex-1 sm:flex-initial flex items-center justify-center gap-2 bg-white text-slate-700 font-bold border-2 border-slate-200/80 hover:border-cyan-400 hover:text-cyan-600 px-4  sm:px-8 py-2 sm:py-4 rounded-2xl shadow-sm transition-all duration-300 text-base sm:text-xl"
               >
                 <Info className="w-5 h-5" />
                 شلون تلعب؟
@@ -149,7 +149,9 @@ export default function HeroSection() {
               {/* Bottom stats indicators */}
               <div className="mt-6 flex justify-between items-center bg-slate-50 p-3 rounded-2xl border border-slate-100">
                 <div className="flex flex-col text-right">
-                  <span className="text-xs text-slate-400">النقاط المتوفرة</span>
+                  <span className="text-xs text-slate-400">
+                    النقاط المتوفرة
+                  </span>
                   <span className="text-sm font-bold text-slate-800">
                     1000 نقطة حرب
                   </span>
