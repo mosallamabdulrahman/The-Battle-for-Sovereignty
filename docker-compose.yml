@@ -44,13 +44,13 @@ services:
 
       # HTTP Router (redirect to HTTPS)
       traefik.http.routers.the-battle-http.entrypoints: http
-      traefik.http.routers.the-battle-http.rule: Host(`thebattle.mosalam.com`)
+      traefik.http.routers.the-battle-http.rule: Host(`7elhmbenhm.com`) || Host(`www.7elhmbenhm.com`)
       traefik.http.routers.the-battle-http.middlewares: https-redirectscheme@file
       traefik.http.routers.the-battle-http.service: the-battle
 
       # HTTPS Router
       traefik.http.routers.the-battle-https.entrypoints: https
-      traefik.http.routers.the-battle-https.rule: Host(`thebattle.mosalam.com`)
+      traefik.http.routers.the-battle-https.rule: Host(`7elhmbenhm.com`) || Host(`www.7elhmbenhm.com`)
       traefik.http.routers.the-battle-https.tls: "true"
       traefik.http.routers.the-battle-https.tls.certresolver: le
       traefik.http.routers.the-battle-https.service: the-battle
