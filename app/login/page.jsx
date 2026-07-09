@@ -95,13 +95,17 @@ export default function QuickLoginPage() {
 
     setIsLoading(true);
     try {
-      const { data: emailMatch, error: emailLookupError } =
-        await supabase.rpc("lookup_account", { p_identifier: cleanEmail });
+      const { data: emailMatch, error: emailLookupError } = await supabase.rpc(
+        "lookup_account",
+        { p_identifier: cleanEmail },
+      );
       if (emailLookupError) throw emailLookupError;
 
       if (emailMatch?.length) {
         setIsError(true);
-        setMsg("هذا الإيميل مسجل عندنا بالفعل — سجل دخولك من تبويب 'تسجيل الدخول'.");
+        setMsg(
+          "هذا الإيميل مسجل عندنا بالفعل — سجل دخولك من تبويب 'تسجيل الدخول'.",
+        );
         return;
       }
 
@@ -273,11 +277,15 @@ export default function QuickLoginPage() {
                       ? "طرشنا رابط تسجيل الدخول حق"
                       : "طرشنا رابط تأكيد الحساب حق"}
                   </p>
-                  <p className="text-sm font-bold text-cyan-700 mt-1 break-all" dir="ltr">
+                  <p
+                    className="text-sm font-bold text-cyan-700 mt-1 break-all"
+                    dir="ltr"
+                  >
                     {sentEmail}
                   </p>
                   <p className="text-xs text-slate-400 mt-3 font-medium leading-relaxed">
-                    بطل إيميلك واضغط على الرابط — راح تدش اللعبة سيدة بدون أي لوية
+                    بطل إيميلك واضغط على الرابط — راح تدش اللعبة سيدة بدون أي
+                    لوية
                   </p>
                 </div>
                 <button
@@ -293,7 +301,11 @@ export default function QuickLoginPage() {
               </motion.div>
             ) : (
               /* ── TABBED FORM ── */
-              <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <motion.div
+                key="form"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
                 {/* Tabs */}
                 <div className="grid grid-cols-2 gap-1.5 bg-slate-100 p-1.5 rounded-xl mb-6">
                   <button
