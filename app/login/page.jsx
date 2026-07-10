@@ -1,20 +1,30 @@
 "use client";
+/* eslint-disable react-hooks/set-state-in-effect */
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Mail,
   ArrowRight,
+  Eye,
+  EyeOff,
   Loader2,
   MailCheck,
   LogIn,
   UserPlus,
   UserCircle2,
+  Lock,
+  RefreshCw,
 } from "lucide-react";
 import Link from "next/link";
 import GameLogo from "../../components/GameLogo";
 import { supabase } from "../../lib/supabase";
-import { getSafeRedirect, normalizeEmail } from "../../lib/auth";
+import {
+  generatePassword,
+  getSafeRedirect,
+  normalizeEmail,
+  suggestUsernameFromEmail,
+} from "../../lib/auth";
 
 const WAS_HERE_KEY = "sovereignty_was_here";
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -23,21 +33,29 @@ export default function QuickLoginPage() {
   // 'login' | 'register'
   const [tab, setTab] = useState("register");
 
-  // Register tab fields
-  const [username, setUsername] = useState("");
+  // Register tab fields — email is entered first, username is auto-suggested
+  // from it until the user edits the username field themselves.
   const [registerEmail, setRegisterEmail] = useState("");
+  const [username, setUsername] = useState("");
+  const [usernameTouched, setUsernameTouched] = useState(false);
+  const [registerPassword, setRegisterPassword] = useState("");
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
 
-  // Login tab field — accepts email or username
+  // Login tab fields — accepts email or username, plus password
   const [identifier, setIdentifier] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
 
   const [isLoading, setIsLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [sentEmail, setSentEmail] = useState("");
-  const [successMode, setSuccessMode] = useState("register"); // 'register' | 'login'
+  const [successMode, setSuccessMode] = useState("register"); // 'register' | 'reset'
   const [msg, setMsg] = useState("");
   const [isError, setIsError] = useState(false);
   // When a login attempt finds no account, offer a one-click hop to Register
   const [notFoundHint, setNotFoundHint] = useState(false);
+  // When a login attempt fails with a real account, offer to set a password
+  const [resolvedLoginEmail, setResolvedLoginEmail] = useState(null);
 
   useEffect(() => {
     // Default to the Login tab for people who've been here before.
@@ -52,7 +70,8 @@ export default function QuickLoginPage() {
       }
     });
 
-    // Handle magic link callback (SIGNED_IN fires when hash is processed)
+    // Handle magic link / email-confirmation callback (SIGNED_IN fires when
+    // the hash is processed) and normal password sign-ins alike.
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
@@ -68,6 +87,7 @@ export default function QuickLoginPage() {
     setMsg("");
     setIsError(false);
     setNotFoundHint(false);
+    setResolvedLoginEmail(null);
   };
 
   const switchTab = (nextTab) => {
@@ -75,21 +95,39 @@ export default function QuickLoginPage() {
     resetMessages();
   };
 
+  const handleEmailChange = (value) => {
+    setRegisterEmail(value);
+    if (!usernameTouched) {
+      setUsername(suggestUsernameFromEmail(value));
+    }
+  };
+
+  const handleUsernameChange = (value) => {
+    setUsernameTouched(true);
+    setUsername(value);
+  };
+
   const handleRegister = async (e) => {
     e?.preventDefault();
     resetMessages();
 
-    const cleanUsername = username.trim();
     const cleanEmail = normalizeEmail(registerEmail);
+    const cleanUsername = username.trim();
+    const cleanPassword = registerPassword.trim();
 
+    if (!EMAIL_PATTERN.test(cleanEmail)) {
+      setIsError(true);
+      setMsg("اكتب إيميل صح لو سمحت.");
+      return;
+    }
     if (cleanUsername.length < 2 || cleanUsername.length > 40) {
       setIsError(true);
       setMsg("اسم المستخدم لازم يكون بين 2 و40 حرف.");
       return;
     }
-    if (!EMAIL_PATTERN.test(cleanEmail)) {
+    if (cleanPassword.length < 6) {
       setIsError(true);
-      setMsg("اكتب إيميل صح لو سمحت.");
+      setMsg("الباسورد لازم يكون 6 أحرف على الأقل.");
       return;
     }
 
@@ -119,10 +157,12 @@ export default function QuickLoginPage() {
         return;
       }
 
-      const { error } = await supabase.auth.signInWithOtp({
+      // Password-based signup: one confirmation email now, instant password
+      // login from now on — no more emails on every future login.
+      const { error } = await supabase.auth.signUp({
         email: cleanEmail,
+        password: cleanPassword,
         options: {
-          shouldCreateUser: true,
           data: { display_name: cleanUsername },
           emailRedirectTo: `${window.location.origin}/`,
         },
@@ -130,7 +170,7 @@ export default function QuickLoginPage() {
 
       if (error) {
         setIsError(true);
-        setMsg(`ما قدرنا نطرش: ${error.message}`);
+        setMsg(`ما قدرنا نسجلك: ${error.message}`);
         return;
       }
 
@@ -150,9 +190,9 @@ export default function QuickLoginPage() {
     resetMessages();
 
     const cleanIdentifier = identifier.trim();
-    if (!cleanIdentifier) {
+    if (!cleanIdentifier || !loginPassword) {
       setIsError(true);
-      setMsg("اكتب إيميلك أو اسم المستخدم بتاعك.");
+      setMsg("اكتب إيميلك أو اسم المستخدم، والباسورد.");
       return;
     }
 
@@ -160,7 +200,7 @@ export default function QuickLoginPage() {
     try {
       const { data: match, error: lookupError } = await supabase.rpc(
         "lookup_account",
-        { p_identifier: normalizeEmail(cleanIdentifier) },
+        { p_identifier: cleanIdentifier },
       );
       if (lookupError) throw lookupError;
 
@@ -172,23 +212,21 @@ export default function QuickLoginPage() {
       }
 
       const resolvedEmail = match[0].matched_email;
-      const { error } = await supabase.auth.signInWithOtp({
+      const { error } = await supabase.auth.signInWithPassword({
         email: resolvedEmail,
-        options: {
-          shouldCreateUser: false,
-          emailRedirectTo: `${window.location.origin}/`,
-        },
+        password: loginPassword,
       });
 
       if (error) {
         setIsError(true);
-        setMsg(`ما قدرنا ندش: ${error.message}`);
+        setResolvedLoginEmail(resolvedEmail);
+        setMsg(
+          "الباسورد غلط — أو لسه ما حطيتش باسورد لحسابك (لو سجلت قبل ما نضيف نظام الباسورد).",
+        );
         return;
       }
 
-      setSentEmail(resolvedEmail);
-      setSuccessMode("login");
-      setSent(true);
+      // onAuthStateChange (SIGNED_IN) handles the redirect — no email involved.
     } catch (err) {
       setIsError(true);
       setMsg(err.message || "حدث خطأ غير متوقع. حاول مرة أخرى.");
@@ -197,12 +235,33 @@ export default function QuickLoginPage() {
     }
   };
 
+  const sendPasswordSetupLink = async () => {
+    if (!resolvedLoginEmail) return;
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(
+        resolvedLoginEmail,
+        { redirectTo: `${window.location.origin}/reset-password` },
+      );
+      if (error) throw error;
+
+      setSentEmail(resolvedLoginEmail);
+      setSuccessMode("reset");
+      setSent(true);
+    } catch (err) {
+      setIsError(true);
+      setMsg(err.message || "ما قدرنا نطرش رابط ضبط الباسورد.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const jumpToRegisterFromLogin = () => {
     const cleanIdentifier = identifier.trim();
     if (EMAIL_PATTERN.test(cleanIdentifier)) {
-      setRegisterEmail(cleanIdentifier);
+      handleEmailChange(cleanIdentifier);
     } else {
-      setUsername(cleanIdentifier);
+      handleUsernameChange(cleanIdentifier);
     }
     switchTab("register");
   };
@@ -268,13 +327,13 @@ export default function QuickLoginPage() {
                 </div>
                 <div>
                   <h2 className="text-xl font-extrabold text-slate-900 mb-2">
-                    {successMode === "login"
+                    {successMode === "reset"
                       ? "شيك على إيميلك!"
                       : "خطوة وحدة باقية!"}
                   </h2>
                   <p className="text-sm text-slate-500 font-medium">
-                    {successMode === "login"
-                      ? "طرشنا رابط تسجيل الدخول حق"
+                    {successMode === "reset"
+                      ? "طرشنا لك رابط تظبط بيه باسورد جديد"
                       : "طرشنا رابط تأكيد الحساب حق"}
                   </p>
                   <p
@@ -284,8 +343,10 @@ export default function QuickLoginPage() {
                     {sentEmail}
                   </p>
                   <p className="text-xs text-slate-400 mt-3 font-medium leading-relaxed">
-                    بطل إيميلك واضغط على الرابط — راح تدش اللعبة سيدة بدون أي
-                    لوية
+                    بطل إيميلك واضغط على الرابط —{" "}
+                    {successMode === "reset"
+                      ? "تقدر تحط باسورد جديد وتدش بيه على طول"
+                      : "بعدها تقدر تدخل بإيميلك أو يوزرنيمك والباسورد اللي حطيته، من غير أي إيميل تاني"}
                   </p>
                 </div>
                 <button
@@ -370,6 +431,41 @@ export default function QuickLoginPage() {
                         </div>
                       </div>
 
+                      <div>
+                        <label
+                          htmlFor="login-password"
+                          className="block text-sm font-bold text-slate-700 mb-2"
+                        >
+                          الباسورد
+                        </label>
+                        <div className="relative rounded-xl shadow-sm">
+                          <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
+                            <Lock className="w-5 h-5" />
+                          </div>
+                          <input
+                            id="login-password"
+                            name="login-password"
+                            type={showLoginPassword ? "text" : "password"}
+                            value={loginPassword}
+                            onChange={(e) => setLoginPassword(e.target.value)}
+                            placeholder="••••••••"
+                            className="text-right block w-full pr-11 pl-11 py-3.5 bg-slate-50/80 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 text-slate-800 placeholder-slate-400/70 transition-all font-medium text-sm"
+                            dir="ltr"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowLoginPassword((v) => !v)}
+                            className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 hover:text-slate-600"
+                          >
+                            {showLoginPassword ? (
+                              <EyeOff className="w-4 h-4" />
+                            ) : (
+                              <Eye className="w-4 h-4" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+
                       {msg && (
                         <motion.div
                           initial={{ opacity: 0, y: 5 }}
@@ -389,6 +485,17 @@ export default function QuickLoginPage() {
                             >
                               <UserPlus className="w-3.5 h-3.5" />
                               سجل حساب جديد من هنا
+                            </button>
+                          )}
+                          {resolvedLoginEmail && (
+                            <button
+                              type="button"
+                              onClick={sendPasswordSetupLink}
+                              disabled={isLoading}
+                              className="inline-flex items-center gap-1.5 text-xs font-bold text-cyan-700 underline underline-offset-2 cursor-pointer disabled:opacity-60"
+                            >
+                              <Mail className="w-3.5 h-3.5" />
+                              ابعتلي رابط أظبط بيه باسورد
                             </button>
                           )}
                         </motion.div>
@@ -424,31 +531,6 @@ export default function QuickLoginPage() {
                     >
                       <div>
                         <label
-                          htmlFor="username"
-                          className="block text-sm font-bold text-slate-700 mb-2"
-                        >
-                          اسم المستخدم
-                        </label>
-                        <div className="relative rounded-xl shadow-sm">
-                          <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
-                            <UserCircle2 className="w-5 h-5" />
-                          </div>
-                          <input
-                            id="username"
-                            name="username"
-                            type="text"
-                            autoFocus
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
-                            placeholder="اسمك بين اللاعبين"
-                            maxLength={40}
-                            className="block w-full pr-11 pl-4 py-3.5 bg-slate-50/80 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 text-slate-800 placeholder-slate-400/70 transition-all font-medium text-sm"
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label
                           htmlFor="register-email"
                           className="block text-sm font-bold text-slate-700 mb-2"
                         >
@@ -462,8 +544,9 @@ export default function QuickLoginPage() {
                             id="register-email"
                             name="register-email"
                             type="email"
+                            autoFocus
                             value={registerEmail}
-                            onChange={(e) => setRegisterEmail(e.target.value)}
+                            onChange={(e) => handleEmailChange(e.target.value)}
                             placeholder="your@email.com"
                             className="text-right block w-full pr-11 pl-4 py-3.5 bg-slate-50/80 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 text-slate-800 placeholder-slate-400/70 transition-all font-medium text-sm"
                             dir="ltr"
@@ -471,6 +554,91 @@ export default function QuickLoginPage() {
                         </div>
                         <p className="text-[11px] text-slate-400 mt-1.5 font-medium">
                           راح يوصلك رابط تأكيد على إيميلك — اضغط عليه وتدش سيدة
+                        </p>
+                      </div>
+
+                      <div>
+                        <label
+                          htmlFor="username"
+                          className="block text-sm font-bold text-slate-700 mb-2"
+                        >
+                          اسم المستخدم
+                        </label>
+                        <div className="relative rounded-xl shadow-sm">
+                          <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
+                            <UserCircle2 className="w-5 h-5" />
+                          </div>
+                          <input
+                            id="username"
+                            name="username"
+                            type="text"
+                            value={username}
+                            onChange={(e) =>
+                              handleUsernameChange(e.target.value)
+                            }
+                            placeholder="اسمك بين اللاعبين"
+                            maxLength={40}
+                            className="text-right block w-full pr-11 pl-4 py-3.5 bg-slate-50/80 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 text-slate-800 placeholder-slate-400/70 transition-all font-medium text-sm"
+                          />
+                        </div>
+                        <p className="text-[11px] text-slate-400 mt-1.5 font-medium">
+                          مقترح تلقائي من إيميلك — عدّله زي ما تحب
+                        </p>
+                      </div>
+
+                      <div>
+                        <label
+                          htmlFor="register-password"
+                          className="block text-sm font-bold text-slate-700 mb-2"
+                        >
+                          الباسورد
+                        </label>
+                        <div className="flex gap-2">
+                          <div className="relative flex-1 rounded-xl shadow-sm">
+                            <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
+                              <Lock className="w-5 h-5" />
+                            </div>
+                            <input
+                              id="register-password"
+                              name="register-password"
+                              type={showRegisterPassword ? "text" : "password"}
+                              value={registerPassword}
+                              onChange={(e) =>
+                                setRegisterPassword(e.target.value)
+                              }
+                              placeholder="باسورد قوي"
+                              className="text-right block w-full pr-11 pl-11 py-3.5 bg-slate-50/80 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 text-slate-800 placeholder-slate-400/70 transition-all font-medium text-sm"
+                              dir="ltr"
+                            />
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setShowRegisterPassword((v) => !v)
+                              }
+                              className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 hover:text-slate-600"
+                            >
+                              {showRegisterPassword ? (
+                                <EyeOff className="w-4 h-4" />
+                              ) : (
+                                <Eye className="w-4 h-4" />
+                              )}
+                            </button>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowRegisterPassword(true);
+                              setRegisterPassword(generatePassword());
+                            }}
+                            title="ولّد باسورد قوي"
+                            className="shrink-0 rounded-xl border border-slate-200 bg-slate-50/80 px-3.5 text-slate-500 hover:bg-slate-100 transition-colors cursor-pointer"
+                          >
+                            <RefreshCw className="w-4 h-4" />
+                          </button>
+                        </div>
+                        <p className="text-[11px] text-slate-400 mt-1.5 font-medium">
+                          6 أحرف على الأقل — هتستخدمه في تسجيل الدخول بعد كده
+                          من غير أي إيميل
                         </p>
                       </div>
 
@@ -496,7 +664,7 @@ export default function QuickLoginPage() {
                         {isLoading ? (
                           <>
                             <Loader2 className="w-5 h-5 animate-spin" />
-                            قاعدين نشيك...
+                            قاعدين نسجل...
                           </>
                         ) : (
                           <>

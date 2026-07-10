@@ -15,15 +15,7 @@ import {
   X,
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
-
-const generatePassword = () => {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%";
-  let out = "";
-  for (let i = 0; i < 14; i += 1) {
-    out += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return out;
-};
+import { generatePassword } from "../../lib/auth";
 
 const callAdminUsersApi = async (path, method, body) => {
   const {
