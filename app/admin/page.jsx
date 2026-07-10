@@ -18,9 +18,11 @@ import {
   Globe,
   HelpCircle,
   LayoutDashboard,
+  Users,
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import GameLogo from "../../components/GameLogo";
+import UsersManager from "../../components/admin/UsersManager";
 
 // ─── helpers ───────────────────────────────────────────────────
 const DIFFICULTY_AR = { easy: "سهل", medium: "متوسط", hard: "صعب" };
@@ -733,6 +735,7 @@ export default function AdminPage() {
                 { key: "dashboard", label: "الرئيسية", icon: LayoutDashboard },
                 { key: "questions", label: "الأسئلة", icon: Edit2 },
                 { key: "categories", label: "تصنيفات الأسئلة", icon: Tag },
+                { key: "users", label: "المستخدمين", icon: Users },
               ].map(({ key, label, icon: Icon }) => {
                 const isActive = tab === key;
                 return (
@@ -778,6 +781,7 @@ export default function AdminPage() {
                 {tab === "dashboard" && "لوحة التحكم الرئيسة"}
                 {tab === "questions" && "الأسئلة"}
                 {tab === "categories" && "تصنيفات الأسئلة"}
+                {tab === "users" && "المستخدمين"}
               </h1>
 
               {tab === "questions" && (
@@ -1239,6 +1243,9 @@ export default function AdminPage() {
               </div>
             </div>
           )}
+
+          {/* ───────────────── TAB: Users ───────────────── */}
+          {tab === "users" && <UsersManager notify={notify} />}
         </main>
       </div>
     </>

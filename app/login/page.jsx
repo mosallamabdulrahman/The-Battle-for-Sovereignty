@@ -310,18 +310,6 @@ export default function QuickLoginPage() {
                 <div className="grid grid-cols-2 gap-1.5 bg-slate-100 p-1.5 rounded-xl mb-6">
                   <button
                     type="button"
-                    onClick={() => switchTab("login")}
-                    className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-bold transition-all cursor-pointer ${
-                      tab === "login"
-                        ? "bg-white text-cyan-700 shadow-sm"
-                        : "text-slate-500 hover:text-slate-700"
-                    }`}
-                  >
-                    <LogIn className="w-4 h-4" />
-                    تسجيل الدخول
-                  </button>
-                  <button
-                    type="button"
                     onClick={() => switchTab("register")}
                     className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-bold transition-all cursor-pointer ${
                       tab === "register"
@@ -331,6 +319,18 @@ export default function QuickLoginPage() {
                   >
                     <UserPlus className="w-4 h-4" />
                     حساب جديد
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => switchTab("login")}
+                    className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-bold transition-all cursor-pointer ${
+                      tab === "login"
+                        ? "bg-white text-cyan-700 shadow-sm"
+                        : "text-slate-500 hover:text-slate-700"
+                    }`}
+                  >
+                    <LogIn className="w-4 h-4" />
+                    تسجيل الدخول
                   </button>
                 </div>
 
@@ -364,7 +364,7 @@ export default function QuickLoginPage() {
                             value={identifier}
                             onChange={(e) => setIdentifier(e.target.value)}
                             placeholder="your@email.com أو اسم المستخدم"
-                            className="block w-full pr-11 pl-4 py-3.5 bg-slate-50/80 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 text-slate-800 placeholder-slate-400/70 transition-all font-medium text-sm"
+                            className="text-right block w-full pr-11 pl-4 py-3.5 bg-slate-50/80 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 text-slate-800 placeholder-slate-400/70 transition-all font-medium text-sm"
                             dir="ltr"
                           />
                         </div>
@@ -465,7 +465,7 @@ export default function QuickLoginPage() {
                             value={registerEmail}
                             onChange={(e) => setRegisterEmail(e.target.value)}
                             placeholder="your@email.com"
-                            className="block w-full pr-11 pl-4 py-3.5 bg-slate-50/80 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 text-slate-800 placeholder-slate-400/70 transition-all font-medium text-sm"
+                            className="text-right block w-full pr-11 pl-4 py-3.5 bg-slate-50/80 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 text-slate-800 placeholder-slate-400/70 transition-all font-medium text-sm"
                             dir="ltr"
                           />
                         </div>
