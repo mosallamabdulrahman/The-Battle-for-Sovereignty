@@ -248,32 +248,50 @@ export default function BattlePage() {
     lastActiveQuestionIdRef.current = currentQuestionId;
   }, [room?.active_question_id, holeActive]);
 
-  // Sync all clients to the same countdown using server timestamp
+  // Synced countdown: every client (team or judge) recomputes the remaining
+  // time from the shared server timestamp on each tick instead of
+  // decrementing a local counter — this makes it self-correcting so
+  // screens never drift apart (background-tab throttling, timer jitter,
+  // clock skew, etc. all reset themselves on the very next tick).
   useEffect(() => {
-    if (!room?.active_question_id || !room?.question_started_at) return;
-    const elapsed =
-      (Date.now() - new Date(room.question_started_at).getTime()) / 1000;
-    const remaining = Math.max(0, Math.floor(60 - elapsed));
-    setQuestionSeconds(remaining);
-  }, [room?.active_question_id, room?.question_started_at]);
-
-  useEffect(() => {
-    if (!room?.active_question_id || room.status !== "playing")
-      return undefined;
-    if (questionSeconds <= 0) {
-      playGameSound("timeout");
+    if (
+      !room?.active_question_id ||
+      !room?.question_started_at ||
+      room.status !== "playing"
+    ) {
       return undefined;
     }
 
-    const timeout = window.setTimeout(() => {
-      setQuestionSeconds((seconds) => Math.max(0, seconds - 1));
-      if (questionSeconds <= 10) {
+    const startedAt = new Date(room.question_started_at).getTime();
+    let lastPlayedSecond = null;
+
+    const tick = () => {
+      const elapsed = (Date.now() - startedAt) / 1000;
+      const remaining = Math.max(0, Math.ceil(60 - elapsed));
+
+      setQuestionSeconds(remaining);
+
+      if (remaining === 0 && lastPlayedSecond !== 0) {
+        playGameSound("timeout");
+      } else if (
+        remaining > 0 &&
+        remaining <= 10 &&
+        remaining !== lastPlayedSecond
+      ) {
         playGameSound("tick");
       }
-    }, 1000);
+      lastPlayedSecond = remaining;
+    };
 
-    return () => window.clearTimeout(timeout);
-  }, [playGameSound, questionSeconds, room?.active_question_id, room?.status]);
+    tick();
+    const interval = window.setInterval(tick, 250);
+    return () => window.clearInterval(interval);
+  }, [
+    playGameSound,
+    room?.active_question_id,
+    room?.question_started_at,
+    room?.status,
+  ]);
 
   useEffect(() => {
     if (!latestCombatEvent || latestCombatEvent.event_type !== "strike") return;
@@ -722,14 +740,32 @@ export default function BattlePage() {
       if (pendingBoardRef.current === pending) {
         if (error) {
           showAlert(error.message, "error");
-          // Silently resync team data without the full loading screen
-          supabase
-            .from("teams")
-            .select("*")
-            .eq("room_id", roomId)
-            .then(({ data }) => {
-              if (data) setTeams(data);
-            });
+          // Silently resync team data without the full loading screen.
+          // `board` lives in its own protected table now, so re-fetch it
+          // via the RPC alongside the public team columns instead of a
+          // plain select("*") (which would otherwise wipe the displayed
+          // board on any transient error).
+          Promise.all([
+            supabase.from("teams").select(TEAM_PUBLIC_COLUMNS).eq("room_id", roomId),
+            supabase.rpc("get_team_board", {
+              p_room_id: roomId,
+              p_team_index: teamIndex,
+            }),
+          ]).then(([{ data: teamRows }, { data: board }]) => {
+            if (!teamRows) return;
+            setTeams((prev) =>
+              teamRows.map((row) => {
+                const existing = prev.find((t) => t.id === row.id);
+                return {
+                  ...row,
+                  board:
+                    row.team_index === teamIndex
+                      ? board ?? existing?.board ?? []
+                      : existing?.board ?? [],
+                };
+              }),
+            );
+          });
         }
         pendingBoardRef.current = null;
       }
