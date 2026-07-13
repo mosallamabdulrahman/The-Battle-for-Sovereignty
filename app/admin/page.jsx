@@ -254,6 +254,92 @@ function CategoryImageUpload({ value, onChange }) {
   );
 }
 
+// Image upload for a question's answer — stored separately from the
+// question's own media (media_url/media_type above) so the two never mix,
+// even though both live in the same "question-media" storage bucket.
+function AnswerImageUpload({ value, onChange }) {
+  const inputRef = useRef(null);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleFile = async (file) => {
+    setError("");
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop().toLowerCase();
+      const allowed = ["jpg", "jpeg", "png", "gif", "webp"];
+      if (!allowed.includes(ext)) throw new Error("نوع الملف غير مدعوم.");
+
+      const path = `answer_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+      const { data, error: upErr } = await supabase.storage
+        .from("question-media")
+        .upload(path, file, { cacheControl: "3600", upsert: false });
+      if (upErr) throw upErr;
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("question-media").getPublicUrl(data.path);
+
+      onChange(publicUrl);
+    } catch (err) {
+      setError(err.message || "فشل الرفع.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={uploading}
+          className="flex items-center gap-2 rounded-xl bg-cyan-600 px-4 py-2 text-sm font-bold text-white hover:bg-cyan-700 disabled:opacity-60"
+        >
+          {uploading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Upload className="h-4 w-4" />
+          )}
+          {uploading ? "جارٍ الرفع..." : "رفع صورة"}
+        </button>
+        {value && (
+          <button
+            type="button"
+            onClick={() => onChange("")}
+            className="flex items-center gap-1 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-100"
+          >
+            <X className="h-3 w-3" />
+            إزالة
+          </button>
+        )}
+      </div>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+      />
+      {error && <p className="text-[11px] text-rose-600">{error}</p>}
+      {value && (
+        <img
+          src={value}
+          alt="preview"
+          className="h-28 rounded-xl object-cover border border-slate-200"
+        />
+      )}
+      <input
+        value={value || ""}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-[11px] font-mono text-slate-500 bg-slate-50"
+        placeholder="أو أدخل رابط URL مباشرة"
+      />
+    </div>
+  );
+}
+
 // ─── Category Modal ─────────────────────────────────────────────
 function CategoryModal({ category, categories, onSave, onClose, busy }) {
   const [form, setForm] = useState(() => {
@@ -462,6 +548,7 @@ function QuestionModal({
       is_active: true,
       media_url: "",
       media_type: null,
+      answer_image_url: "",
     };
   });
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
@@ -620,6 +707,18 @@ function QuestionModal({
                 onChange={(url, type) => {
                   setForm((f) => ({ ...f, media_url: url, media_type: type }));
                 }}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-[11px] font-bold text-slate-500 flex items-center gap-1">
+              <ImageIcon className="h-3 w-3" /> صورة الإجابة (اختياري)
+            </label>
+            <div className="mt-1">
+              <AnswerImageUpload
+                value={form.answer_image_url || ""}
+                onChange={(url) => set("answer_image_url", url)}
               />
             </div>
           </div>
@@ -784,6 +883,7 @@ export default function AdminPage() {
         p_media_type: form.media_url?.trim()
           ? form.media_type || "image"
           : null,
+        p_answer_image_url: form.answer_image_url?.trim() || null,
       });
       if (error) throw error;
       notify(form.id ? "تم تحديث السؤال." : "تم إضافة السؤال.");

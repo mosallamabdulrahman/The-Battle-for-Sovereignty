@@ -212,10 +212,13 @@ export default function QuickLoginPage() {
       }
 
       // Admin-panel accounts are a completely separate system — they never
-      // sign into the game site, even with correct credentials.
+      // sign into the game site, even with correct credentials. The message
+      // deliberately matches the generic "not found" case above so it never
+      // reveals that an identifier belongs to an admin account.
       if (match[0].is_admin_account) {
         setIsError(true);
-        setMsg("هذا الحساب مخصص لدخول لوحة التحكم بس — مش تقدر تدخل اللعبة بيه.");
+        setNotFoundHint(true);
+        setMsg("ما لقيناك عندنا. لو أول مرة تدخل، سجل حساب جديد.");
         return;
       }
 

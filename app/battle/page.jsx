@@ -77,6 +77,7 @@ export default function BattlePage() {
   const [room, setRoom] = useState(null);
   const [teams, setTeams] = useState([]);
   const [questions, setQuestions] = useState([]);
+  const [categoryInfoMap, setCategoryInfoMap] = useState(new Map());
   const [combatEvents, setCombatEvents] = useState([]);
   const [dbLoading, setDbLoading] = useState(false);
   const [dbError, setDbError] = useState(null);
@@ -496,6 +497,7 @@ export default function BattlePage() {
       if (questionError) throw questionError;
 
       let categoryImageMap = new Map();
+      let newCategoryInfoMap = new Map();
       const categoryIds = [
         ...new Set(
           (questionData || []).map((question) => question.category_id),
@@ -504,7 +506,7 @@ export default function BattlePage() {
       if (categoryIds.length > 0) {
         const { data: categoryData } = await supabase
           .from("question_categories")
-          .select("id,image_url")
+          .select("id,image_url,name,emoji")
           .in("id", categoryIds);
         categoryImageMap = new Map(
           (categoryData || []).map((category) => [
@@ -512,7 +514,14 @@ export default function BattlePage() {
             category.image_url,
           ]),
         );
+        newCategoryInfoMap = new Map(
+          (categoryData || []).map((category) => [
+            category.id,
+            { name: category.name, emoji: category.emoji },
+          ]),
+        );
       }
+      setCategoryInfoMap(newCategoryInfoMap);
 
       setQuestions(
         (questionData || []).map((question) => ({
@@ -535,9 +544,7 @@ export default function BattlePage() {
       setCombatEvents(eventData || []);
     } catch (err) {
       console.error(err);
-      setDbError(
-        err.message || "ما قدرنا نحمل بيانات حيلهم بينهم.",
-      );
+      setDbError(err.message || "ما قدرنا نحمل بيانات حيلهم بينهم.");
     } finally {
       setDbLoading(false);
     }
@@ -674,11 +681,12 @@ export default function BattlePage() {
 
     // Read from pendingBoardRef first to avoid stale state on rapid clicks
     const pendingState = pendingBoardRef.current;
-    const rawBoard = pendingState
-      ? pendingState.board
-      : (activeTeam.board || []);
+    const rawBoard = pendingState ? pendingState.board : activeTeam.board || [];
     // Always ensure board is exactly 36 elements to match the 6×6 grid
-    const currentBoard = Array.from({ length: 36 }, (_, i) => rawBoard[i] ?? null);
+    const currentBoard = Array.from(
+      { length: 36 },
+      (_, i) => rawBoard[i] ?? null,
+    );
     let currentPoints = pendingState ? pendingState.points : activeTeam.points;
 
     // A. Deletion Refund behavior if already populated
@@ -746,7 +754,10 @@ export default function BattlePage() {
           // plain select("*") (which would otherwise wipe the displayed
           // board on any transient error).
           Promise.all([
-            supabase.from("teams").select(TEAM_PUBLIC_COLUMNS).eq("room_id", roomId),
+            supabase
+              .from("teams")
+              .select(TEAM_PUBLIC_COLUMNS)
+              .eq("room_id", roomId),
             supabase.rpc("get_team_board", {
               p_room_id: roomId,
               p_team_index: teamIndex,
@@ -760,8 +771,8 @@ export default function BattlePage() {
                   ...row,
                   board:
                     row.team_index === teamIndex
-                      ? board ?? existing?.board ?? []
-                      : existing?.board ?? [],
+                      ? (board ?? existing?.board ?? [])
+                      : (existing?.board ?? []),
                 };
               }),
             );
@@ -1089,7 +1100,8 @@ export default function BattlePage() {
             لازم تسجل دخولك أول
           </h2>
           <p className="text-xs text-slate-500 mt-2 leading-relaxed font-semibold">
-            عفواً، لازم تسجل دخولك أول شي عشان تقدر توزع فريقك أو تدير الغرفة. الدخول وايد سريع بدون باسورد!
+            عفواً، لازم تسجل دخولك أول شي عشان تقدر توزع فريقك أو تدير الغرفة.
+            الدخول وايد سريع بدون باسورد!
           </p>
           <div className="mt-8 flex flex-col gap-3">
             <Link
@@ -1200,7 +1212,8 @@ export default function BattlePage() {
               اطلع وسجل دخول بحساب الفريق
             </button>
             <p className="text-[11px] leading-relaxed text-slate-400">
-              تقدر بعد تبطل رابط الفريق بصفحة خفية أو بجهاز ثاني وتدش بحساب ثاني.
+              تقدر بعد تبطل رابط الفريق بصفحة خفية أو بجهاز ثاني وتدش بحساب
+              ثاني.
             </p>
           </div>
         </div>
@@ -1499,9 +1512,7 @@ export default function BattlePage() {
                           : "bg-slate-100 text-slate-400"
                       }`}
                     >
-                      {team1Obj?.joined
-                        ? "✓ دش الغرفة"
-                        : "○ ناطرين الفريق يدش"}
+                      {team1Obj?.joined ? "✓ دش الغرفة" : "○ ناطرين الفريق يدش"}
                     </span>
                   </div>
 
@@ -1573,9 +1584,7 @@ export default function BattlePage() {
                           : "bg-slate-100 text-slate-400"
                       }`}
                     >
-                      {team2Obj?.joined
-                        ? "✓ دش الغرفة"
-                        : "○ ناطرين الفريق يدش"}
+                      {team2Obj?.joined ? "✓ دش الغرفة" : "○ ناطرين الفريق يدش"}
                     </span>
                   </div>
 
@@ -1617,10 +1626,7 @@ export default function BattlePage() {
                       type="button"
                       onClick={() => {
                         navigator.clipboard.writeText(getTeamUrl(room.id, 2));
-                        showAlert(
-                          "نسخنا رابط الفريق الثاني بنجاح!",
-                          "success",
-                        );
+                        showAlert("نسخنا رابط الفريق الثاني بنجاح!", "success");
                       }}
                       className="mt-2.5 text-[9px] font-bold text-orange-600 bg-orange-50 px-3 py-1.5 rounded-lg flex items-center gap-1 cursor-pointer hover:bg-orange-100"
                     >
@@ -1647,14 +1653,17 @@ export default function BattlePage() {
                     فئات الأسئلة المفتوحة (6 فئات):
                   </span>
                   <div className="flex flex-wrap gap-1.5">
-                    {room.selected_categories.map((catId, idx) => (
-                      <span
-                        key={idx}
-                        className="bg-slate-100 text-slate-700 font-bold text-[10px] px-2.5 py-1 rounded-lg border border-slate-200"
-                      >
-                        🛡️ {catId}
-                      </span>
-                    ))}
+                    {room.selected_categories.map((catId, idx) => {
+                      const info = categoryInfoMap.get(catId);
+                      return (
+                        <span
+                          key={idx}
+                          className="bg-slate-100 text-slate-700 font-bold text-[10px] px-2.5 py-1 rounded-lg border border-slate-200"
+                        >
+                          {info?.emoji || "🛡️"} {info?.name || catId}
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -1761,9 +1770,7 @@ export default function BattlePage() {
                     : "bg-amber-100 text-amber-700"
                 }`}
               >
-                {activeTeam.is_ready
-                  ? "✓ جاهز"
-                  : "● قاعد يوزع الجنود"}
+                {activeTeam.is_ready ? "✓ جاهز" : "● قاعد يوزع الجنود"}
               </span>
             </div>
           </div>
@@ -1799,7 +1806,9 @@ export default function BattlePage() {
                           : "bg-gradient-to-r from-cyan-500 to-sky-500 hover:from-cyan-600 hover:to-sky-600"
                       }`}
                     >
-                      <RefreshCw className={`h-3 w-3 ${isAutoFilling ? "animate-spin" : ""}`} />
+                      <RefreshCw
+                        className={`h-3 w-3 ${isAutoFilling ? "animate-spin" : ""}`}
+                      />
                       {isAutoFilling ? "قاعدين نحفظ..." : "توزيع عشوائي"}
                     </motion.button>
                   )}
@@ -1880,7 +1889,8 @@ export default function BattlePage() {
                       قفلنا خريطة اللعب لين تبدون
                     </h4>
                     <p className="text-xs text-slate-300 max-w-xs mt-2 leading-relaxed">
-                      وزعنا جنودك وخشيناهم بنجاح! ما حد يقدر يشوف توزيعك الحين لا ربعك ولا خصمك.
+                      وزعنا جنودك وخشيناهم بنجاح! ما حد يقدر يشوف توزيعك الحين
+                      لا ربعك ولا خصمك.
                     </p>
                   </motion.div>
                 )}
@@ -1951,7 +1961,8 @@ export default function BattlePage() {
                     وزعت جنودك وجهزت فريقك بنجاح!
                   </h4>
                   <p className="text-xs text-slate-400 font-semibold leading-relaxed">
-                    يا سلام! الحين ناطرين الفريق الثاني يخلص توزيع جنوده عشان تبدون اللعب والطق...
+                    يا سلام! الحين ناطرين الفريق الثاني يخلص توزيع جنوده عشان
+                    تبدون اللعب والطق...
                   </p>
                   {opponentTeam && (
                     <div className="mt-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
@@ -1975,11 +1986,14 @@ export default function BattlePage() {
               ) : (
                 <div className="space-y-4">
                   <div className="text-right bg-slate-50 p-4 rounded-2xl border border-slate-100 text-xs font-bold leading-relaxed text-slate-500">
-                    تبدأ بـ <strong className="text-slate-800">1000 نقطة</strong> ·
-                    لازم تصرف{" "}
-                    <strong className="text-cyan-700">700 نقطة على الأقل</strong>.
-                    الحدود: جندي (10) · دبابة (4) · طائرة (3) · غواصة (2) · لغم
-                    (2). إذا شلت جندي ترجع لك نقاطه.
+                    تبدأ بـ{" "}
+                    <strong className="text-slate-800">1000 نقطة</strong> · لازم
+                    تصرف{" "}
+                    <strong className="text-cyan-700">
+                      700 نقطة على الأقل
+                    </strong>
+                    . الحدود: جندي (10) · دبابة (4) · طائرة (3) · غواصة (2) ·
+                    لغم (2). إذا شلت جندي ترجع لك نقاطه.
                   </div>
                   <motion.button
                     whileHover={!isAutoFilling ? { scale: 1.02 } : {}}
@@ -2021,7 +2035,8 @@ export default function BattlePage() {
           لعبة حيلهم بينهم
         </h2>
         <p className="text-xs text-slate-500 mt-2.5 leading-relaxed font-semibold">
-          يا هلا فيك! عشان تبدأ اللعب وتتحدى ربعك، لازم تسوي غرفة جديدة وتختار فئات الأسئلة من الصفحة الرئيسية أول شي.
+          يا هلا فيك! عشان تبدأ اللعب وتتحدى ربعك، لازم تسوي غرفة جديدة وتختار
+          فئات الأسئلة من الصفحة الرئيسية أول شي.
         </p>
 
         <div className="mt-8 space-y-3">
