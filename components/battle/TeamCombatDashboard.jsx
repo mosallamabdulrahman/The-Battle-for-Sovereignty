@@ -484,7 +484,7 @@ export function TeamCombatDashboard({
                       isBusy ||
                       room.status !== "playing" ||
                       (!radarMode && activeTeam.available_strikes <= 0) ||
-                      Boolean(result && result !== "blocked")
+                      Boolean(result)
                     }
                     onClick={() =>
                       radarMode

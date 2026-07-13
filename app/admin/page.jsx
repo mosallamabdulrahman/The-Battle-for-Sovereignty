@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import {
   AlertTriangle,
   CheckCircle,
@@ -20,7 +21,7 @@ import {
   LayoutDashboard,
   Users,
 } from "lucide-react";
-import { supabase } from "../../lib/supabase";
+import { supabasePanel as supabase } from "../../lib/supabase-panel";
 import GameLogo from "../../components/GameLogo";
 import UsersManager from "../../components/admin/UsersManager";
 
@@ -168,19 +169,113 @@ function MediaUpload({ value, type, onChange }) {
   );
 }
 
+// Cover-image upload for categories — separate storage bucket and state
+// from the question MediaUpload above, so the two never interfere.
+function CategoryImageUpload({ value, onChange }) {
+  const inputRef = useRef(null);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleFile = async (file) => {
+    setError("");
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop().toLowerCase();
+      const allowed = ["jpg", "jpeg", "png", "gif", "webp"];
+      if (!allowed.includes(ext)) throw new Error("نوع الملف غير مدعوم.");
+
+      const path = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+      const { data, error: upErr } = await supabase.storage
+        .from("category-images")
+        .upload(path, file, { cacheControl: "3600", upsert: false });
+      if (upErr) throw upErr;
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("category-images").getPublicUrl(data.path);
+
+      onChange(publicUrl);
+    } catch (err) {
+      setError(err.message || "فشل الرفع.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={uploading}
+          className="flex items-center gap-2 rounded-xl bg-cyan-600 px-4 py-2 text-sm font-bold text-white hover:bg-cyan-700 disabled:opacity-60"
+        >
+          {uploading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Upload className="h-4 w-4" />
+          )}
+          {uploading ? "جارٍ الرفع..." : "رفع صورة"}
+        </button>
+        {value && (
+          <button
+            type="button"
+            onClick={() => onChange("")}
+            className="flex items-center gap-1 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-100"
+          >
+            <X className="h-3 w-3" />
+            إزالة
+          </button>
+        )}
+      </div>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+      />
+      {error && <p className="text-[11px] text-rose-600">{error}</p>}
+      {value && (
+        <img
+          src={value}
+          alt="preview"
+          className="h-28 rounded-xl object-cover border border-slate-200"
+        />
+      )}
+      <input
+        value={value || ""}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-[11px] font-mono text-slate-500 bg-slate-50"
+        placeholder="أو أدخل رابط URL مباشرة"
+      />
+    </div>
+  );
+}
+
 // ─── Category Modal ─────────────────────────────────────────────
-function CategoryModal({ category, onSave, onClose, busy }) {
-  const [form, setForm] = useState(
-    category || {
+function CategoryModal({ category, categories, onSave, onClose, busy }) {
+  const [form, setForm] = useState(() => {
+    if (category) return category;
+    const usedOrders = new Set((categories || []).map((c) => c.sort_order));
+    let nextOrder = 1;
+    while (usedOrders.has(nextOrder)) nextOrder += 1;
+    return {
       name: "",
       description: "",
       emoji: "📌",
       image_url: "",
-      sort_order: 0,
+      sort_order: nextOrder,
       is_active: true,
-    },
-  );
+    };
+  });
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  const orderTaken = (categories || []).some(
+    (c) => c.sort_order === form.sort_order && c.id !== form.id,
+  );
+  const orderTooLow = form.sort_order < 1;
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -191,8 +286,19 @@ function CategoryModal({ category, onSave, onClose, busy }) {
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/60 p-4 animate-fade-in">
-      <div className="w-full max-w-md max-h-[85vh] rounded-3xl bg-white shadow-2xl flex flex-col animate-scale-up">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[150] flex items-center justify-center bg-black/60 p-4"
+    >
+      <motion.div
+        initial={{ scale: 0.95, y: 15, opacity: 0 }}
+        animate={{ scale: 1, y: 0, opacity: 1 }}
+        exit={{ scale: 0.95, y: 15, opacity: 0 }}
+        transition={{ type: "spring", stiffness: 350, damping: 25 }}
+        className="w-full max-w-md max-h-[85vh] rounded-3xl bg-white shadow-2xl flex flex-col"
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-slate-100">
           <h2 className="font-bold text-slate-900">
@@ -241,29 +347,43 @@ function CategoryModal({ category, onSave, onClose, busy }) {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-[11px] font-bold text-slate-500">
-                صورة الغلاف (URL)
-              </label>
-              <input
+          <div>
+            <label className="text-[11px] font-bold text-slate-500">
+              صورة الغلاف
+            </label>
+            <div className="mt-1">
+              <CategoryImageUpload
                 value={form.image_url || ""}
-                onChange={(e) => set("image_url", e.target.value)}
-                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-[11px] font-mono focus:border-cyan-500 outline-none transition-colors"
-                placeholder="https://..."
+                onChange={(url) => set("image_url", url)}
               />
             </div>
-            <div>
-              <label className="text-[11px] font-bold text-slate-500">
-                الترتيب
-              </label>
-              <input
-                type="number"
-                value={form.sort_order}
-                onChange={(e) => set("sort_order", Number(e.target.value))}
-                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-cyan-500 outline-none transition-colors"
-              />
-            </div>
+          </div>
+
+          <div>
+            <label className="text-[11px] font-bold text-slate-500">
+              الترتيب
+            </label>
+            <input
+              type="number"
+              value={form.sort_order}
+              min={1}
+              onChange={(e) => set("sort_order", Number(e.target.value))}
+              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-cyan-500 outline-none transition-colors"
+            />
+            <p className="mt-1 text-[10px] text-slate-400">
+              ده ترتيب ظهور التصنيف في الصفحة الرئيسية — الرقم الأصغر يظهر
+              الأول. أول رقم مسموح هو 1.
+            </p>
+            {orderTooLow && (
+              <p className="mt-1 text-[10px] font-bold text-rose-600">
+                الترتيب لازم يكون 1 أو أكبر.
+              </p>
+            )}
+            {!orderTooLow && orderTaken && (
+              <p className="mt-1 text-[10px] font-bold text-rose-600">
+                الترتيب ده متاخد بتصنيف تاني — اختار رقم مختلف.
+              </p>
+            )}
           </div>
 
           <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -284,7 +404,7 @@ function CategoryModal({ category, onSave, onClose, busy }) {
           <button
             type="button"
             onClick={() => onSave(form)}
-            disabled={busy || !form.name.trim()}
+            disabled={busy || !form.name.trim() || orderTaken || orderTooLow}
             className="flex-1 flex items-center justify-center gap-2 rounded-2xl bg-cyan-600 py-3 text-sm font-bold text-white disabled:opacity-60 hover:bg-cyan-700 transition-all duration-200 shadow-md hover:shadow-lg active:scale-[0.98]"
           >
             {busy ? (
@@ -302,8 +422,8 @@ function CategoryModal({ category, onSave, onClose, busy }) {
             إلغاء
           </button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
@@ -366,8 +486,19 @@ function QuestionModal({ question, categories, questions, onSave, onClose, busy 
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/60 p-4 animate-fade-in">
-      <div className="w-full max-w-lg max-h-[85vh] rounded-3xl bg-white shadow-2xl flex flex-col animate-scale-up">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[150] flex items-center justify-center bg-black/60 p-4"
+    >
+      <motion.div
+        initial={{ scale: 0.95, y: 15, opacity: 0 }}
+        animate={{ scale: 1, y: 0, opacity: 1 }}
+        exit={{ scale: 0.95, y: 15, opacity: 0 }}
+        transition={{ type: "spring", stiffness: 350, damping: 25 }}
+        className="w-full max-w-lg max-h-[85vh] rounded-3xl bg-white shadow-2xl flex flex-col"
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-slate-100">
           <h2 className="font-bold text-slate-900">
@@ -517,8 +648,8 @@ function QuestionModal({ question, categories, questions, onSave, onClose, busy 
             إلغاء
           </button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
@@ -698,24 +829,29 @@ export default function AdminPage() {
   return (
     <>
       <Toast msg={toast.msg} type={toast.type} onClose={closeToast} />
-      {catModal !== null && (
-        <CategoryModal
-          category={catModal.id ? catModal : null}
-          onSave={saveCategory}
-          onClose={() => setCatModal(null)}
-          busy={busy}
-        />
-      )}
-      {qModal !== null && (
-        <QuestionModal
-          question={qModal.id ? qModal : null}
-          categories={categories}
-          questions={questions}
-          onSave={saveQuestion}
-          onClose={() => setQModal(null)}
-          busy={busy}
-        />
-      )}
+      <AnimatePresence>
+        {catModal !== null && (
+          <CategoryModal
+            category={catModal.id ? catModal : null}
+            categories={categories}
+            onSave={saveCategory}
+            onClose={() => setCatModal(null)}
+            busy={busy}
+          />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {qModal !== null && (
+          <QuestionModal
+            question={qModal.id ? qModal : null}
+            categories={categories}
+            questions={questions}
+            onSave={saveQuestion}
+            onClose={() => setQModal(null)}
+            busy={busy}
+          />
+        )}
+      </AnimatePresence>
 
       <div className="flex flex-1 min-h-[calc(100vh-32px)]">
         {/* Right Sidebar (WordPress-style) */}
@@ -745,12 +881,19 @@ export default function AdminPage() {
                       setTab(key);
                       setSearchQuery("");
                     }}
-                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-[14px] text-right transition-colors border-r-4 ${
+                    className={`relative w-full flex items-center gap-3 px-4 py-2.5 text-[14px] text-right transition-colors ${
                       isActive
-                        ? "bg-[#2271b1] text-white border-cyan-400 font-bold"
-                        : "border-transparent text-[#f0f0f1] hover:bg-[#3c434a] hover:text-cyan-400"
+                        ? "bg-[#2271b1] text-white font-bold"
+                        : "text-[#f0f0f1] hover:bg-[#3c434a] hover:text-cyan-400"
                     }`}
                   >
+                    {isActive && (
+                      <motion.span
+                        layoutId="activeSidebarBorder"
+                        className="absolute top-0 right-0 bottom-0 w-1 bg-cyan-400"
+                        transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                      />
+                    )}
                     <Icon className="w-4 h-4" />
                     <span>{label}</span>
                   </button>
@@ -812,7 +955,12 @@ export default function AdminPage() {
 
           {/* ───────────────── TAB: Dashboard ───────────────── */}
           {tab === "dashboard" && (
-            <div className="space-y-6">
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25 }}
+              className="space-y-6"
+            >
               {/* Welcome Panel */}
               <div className="bg-white border border-[#ccd0d4] p-8 shadow-sm relative overflow-hidden">
                 <div className="max-w-2xl">
@@ -939,12 +1087,17 @@ export default function AdminPage() {
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
           )}
 
           {/* ───────────────── TAB: Questions ───────────────── */}
           {tab === "questions" && (
-            <div className="space-y-4">
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25 }}
+              className="space-y-4"
+            >
               {/* Filter and Search Bar */}
               <div className="flex flex-wrap justify-between items-center gap-3">
                 <div className="flex items-center gap-2">
@@ -1107,12 +1260,17 @@ export default function AdminPage() {
                   {questions.length}
                 </div>
               </div>
-            </div>
+            </motion.div>
           )}
 
           {/* ───────────────── TAB: Categories ───────────────── */}
           {tab === "categories" && (
-            <div className="space-y-4">
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25 }}
+              className="space-y-4"
+            >
               {/* Filter and Search Bar */}
               <div className="flex justify-end items-center gap-3">
                 {/* Search Box */}
@@ -1241,11 +1399,19 @@ export default function AdminPage() {
                   {categories.length}
                 </div>
               </div>
-            </div>
+            </motion.div>
           )}
 
           {/* ───────────────── TAB: Users ───────────────── */}
-          {tab === "users" && <UsersManager notify={notify} />}
+          {tab === "users" && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25 }}
+            >
+              <UsersManager notify={notify} />
+            </motion.div>
+          )}
         </main>
       </div>
     </>

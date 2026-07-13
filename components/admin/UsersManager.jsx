@@ -14,8 +14,9 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { supabase } from "../../lib/supabase";
+import { supabasePanel as supabase } from "../../lib/supabase-panel";
 import { generatePassword } from "../../lib/auth";
+import { motion, AnimatePresence } from "motion/react";
 
 const callAdminUsersApi = async (path, method, body) => {
   const {
@@ -59,8 +60,19 @@ function UserModal({ user, onSave, onClose, busy }) {
     (form.password.trim().length === 0 || form.password.trim().length >= 6);
 
   return (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/60 p-4 overflow-y-auto">
-      <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl space-y-4 my-4">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[150] flex items-center justify-center bg-black/60 p-4 overflow-y-auto"
+    >
+      <motion.div
+        initial={{ scale: 0.95, y: 15, opacity: 0 }}
+        animate={{ scale: 1, y: 0, opacity: 1 }}
+        exit={{ scale: 0.95, y: 15, opacity: 0 }}
+        transition={{ type: "spring", stiffness: 350, damping: 25 }}
+        className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl space-y-4 my-4"
+      >
         <div className="flex items-center justify-between">
           <h2 className="font-bold text-slate-900">
             {isEdit ? "تعديل مستخدم" : "مستخدم جديد"}
@@ -171,8 +183,8 @@ function UserModal({ user, onSave, onClose, busy }) {
             إلغاء
           </button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
@@ -259,14 +271,16 @@ export default function UsersManager({ notify }) {
 
   return (
     <div className="space-y-4">
-      {modal !== null && (
-        <UserModal
-          user={modal.user_id ? modal : null}
-          onSave={handleSave}
-          onClose={() => setModal(null)}
-          busy={busy}
-        />
-      )}
+      <AnimatePresence>
+        {modal !== null && (
+          <UserModal
+            user={modal.user_id ? modal : null}
+            onSave={handleSave}
+            onClose={() => setModal(null)}
+            busy={busy}
+          />
+        )}
+      </AnimatePresence>
 
       <div className="flex justify-end">
         <button

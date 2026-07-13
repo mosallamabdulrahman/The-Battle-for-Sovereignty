@@ -2,11 +2,12 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import { useEffect, useState } from "react";
-import { supabase } from "../../lib/supabase";
+import { supabasePanel as supabase } from "../../lib/supabase-panel";
 import { getUserDisplayName } from "../../lib/auth";
 import Link from "next/link";
 import { Eye, EyeOff, Loader2, Lock, Shield } from "lucide-react";
 import GameLogo from "@/components/GameLogo";
+import { motion } from "motion/react";
 
 function AdminLoginForm({ onSuccess }) {
   const [identifier, setIdentifier] = useState("");
@@ -65,10 +66,16 @@ function AdminLoginForm({ onSuccess }) {
 
   return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 dir-rtl">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-sm rounded-3xl border border-slate-800 bg-slate-900 p-8 shadow-2xl space-y-5"
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 15 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 300, damping: 25 }}
+        className="w-full max-w-sm"
       >
+        <form
+          onSubmit={handleSubmit}
+          className="w-full rounded-3xl border border-slate-800 bg-slate-900 p-8 shadow-2xl space-y-5"
+        >
         <div className="flex flex-col items-center gap-3 text-center">
           <div className="border border-cyan-500/30 rounded-2xl p-3">
             <GameLogo className="w-16 h-16" />
@@ -146,7 +153,8 @@ function AdminLoginForm({ onSuccess }) {
         >
           ارجع للموقع الرئيسي
         </Link>
-      </form>
+        </form>
+      </motion.div>
     </div>
   );
 }
@@ -200,7 +208,12 @@ export default function AdminLayout({ children }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#f0f0f1] text-[#3c434a] font-sans antialiased dir-rtl flex flex-col">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4 }}
+      className="min-h-screen bg-[#f0f0f1] text-[#3c434a] font-sans antialiased dir-rtl flex flex-col"
+    >
       {/* WordPress-style Top Admin Bar */}
       <div className="h-8 bg-[#1d2327] text-[#c3c4c7] text-[13px] flex items-center justify-between px-4 select-none z-[190] shrink-0 border-b border-[#2c3338]">
         {/* Right side (RTL) - Brand & Visit Site */}
@@ -240,6 +253,6 @@ export default function AdminLayout({ children }) {
       <div className="flex-1 flex flex-col min-h-[calc(100vh-32px)]">
         {children}
       </div>
-    </div>
+    </motion.div>
   );
 }

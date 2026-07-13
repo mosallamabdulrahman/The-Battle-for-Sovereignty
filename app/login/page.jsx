@@ -211,6 +211,14 @@ export default function QuickLoginPage() {
         return;
       }
 
+      // Admin-panel accounts are a completely separate system — they never
+      // sign into the game site, even with correct credentials.
+      if (match[0].is_admin_account) {
+        setIsError(true);
+        setMsg("هذا الحساب مخصص لدخول لوحة التحكم بس — مش تقدر تدخل اللعبة بيه.");
+        return;
+      }
+
       const resolvedEmail = match[0].matched_email;
       const { error } = await supabase.auth.signInWithPassword({
         email: resolvedEmail,
@@ -368,28 +376,42 @@ export default function QuickLoginPage() {
                 animate={{ opacity: 1 }}
               >
                 {/* Tabs */}
-                <div className="grid grid-cols-2 gap-1.5 bg-slate-100 p-1.5 rounded-xl mb-6">
+                <div className="grid grid-cols-2 gap-1.5 bg-slate-100 p-1.5 rounded-xl mb-6 relative z-0">
                   <button
                     type="button"
                     onClick={() => switchTab("register")}
-                    className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-bold transition-all cursor-pointer ${
+                    className={`relative flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-bold transition-colors duration-250 cursor-pointer ${
                       tab === "register"
-                        ? "bg-white text-cyan-700 shadow-sm"
+                        ? "text-cyan-700"
                         : "text-slate-500 hover:text-slate-700"
                     }`}
                   >
+                    {tab === "register" && (
+                      <motion.span
+                        layoutId="activeTab"
+                        className="absolute inset-0 bg-white rounded-lg shadow-sm -z-10"
+                        transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                      />
+                    )}
                     <UserPlus className="w-4 h-4" />
                     حساب جديد
                   </button>
                   <button
                     type="button"
                     onClick={() => switchTab("login")}
-                    className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-bold transition-all cursor-pointer ${
+                    className={`relative flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-bold transition-colors duration-250 cursor-pointer ${
                       tab === "login"
-                        ? "bg-white text-cyan-700 shadow-sm"
+                        ? "text-cyan-700"
                         : "text-slate-500 hover:text-slate-700"
                     }`}
                   >
+                    {tab === "login" && (
+                      <motion.span
+                        layoutId="activeTab"
+                        className="absolute inset-0 bg-white rounded-lg shadow-sm -z-10"
+                        transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                      />
+                    )}
                     <LogIn className="w-4 h-4" />
                     تسجيل الدخول
                   </button>
@@ -399,10 +421,10 @@ export default function QuickLoginPage() {
                   {tab === "login" ? (
                     <motion.form
                       key="login-form"
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -8 }}
-                      transition={{ duration: 0.2 }}
+                      initial={{ opacity: 0, x: -16, scale: 0.98 }}
+                      animate={{ opacity: 1, x: 0, scale: 1 }}
+                      exit={{ opacity: 0, x: 16, scale: 0.98 }}
+                      transition={{ duration: 0.25, ease: "easeInOut" }}
                       onSubmit={handleLogin}
                       className="space-y-4"
                     >
@@ -522,10 +544,10 @@ export default function QuickLoginPage() {
                   ) : (
                     <motion.form
                       key="register-form"
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -8 }}
-                      transition={{ duration: 0.2 }}
+                      initial={{ opacity: 0, x: 16, scale: 0.98 }}
+                      animate={{ opacity: 1, x: 0, scale: 1 }}
+                      exit={{ opacity: 0, x: -16, scale: 0.98 }}
+                      transition={{ duration: 0.25, ease: "easeInOut" }}
                       onSubmit={handleRegister}
                       className="space-y-4"
                     >
