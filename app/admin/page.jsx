@@ -304,7 +304,11 @@ function CategoryModal({ category, categories, onSave, onClose, busy }) {
           <h2 className="font-bold text-slate-900">
             {category ? "تعديل تصنيف" : "تصنيف جديد"}
           </h2>
-          <button type="button" onClick={onClose} className="p-1 rounded-lg hover:bg-slate-100 transition-colors">
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1 rounded-lg hover:bg-slate-100 transition-colors"
+          >
             <X className="h-5 w-5 text-slate-400" />
           </button>
         </div>
@@ -337,7 +341,7 @@ function CategoryModal({ category, categories, onSave, onClose, busy }) {
 
           <div>
             <label className="text-[11px] font-bold text-slate-500">
-              وصف (اختياري)
+              الوصف
             </label>
             <input
               value={form.description || ""}
@@ -438,7 +442,14 @@ const nextPosition = (questions, categoryId, excludeId) => {
   return used.length ? Math.max(...used) + 1 : 1;
 };
 
-function QuestionModal({ question, categories, questions, onSave, onClose, busy }) {
+function QuestionModal({
+  question,
+  categories,
+  questions,
+  onSave,
+  onClose,
+  busy,
+}) {
   const [form, setForm] = useState(() => {
     if (question) return question;
     const initialCategoryId = categories[0]?.id || "";
@@ -504,7 +515,11 @@ function QuestionModal({ question, categories, questions, onSave, onClose, busy 
           <h2 className="font-bold text-slate-900">
             {question ? "تعديل سؤال" : "سؤال جديد"}
           </h2>
-          <button type="button" onClick={onClose} className="p-1 rounded-lg hover:bg-slate-100 transition-colors">
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1 rounded-lg hover:bg-slate-100 transition-colors"
+          >
             <X className="h-5 w-5 text-slate-400" />
           </button>
         </div>
@@ -891,7 +906,11 @@ export default function AdminPage() {
                       <motion.span
                         layoutId="activeSidebarBorder"
                         className="absolute top-0 right-0 bottom-0 w-1 bg-cyan-400"
-                        transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                        transition={{
+                          type: "spring",
+                          stiffness: 350,
+                          damping: 30,
+                        }}
                       />
                     )}
                     <Icon className="w-4 h-4" />
@@ -968,7 +987,8 @@ export default function AdminPage() {
                     هلا بيك في لوحة تحكم حيلهم بينهم!
                   </h2>
                   <p className="text-slate-600 text-sm mb-6 leading-relaxed">
-                    من هني تقدر تدير بنك الأسئلة والفئات وتعدل الصور والأصوات وتغير الصعوبة بكل سهولة وبسرعة.
+                    من هني تقدر تدير بنك الأسئلة والفئات وتعدل الصور والأصوات
+                    وتغير الصعوبة بكل سهولة وبسرعة.
                   </p>
                   <div className="flex gap-4">
                     <button
