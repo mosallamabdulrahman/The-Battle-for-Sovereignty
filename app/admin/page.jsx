@@ -20,6 +20,7 @@ import {
   HelpCircle,
   LayoutDashboard,
   Users,
+  BarChart3,
 } from "lucide-react";
 import { supabasePanel as supabase } from "../../lib/supabase-panel";
 import GameLogo from "../../components/GameLogo";
@@ -537,7 +538,13 @@ function QuestionModal({
   busy,
 }) {
   const [form, setForm] = useState(() => {
-    if (question) return question;
+    if (question) {
+      const hasValidCategory = categories.some((c) => String(c.id) === String(question.category_id));
+      return {
+        ...question,
+        category_id: hasValidCategory ? question.category_id : (categories[0]?.id || ""),
+      };
+    }
     const initialCategoryId = categories[0]?.id || "";
     return {
       category_id: initialCategoryId,
@@ -560,18 +567,29 @@ function QuestionModal({
   );
   const positionTaken = usedPositions.has(form.position);
 
+  const isDuplicateQuestion = (questions || []).some((q) => {
+    if (q.category_id !== form.category_id) return false;
+    if (question && q.id === question.id) return false;
+    if (form.id && q.id === form.id) return false;
+    return (
+      q.question_text?.trim().toLowerCase() ===
+      form.question_text?.trim().toLowerCase()
+    );
+  });
+
   // New question, category changed: jump the position past that category's
   // current highest slot instead of leaving it on whatever the previous
   // category last had (avoids colliding with an already-used position).
   const handleCategoryChange = (categoryId) => {
+    const targetCategoryId = categoryId || (categories[0]?.id || "");
     if (question) {
-      set("category_id", categoryId);
+      set("category_id", targetCategoryId);
       return;
     }
     setForm((f) => ({
       ...f,
-      category_id: categoryId,
-      position: nextPosition(questions, categoryId),
+      category_id: targetCategoryId,
+      position: nextPosition(questions, targetCategoryId),
     }));
   };
 
@@ -638,9 +656,19 @@ function QuestionModal({
               value={form.question_text}
               onChange={(e) => set("question_text", e.target.value)}
               rows={3}
-              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm resize-none focus:border-cyan-500 outline-none transition-colors"
+              className={`mt-1 w-full rounded-xl border px-3 py-2 text-sm resize-none outline-none transition-colors ${
+                isDuplicateQuestion
+                  ? "border-rose-400 focus:border-rose-500 bg-rose-50/50 text-rose-900"
+                  : "border-slate-200 focus:border-cyan-500"
+              }`}
               placeholder="اكتب السؤال هنا..."
             />
+            {isDuplicateQuestion && (
+              <p className="mt-1.5 text-[11px] font-bold text-rose-600 flex items-center gap-1">
+                <AlertTriangle className="h-3.5 w-3.5 inline shrink-0" />
+                هالسؤال موجود من قبل بنفس التصنيف، ما تقدر تضيفه مرة ثانية!
+              </p>
+            )}
           </div>
 
           <div>
@@ -741,9 +769,11 @@ function QuestionModal({
             onClick={() => onSave(form)}
             disabled={
               busy ||
+              !form.category_id ||
               !form.question_text.trim() ||
               !form.answer_text.trim() ||
-              positionTaken
+              positionTaken ||
+              isDuplicateQuestion
             }
             className="flex-1 flex items-center justify-center gap-2 rounded-2xl bg-cyan-600 py-3 text-sm font-bold text-white disabled:opacity-60 hover:bg-cyan-700 transition-all duration-200 shadow-md hover:shadow-lg active:scale-[0.98]"
           >
@@ -767,18 +797,154 @@ function QuestionModal({
   );
 }
 
+// ─── Help Modal ─────────────────────────────────────────────────
+function HelpModal({ onClose }) {
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[150] flex items-center justify-center bg-black/60 p-4"
+    >
+      <motion.div
+        initial={{ scale: 0.95, y: 15, opacity: 0 }}
+        animate={{ scale: 1, y: 0, opacity: 1 }}
+        exit={{ scale: 0.95, y: 15, opacity: 0 }}
+        transition={{ type: "spring", stiffness: 350, damping: 25 }}
+        className="w-full max-w-lg max-h-[85vh] rounded-3xl bg-white shadow-2xl flex flex-col overflow-hidden text-right"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-slate-50/50">
+          <div className="flex items-center gap-2">
+            <HelpCircle className="h-5 w-5 text-cyan-600 animate-pulse" />
+            <h2 className="font-bold text-slate-900 text-base">دليل استخدام لوحة التحكم</h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-4 leading-relaxed text-slate-600 text-sm">
+          <div className="border-b border-slate-100 pb-3">
+            <h3 className="font-bold text-slate-800 text-sm mb-1">🎮 نظرة عامة</h3>
+            <p className="text-xs">
+              مرحباً بك في لوحة تحكم لعبة **حيلهم بينهم**. يمكنك من هنا إعداد بنك الأسئلة بالكامل وإدارة غرف اللعب والمستخدمين.
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+              <h4 className="font-bold text-slate-900 text-xs mb-1">📊 لوحة التحكم (الرئيسية)</h4>
+              <p className="text-[11px]">
+                تعرض إحصائيات سريعة للأسئلة المتاحة ومستويات الصعوبة، بالإضافة إلى إحصائية لعدد مرات اختيار ولعب كل تصنيف في غرف اللعب السابقة.
+              </p>
+            </div>
+
+            <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+              <h4 className="font-bold text-slate-900 text-xs mb-1">❓ إدارة الأسئلة</h4>
+              <p className="text-[11px]">
+                تمكنك من إضافة أسئلة جديدة وتعديلها أو حذفها. كما يمكنك تعيين مستويات الصعوبة (سهل، متوسط، صعب)، وإضافة صور أو ملفات صوتية لكل سؤال. نظام الفحص يمنع إضافة سؤال مكرر بنفس التصنيف تلقائياً لتفادي التشابه.
+              </p>
+            </div>
+
+            <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+              <h4 className="font-bold text-slate-900 text-xs mb-1">🏷️ تصنيفات الأسئلة</h4>
+              <p className="text-[11px]">
+                تعديل رموز التصنيف (Emoji)، الأسماء، الأوصاف، وترتيب ظهورها عند إنشاء غرف اللعب. كما يُعرض أمام كل تصنيف إحصائية إجمالي مرات اختياره في ألعاب اللعبة.
+              </p>
+            </div>
+
+            <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+              <h4 className="font-bold text-slate-900 text-xs mb-1">👥 إدارة المستخدمين</h4>
+              <p className="text-[11px]">
+                تتيح لك إضافة حسابات جديدة للحكّام أو اللاعبين، تعديل كلمات المرور الخاصة بهم، أو تعيين وتعديل الصلاحيات أو حذف المستخدمين كلياً.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="p-5 border-t border-slate-100 bg-slate-50 flex justify-end">
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full sm:w-auto rounded-2xl border border-slate-200 bg-white hover:bg-slate-100 px-6 py-2.5 text-sm font-bold text-slate-700 transition-all duration-200 active:scale-[0.98] shadow-sm hover:shadow"
+          >
+            إغلاق الدليل
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+
 // ─── Main Admin Page ────────────────────────────────────────────
 export default function AdminPage() {
-  const [tab, setTab] = useState("questions"); // "questions" | "categories"
+  const [tab, setTabState] = useState(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const urlTab = params.get("tab");
+      const validTabs = ["dashboard", "questions", "categories", "users", "stats"];
+      if (urlTab && validTabs.includes(urlTab)) {
+        return urlTab;
+      }
+      const savedTab = window.localStorage.getItem("admin_active_tab");
+      if (savedTab && validTabs.includes(savedTab)) {
+        return savedTab;
+      }
+    }
+    return "questions";
+  });
+
+  const setTab = useCallback((newTab) => {
+    setTabState(newTab);
+    setSearchQuery("");
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("admin_active_tab", newTab);
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", newTab);
+      window.history.replaceState(null, "", url.toString());
+    }
+  }, []);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const urlTab = params.get("tab");
+      const validTabs = ["dashboard", "questions", "categories", "users", "stats"];
+      if (urlTab && validTabs.includes(urlTab)) {
+        setTabState(urlTab);
+      }
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [categories, setCategories] = useState([]);
   const [questions, setQuestions] = useState([]);
+  const [categoryUsage, setCategoryUsage] = useState({});
   const [filterCategory, setFilterCategory] = useState("");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState({ msg: "", type: "success" });
   const [catModal, setCatModal] = useState(null); // null | {} | category object
   const [qModal, setQModal] = useState(null);
+  const [helpOpen, setHelpOpen] = useState(false);
 
   const notify = useCallback(
     (msg, type = "success") => setToast({ msg, type }),
@@ -815,15 +981,40 @@ export default function AdminPage() {
     setQuestions(data || []);
   }, [notify]);
 
+  const loadCategoryUsage = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from("game_rooms")
+        .select("selected_categories");
+      if (!error && data) {
+        const counts = {};
+        data.forEach((room) => {
+          if (Array.isArray(room.selected_categories)) {
+            room.selected_categories.forEach((catIdentifier) => {
+              counts[catIdentifier] = (counts[catIdentifier] || 0) + 1;
+            });
+          }
+        });
+        setCategoryUsage(counts);
+      }
+    } catch (err) {
+      console.error("Error loading category usage statistics:", err);
+    }
+  }, []);
+
   useEffect(() => {
     let active = true;
-    Promise.all([loadCategories(), loadQuestions()]).finally(() => {
+    Promise.all([
+      loadCategories(),
+      loadQuestions(),
+      loadCategoryUsage(),
+    ]).finally(() => {
       if (active) setLoading(false);
     });
     return () => {
       active = false;
     };
-  }, [loadCategories, loadQuestions]);
+  }, [loadCategories, loadQuestions, loadCategoryUsage]);
 
   // ── Categories CRUD
   const saveCategory = async (form) => {
@@ -868,6 +1059,20 @@ export default function AdminPage() {
 
   // ── Questions CRUD
   const saveQuestion = async (form) => {
+    const isDup = questions.some(
+      (q) =>
+        q.category_id === form.category_id &&
+        q.id !== form.id &&
+        q.question_text?.trim().toLowerCase() ===
+          form.question_text?.trim().toLowerCase(),
+    );
+    if (isDup) {
+      notify(
+        "هالسؤال موجود من قبل بنفس التصنيف، ما تقدر تضيفه مرة ثانية!",
+        "error",
+      );
+      return;
+    }
     setBusy(true);
     try {
       const { error } = await supabase.rpc("admin_save_question", {
@@ -931,7 +1136,13 @@ export default function AdminPage() {
       : true;
   });
 
-  const categoryMap = Object.fromEntries(categories.map((c) => [c.id, c]));
+  const categoryMap = {};
+  categories.forEach((c) => {
+    categoryMap[String(c.id)] = c;
+    if (c.name) {
+      categoryMap[c.name.trim()] = c;
+    }
+  });
 
   if (loading) {
     return (
@@ -967,6 +1178,11 @@ export default function AdminPage() {
           />
         )}
       </AnimatePresence>
+      <AnimatePresence>
+        {helpOpen && (
+          <HelpModal onClose={() => setHelpOpen(false)} />
+        )}
+      </AnimatePresence>
 
       <div className="flex flex-1 min-h-[calc(100vh-32px)]">
         {/* Right Sidebar (WordPress-style) */}
@@ -987,6 +1203,7 @@ export default function AdminPage() {
                 { key: "questions", label: "الأسئلة", icon: Edit2 },
                 { key: "categories", label: "تصنيفات الأسئلة", icon: Tag },
                 { key: "users", label: "المستخدمين", icon: Users },
+                { key: "stats", label: "إحصائيات اللعبة", icon: BarChart3 },
               ].map(({ key, label, icon: Icon }) => {
                 const isActive = tab === key;
                 return (
@@ -1044,6 +1261,7 @@ export default function AdminPage() {
                 {tab === "questions" && "الأسئلة"}
                 {tab === "categories" && "تصنيفات الأسئلة"}
                 {tab === "users" && "المستخدمين"}
+                {tab === "stats" && "إحصائيات اللعبة"}
               </h1>
 
               {tab === "questions" && (
@@ -1066,9 +1284,13 @@ export default function AdminPage() {
             </div>
 
             <div className="flex gap-2">
-              <div className="text-[12px] bg-white border border-slate-300 rounded px-2.5 py-1 text-slate-600 shadow-sm hover:bg-slate-50 cursor-pointer flex items-center gap-1 select-none">
+              <button
+                type="button"
+                onClick={() => setHelpOpen(true)}
+                className="text-[12px] bg-white border border-slate-300 rounded px-2.5 py-1 text-slate-600 shadow-sm hover:bg-slate-50 cursor-pointer flex items-center gap-1 select-none outline-none focus:ring-2 focus:ring-cyan-500/20"
+              >
                 <HelpCircle className="w-3.5 h-3.5" /> المساعدة
-              </div>
+              </button>
             </div>
           </div>
 
@@ -1210,6 +1432,7 @@ export default function AdminPage() {
             </motion.div>
           )}
 
+
           {/* ───────────────── TAB: Questions ───────────────── */}
           {tab === "questions" && (
             <motion.div
@@ -1273,7 +1496,7 @@ export default function AdminPage() {
                       </tr>
                     ) : (
                       filteredQuestions.map((q) => {
-                        const cat = categoryMap[q.category_id];
+                        const cat = (q.category_id ? categoryMap[String(q.category_id)] : null) || categories[0];
                         return (
                           <tr
                             key={q.id}
@@ -1416,6 +1639,7 @@ export default function AdminPage() {
                       <th className="p-3 text-right">الترتيب</th>
                       <th className="p-3 text-right">صورة الغلاف</th>
                       <th className="p-3 text-right">عدد الأسئلة</th>
+                      <th className="p-3 text-right">مرات الاختيار باللعب</th>
                       <th className="p-3 text-right">الحالة</th>
                     </tr>
                   </thead>
@@ -1423,7 +1647,7 @@ export default function AdminPage() {
                     {filteredCategories.length === 0 ? (
                       <tr>
                         <td
-                          colSpan="6"
+                          colSpan="7"
                           className="p-8 text-center text-slate-400"
                         >
                           لا توجد تصنيفات تطابق البحث.
@@ -1497,6 +1721,14 @@ export default function AdminPage() {
                             <td className="p-3 font-semibold text-slate-700">
                               {catQuestionsCount} أسئلة
                             </td>
+                            <td className="p-3 font-semibold text-slate-700">
+                              <span className="inline-flex items-center gap-1.5 bg-purple-50 border border-purple-200 text-purple-800 px-2.5 py-1 rounded-full font-bold text-[11px]">
+                                🎮 {categoryUsage[cat.id] || categoryUsage[cat.name] || 0}{" "}
+                                {(categoryUsage[cat.id] || categoryUsage[cat.name] || 0) === 1
+                                  ? "مرة"
+                                  : "مرات"}
+                              </span>
+                            </td>
                             <td className="p-3">
                               <span
                                 className={`inline-block font-semibold text-[11px] ${
@@ -1530,6 +1762,51 @@ export default function AdminPage() {
               transition={{ duration: 0.25 }}
             >
               <UsersManager notify={notify} />
+            </motion.div>
+          )}
+
+          {/* ───────────────── TAB: Stats ───────────────── */}
+          {tab === "stats" && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25 }}
+              className="space-y-6"
+            >
+              {/* Category Usage Statistics */}
+              <div className="bg-white border border-[#ccd0d4] p-8 shadow-sm">
+                <h3 className="font-semibold text-slate-900 border-b pb-3 mb-5 text-base flex items-center justify-between">
+                  <span>🎮 إحصائيات اختيار التصنيفات في ألعاب اللعبة (كم مرة انلعب كل تصنيف)</span>
+                  <span className="text-[12px] text-slate-400 font-normal">
+                    محسوبة تلقائياً من غرف اللعب الحالية والسابقة بقاعدة البيانات
+                  </span>
+                </h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
+                  {categories.map((cat) => {
+                    const usageCount =
+                      categoryUsage[cat.id] || categoryUsage[cat.name] || 0;
+                    return (
+                      <div
+                        key={cat.id}
+                        className="bg-slate-50 border border-slate-200 rounded-3xl p-4 text-center flex flex-col justify-between hover:border-purple-300 hover:shadow-md transition-all duration-200"
+                      >
+                        <div>
+                          <div className="text-3xl mb-2">{cat.emoji}</div>
+                          <div
+                            className="font-bold text-sm text-slate-800 truncate"
+                            title={cat.name}
+                          >
+                            {cat.name}
+                          </div>
+                        </div>
+                        <div className="mt-4 text-xs font-extrabold text-purple-700 bg-purple-100/70 border border-purple-200 rounded-xl py-1.5 px-2">
+                          {usageCount} {usageCount === 1 ? "مرة" : "مرات"}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </motion.div>
           )}
         </main>

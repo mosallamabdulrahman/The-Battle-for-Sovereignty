@@ -152,10 +152,7 @@ export default function GameSetupSection() {
       setSelectedCategories((prev) => prev.filter((id) => id !== catId));
     } else {
       if (selectedCategories.length >= 6) {
-        triggerToast(
-          "ما تقدر تختار أكثر من 6 فئات حق اللعبة.",
-          "warning",
-        );
+        triggerToast("ما تقدر تختار أكثر من 6 فئات حق اللعبة.", "warning");
         return;
       }
       setSelectedCategories((prev) => [...prev, catId]);
@@ -183,15 +180,15 @@ export default function GameSetupSection() {
     }
 
     if (!questionSourceReady) {
-      triggerToast(
-        "قاعدين نحمل الأسئلة، انطر شوي ورد جرب.",
-        "warning",
-      );
+      triggerToast("قاعدين نحمل الأسئلة، انطر شوي ورد جرب.", "warning");
       return;
     }
 
     if (!team1Name.trim() || !team2Name.trim()) {
-      triggerToast("لو سمحت اكتب اسم الفريق الأول واسم الفريق الثاني.", "error");
+      triggerToast(
+        "لو سمحت اكتب اسم الفريق الأول واسم الفريق الثاني.",
+        "error",
+      );
       return;
     }
 
@@ -233,10 +230,7 @@ export default function GameSetupSection() {
 
       setCreatedRoom(room);
       window.localStorage.setItem("sovereignty_active_room", room.id);
-      triggerToast(
-        "جهزنا الغرفة وطلعنا روابط الانضمام بنجاح!",
-        "success",
-      );
+      triggerToast("جهزنا الغرفة وطلعنا روابط الانضمام بنجاح!", "success");
     } catch (err) {
       console.error(err);
       triggerToast(
@@ -306,7 +300,8 @@ export default function GameSetupSection() {
             تجهيز وضبط اللعبة
           </h2>
           <p className="text-sm md:text-md text-slate-600 mt-2.5 max-w-xl mx-auto leading-relaxed font-semibold">
-            بصفتك الحكم، اختار فئات الأسئلة وأسماء الفرق، وعقبها طلع الروابط والـ QR كود عشان يدشون معاك باللعبة.
+            بصفتك الحكم، اختار فئات الأسئلة وأسماء الفرق، وعقبها طلع الروابط
+            والـ QR كود عشان يدشون معاك باللعبة.
           </p>
         </div>
 
@@ -377,7 +372,8 @@ export default function GameSetupSection() {
 
               {questionSourceReady && categoriesList.length === 0 && (
                 <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-center text-sm font-bold text-amber-900">
-                  ماكو فئات محملة من Supabase. شغل ملف SUPABASE_QUESTION_BANK.sql تالي حدث الصفحة.
+                  ماكو فئات محملة من Supabase. شغل ملف
+                  SUPABASE_QUESTION_BANK.sql تالي حدث الصفحة.
                 </div>
               )}
 
@@ -390,7 +386,7 @@ export default function GameSetupSection() {
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => handleCategoryClick(cat.id)}
-                      className={`p-5 rounded-2xl border text-right transition-all flex flex-col justify-between h-40 relative overflow-hidden group cursor-pointer ${
+                      className={`p-5 rounded-2xl border text-right transition-all flex flex-col justify-between h-34 relative overflow-hidden group cursor-pointer ${
                         isSelected
                           ? "bg-gradient-to-br from-cyan-50/70 to-cyan-100/50 border-cyan-500 ring-2 ring-cyan-500/20 shadow-md shadow-cyan-100/50"
                           : "bg-white border-slate-200 hover:border-slate-350 hover:shadow-lg"
@@ -525,7 +521,8 @@ export default function GameSetupSection() {
                     الخطوة الثالثة: الفزعات والمساعدات
                   </h3>
                   <p className="text-xs text-slate-500">
-                    الفريقين راح يحصلون على نفس الفزعات، وما تقدرون تستخدمونها إلا لما يبدأ اللعب.
+                    الفريقين راح يحصلون على نفس الفزعات، وما تقدرون تستخدمونها
+                    إلا لما يبدأ اللعب.
                   </p>
                 </div>
               </div>
@@ -533,7 +530,8 @@ export default function GameSetupSection() {
               <div className="rounded-2xl border border-cyan-200 bg-cyan-50 p-5 flex items-center gap-3">
                 <Zap className="w-5 h-5 text-cyan-600 shrink-0" />
                 <p className="text-xs font-bold text-cyan-900 leading-relaxed">
-                  كل فريق راح ياخذ 3 فزعات متساوية. الفزعات تكون مخشوشة وما تقدرون تستخدمونها إلا لما يبدأ اللعب والطق.
+                  كل فريق راح ياخذ 3 فزعات متساوية. الفزعات تكون مخشوشة وما
+                  تقدرون تستخدمونها إلا لما يبدأ اللعب والطق.
                 </p>
               </div>
             </div>
@@ -548,12 +546,11 @@ export default function GameSetupSection() {
                 className="inline-flex items-center gap-3 bg-gradient-to-r from-orange-400 via-orange-500 to-amber-500 text-white font-sans font-bold text-lg px-12 py-4 rounded-2xl shadow-xl shadow-orange-500/20 hover:shadow-orange-500/35 active:translate-y-0.5 transition-all cursor-pointer"
               >
                 <Play className="w-5 h-5 fill-white" />
-                {isSubmitting
-                  ? "قاعدين نجهز الغرفة..."
-                  : "ابدأ اللعب الحين"}
+                {isSubmitting ? "قاعدين نجهز الغرفة..." : "ابدأ اللعب الحين"}
               </motion.button>
               <p className="text-xs text-slate-400 mt-3 font-semibold">
-                الغرفة راح تطلع لك QR كود عشان تمسحه وتلعب من تلفونك أو أي جهاز ثاني
+                الغرفة راح تطلع لك QR كود عشان تمسحه وتلعب من تلفونك أو أي جهاز
+                ثاني
               </p>
             </div>
           </div>
@@ -693,7 +690,8 @@ export default function GameSetupSection() {
             </div>
 
             <div className="mb-8 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-center text-xs font-bold leading-relaxed text-amber-900">
-              لا تفتح رابط الفريق بنفس حساب الحكم. انسخ الرابط وافتحه بجهاز ثاني أو بصفحة خفية، وسجل دخول بحساب ثاني حق كل فريق.
+              لا تفتح رابط الفريق بنفس حساب الحكم. انسخ الرابط وافتحه بجهاز ثاني
+              أو بصفحة خفية، وسجل دخول بحساب ثاني حق كل فريق.
             </div>
 
             {/* Launch Referee view */}
