@@ -32,8 +32,10 @@ export default function GameSetupSection() {
 
   // Core setup states
   const [selectedCategories, setSelectedCategories] = useState([]);
+  const [gameName, setGameName] = useState("");
   const [team1Name, setTeam1Name] = useState("كتائب الفرسان");
   const [team2Name, setTeam2Name] = useState("صقور النخبة");
+  const [teamTokens, setTeamTokens] = useState(null);
 
   // Toast Helper
   const triggerToast = (message, type = "warning") => {
@@ -62,15 +64,15 @@ export default function GameSetupSection() {
     if (!user) return;
 
     const restoreActiveRoom = async () => {
-      const savedRoomId = window.localStorage.getItem(
-        "sovereignty_active_room",
-      );
-      if (!savedRoomId) return;
+      const savedRaw = window.localStorage.getItem("sovereignty_active_room");
+      if (!savedRaw) return;
+
+      const saved = JSON.parse(savedRaw);
 
       const { data } = await supabase
         .from("game_rooms")
         .select("*")
-        .eq("id", savedRoomId)
+        .eq("id", saved.id)
         .eq("judge_id", user.id)
         .in("status", ["setup", "playing"])
         .maybeSingle();
@@ -78,8 +80,13 @@ export default function GameSetupSection() {
       if (data) {
         setCreatedRoom(data);
         setSelectedCategories(data.selected_categories || []);
+        setGameName(data.game_name || "");
         setTeam1Name(data.team_1_name);
         setTeam2Name(data.team_2_name);
+        setTeamTokens({
+          team_1_token: saved.team_1_token,
+          team_2_token: saved.team_2_token,
+        });
       } else {
         window.localStorage.removeItem("sovereignty_active_room");
       }
@@ -184,6 +191,11 @@ export default function GameSetupSection() {
       return;
     }
 
+    if (!gameName.trim()) {
+      triggerToast("لو سمحت اكتب اسم اللعبة.", "error");
+      return;
+    }
+
     if (!team1Name.trim() || !team2Name.trim()) {
       triggerToast(
         "لو سمحت اكتب اسم الفريق الأول واسم الفريق الثاني.",
@@ -208,9 +220,10 @@ export default function GameSetupSection() {
         );
       }
 
-      const { data: roomId, error: createError } = await supabase.rpc(
+      const { data: createResult, error: createError } = await supabase.rpc(
         "create_game_room",
         {
+          p_game_name: gameName.trim(),
           p_team_1_name: team1Name.trim(),
           p_team_2_name: team2Name.trim(),
           p_selected_categories: selectedCategories,
@@ -223,13 +236,22 @@ export default function GameSetupSection() {
       const { data: room, error: roomError } = await supabase
         .from("game_rooms")
         .select("*")
-        .eq("id", roomId)
+        .eq("id", createResult.room_id)
         .single();
 
       if (roomError) throw roomError;
 
+      const tokens = {
+        team_1_token: createResult.team_1_token,
+        team_2_token: createResult.team_2_token,
+      };
+
       setCreatedRoom(room);
-      window.localStorage.setItem("sovereignty_active_room", room.id);
+      setTeamTokens(tokens);
+      window.localStorage.setItem(
+        "sovereignty_active_room",
+        JSON.stringify({ id: room.id, ...tokens }),
+      );
       triggerToast("جهزنا الغرفة وطلعنا روابط الانضمام بنجاح!", "success");
     } catch (err) {
       console.error(err);
@@ -243,13 +265,16 @@ export default function GameSetupSection() {
   };
 
   const getTeamUrl = (room_id, teamIndex) => {
+    const token =
+      teamIndex === 1 ? teamTokens?.team_1_token : teamTokens?.team_2_token;
     if (typeof window !== "undefined") {
       const url = new URL("/battle", window.location.origin);
       url.searchParams.set("room_id", room_id);
       url.searchParams.set("team", String(teamIndex));
+      if (token) url.searchParams.set("token", token);
       return url.toString();
     }
-    return `/battle?room_id=${room_id}&team=${teamIndex}`;
+    return `/battle?room_id=${room_id}&team=${teamIndex}&token=${token || ""}`;
   };
 
   const masterJudgeUrl = createdRoom
@@ -272,6 +297,7 @@ export default function GameSetupSection() {
 
     window.localStorage.removeItem("sovereignty_active_room");
     setCreatedRoom(null);
+    setTeamTokens(null);
     triggerToast("تسكرت الغرفة وطلعنا من اللعبة.", "success");
   };
 
@@ -443,6 +469,24 @@ export default function GameSetupSection() {
                 </div>
               </div>
 
+              <div className="mb-8 text-center">
+                <label
+                  htmlFor="gameName"
+                  className="block text-sm font-bold text-slate-800 mb-2"
+                >
+                  اسم اللعبة
+                </label>
+                <input
+                  id="gameName"
+                  type="text"
+                  disabled={selectedCategories.length !== 6}
+                  value={gameName}
+                  onChange={(e) => setGameName(e.target.value)}
+                  placeholder="مثال: تحدي رمضان ٢٠٢٦"
+                  className="block w-full max-w-md mx-auto px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 text-sm font-bold text-slate-800 focus:outline-none transition-all text-center"
+                />
+              </div>
+
               <div
                 className="grid grid-cols-1 md:grid-cols-2 gap-8"
                 onClick={() => {
@@ -578,6 +622,16 @@ export default function GameSetupSection() {
 
             {/* Setup specs summary */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 bg-slate-50 p-6 rounded-2xl border border-slate-100 mb-8 text-right">
+              {createdRoom.game_name && (
+                <div>
+                  <span className="text-[10px] text-slate-400 font-bold block">
+                    اسم اللعبة
+                  </span>
+                  <span className="text-xs font-bold text-slate-700">
+                    {createdRoom.game_name}
+                  </span>
+                </div>
+              )}
               <div>
                 <span className="text-[10px] text-slate-400 font-bold block">
                   كود الغرفة
@@ -689,9 +743,9 @@ export default function GameSetupSection() {
               </div>
             </div>
 
-            <div className="mb-8 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-center text-xs font-bold leading-relaxed text-amber-900">
-              لا تفتح رابط الفريق بنفس حساب الحكم. انسخ الرابط وافتحه بجهاز ثاني
-              أو بصفحة خفية، وسجل دخول بحساب ثاني حق كل فريق.
+            <div className="mb-8 rounded-2xl border border-cyan-200 bg-cyan-50 p-4 text-center text-xs font-bold leading-relaxed text-cyan-900">
+              الفرق تدش من رابطها مباشرة وبدون تسجيل دخول، توزع جنودها، وبعدين
+              تلعب شفهيًا وانت تتحكم بكل حاجة من شاشة الحكم.
             </div>
 
             {/* Launch Referee view */}

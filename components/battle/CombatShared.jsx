@@ -25,6 +25,15 @@ export const RESULT_LABELS = {
   blocked: "الدرع صده",
 };
 
+export const UNIT_LABELS = {
+  infantry: "جندي 👥",
+  armored: "مدرعة 🛡️",
+  tank: "دبابة 🚜",
+  aircraft: "طائرة ✈️",
+  submarine: "غواصة ⛵",
+  mine: "لغم 💥",
+};
+
 export const FALLBACK_CATEGORY_IMAGE =
   "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=360&q=80";
 
@@ -133,7 +142,7 @@ export function FinishedCelebration({
               )}
               <p className="text-xs font-bold text-white/60">{team.name}</p>
               <p
-                className={`text-3xl font-black mt-1 ${isWinner ? "text-amber-300" : "text-white/80"}`}
+                className={`text-3xl  mt-1 ${isWinner ? "text-amber-300" : "text-white/80"}`}
               >
                 {team.score}
               </p>
@@ -202,7 +211,7 @@ export function ScoreCards({ teams }) {
                 }`}
               />
               <p
-                className={`font-black text-sm tracking-wide ${
+                className={` text-sm tracking-wide ${
                   isTeam1 ? "text-cyan-200" : "text-orange-200"
                 }`}
               >
@@ -216,7 +225,7 @@ export function ScoreCards({ teams }) {
                 <div className="h-8 flex items-center justify-center overflow-hidden">
                   <AnimatedNumber
                     value={team.score}
-                    className={`text-xl font-black ${
+                    className={`text-xl  ${
                       isTeam1 ? "text-cyan-300" : "text-orange-300"
                     }`}
                   />
@@ -230,7 +239,7 @@ export function ScoreCards({ teams }) {
                 <div className="h-8 flex items-center justify-center overflow-hidden">
                   <AnimatedNumber
                     value={team.available_strikes}
-                    className="text-xl font-black text-rose-300"
+                    className="text-xl  text-rose-300"
                   />
                 </div>
                 <span className="block text-[10px] text-white/50 font-bold mt-0.5">
@@ -249,6 +258,10 @@ export function CircularTimer({
   seconds,
   label = "مؤقت السؤال",
   onDismiss,
+  isPaused = false,
+  onPause,
+  onResume,
+  onReset,
   className = "",
 }) {
   const radius = 52;
@@ -324,6 +337,38 @@ export function CircularTimer({
               انتهى الوقت
             </button>
           )}
+          {(onPause || onResume || onReset) && (
+            <div className="mt-4 flex items-center justify-center sm:justify-start gap-2">
+              {isPaused
+                ? onResume && (
+                    <button
+                      type="button"
+                      onClick={onResume}
+                      className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-emerald-700"
+                    >
+                      استمرار
+                    </button>
+                  )
+                : onPause && (
+                    <button
+                      type="button"
+                      onClick={onPause}
+                      className="rounded-xl bg-slate-950 px-4 py-2 text-xs font-bold text-white transition hover:bg-slate-800"
+                    >
+                      إيقاف مؤقت
+                    </button>
+                  )}
+              {onReset && (
+                <button
+                  type="button"
+                  onClick={onReset}
+                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-100"
+                >
+                  إعادة تشغيل
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </motion.div>
@@ -353,17 +398,12 @@ function QuestionSlotButton({
     DIFFICULTY_LABELS[difficulty] ||
     difficulty;
 
-  // No question configured for this difficulty slot in this category —
-  // keep the button in place (so both sides always line up) but lock it.
-  const gridColumn = side === "right" ? 1 : 3;
-
   if (!question) {
     return (
       <button
         type="button"
         disabled
-        style={{ gridRow: row + 1, gridColumn }}
-        className={`h-14 ${roundedClass} border border-slate-150 bg-slate-100 text-center text-sm font-semibold text-slate-300 cursor-not-allowed opacity-60`}
+        className={`h-14 sm:h-16 w-full ${roundedClass} border-2 border-slate-200 bg-slate-100 text-center text-sm sm:text-base font-bold text-slate-300 cursor-not-allowed opacity-60 flex items-center justify-center`}
         title="مفيش سؤال متاح بهذا المستوى لهذا التصنيف"
       >
         {label}
@@ -379,13 +419,12 @@ function QuestionSlotButton({
       type="button"
       disabled={isDisabled}
       onClick={() => onSelect(question)}
-      style={{ gridRow: row + 1, gridColumn }}
-      className={`h-14 ${roundedClass} border text-center text-sm font-semibold transition-all ${
+      className={`h-14 sm:h-16 w-full ${roundedClass} border-2 text-center text-base sm:text-lg font-bold transition-all shadow-sm flex items-center justify-center ${
         question.is_used
           ? "border-slate-200 bg-slate-200 text-slate-400 line-through"
           : isActive
-            ? "border-amber-400 bg-amber-100 text-amber-900 ring-2 ring-amber-300"
-            : `border-slate-200 ${baseBg} text-rose-800 hover:border-cyan-400 hover:bg-cyan-50 disabled:cursor-not-allowed`
+            ? "border-amber-400 bg-amber-100 text-amber-900 ring-4 ring-amber-300"
+            : `border-slate-300 ${baseBg} text-rose-800 hover:border-cyan-500 hover:bg-cyan-50 disabled:cursor-not-allowed`
       }`}
       title={`${DIFFICULTY_LABELS[question.difficulty]} · ${question.strikes} طقة`}
     >
@@ -413,11 +452,8 @@ export function QuestionGrid({
   }, {});
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
       {Object.entries(categories).map(([categoryId, category]) => {
-        // Up to 2 questions per difficulty tier, ordered easy/medium/hard
-        // top-to-bottom — missing ones render as locked placeholders so
-        // both columns always stay aligned with the category image.
         const rows = DIFFICULTY_ROW_ORDER.map((difficulty) =>
           category.questions
             .filter((q) => q.difficulty === difficulty)
@@ -426,50 +462,50 @@ export function QuestionGrid({
         );
 
         return (
-          <section
-            key={categoryId}
-            className="grid grid-cols-[1fr_120px_1fr] grid-rows-3 items-stretch gap-2"
-          >
-            {rows.map(([rightQuestion], row) => (
-              <QuestionSlotButton
-                key={`right-${row}`}
-                question={rightQuestion}
-                difficulty={DIFFICULTY_ROW_ORDER[row]}
-                side="right"
-                row={row}
-                activeQuestionId={activeQuestionId}
-                disabled={disabled}
-                onSelect={onSelect}
-              />
-            ))}
+          <section key={categoryId} className="flex">
+            <div className="flex-1 flex flex-col justify-between gap-2.5">
+              {rows.map(([rightQuestion], row) => (
+                <QuestionSlotButton
+                  key={`right-${row}`}
+                  question={rightQuestion}
+                  difficulty={DIFFICULTY_ROW_ORDER[row]}
+                  side="right"
+                  row={row}
+                  activeQuestionId={activeQuestionId}
+                  disabled={disabled}
+                  onSelect={onSelect}
+                />
+              ))}
+            </div>
 
-            <div
-              style={{ gridRow: "1 / span 3", gridColumn: 2 }}
-              className="relative bg-cyan-50 shadow-sm"
-            >
+            <div className="w-32 sm:w-36 shrink-0 relative bg-cyan-50 flex flex-col justify-end">
               <img
                 src={category.imageUrl || FALLBACK_CATEGORY_IMAGE}
                 alt={category.name}
-                className="h-full w-full object-cover"
+                className="absolute inset-0 h-full w-full object-cover"
                 loading="lazy"
               />
-              <div className="absolute inset-x-0 bottom-0 bg-[#E1734B] border-t-2 border-solid border-black px-2 py-2 text-center">
-                <h3 className="font-medium text-white">{category.name}</h3>
+              <div className="relative z-10 bg-cyan-700/95 px-1.5 py-2 text-center">
+                <h3 className="font-bold text-white text-xs sm:text-sm truncate">
+                  {category.name}
+                </h3>
               </div>
             </div>
 
-            {rows.map(([, leftQuestion], row) => (
-              <QuestionSlotButton
-                key={`left-${row}`}
-                question={leftQuestion}
-                difficulty={DIFFICULTY_ROW_ORDER[row]}
-                side="left"
-                row={row}
-                activeQuestionId={activeQuestionId}
-                disabled={disabled}
-                onSelect={onSelect}
-              />
-            ))}
+            <div className="flex-1 flex flex-col justify-between gap-1">
+              {rows.map(([, leftQuestion], row) => (
+                <QuestionSlotButton
+                  key={`left-${row}`}
+                  question={leftQuestion}
+                  difficulty={DIFFICULTY_ROW_ORDER[row]}
+                  side="left"
+                  row={row}
+                  activeQuestionId={activeQuestionId}
+                  disabled={disabled}
+                  onSelect={onSelect}
+                />
+              ))}
+            </div>
           </section>
         );
       })}
@@ -588,9 +624,14 @@ export function CombatEventModal({ event, onClose, autoCloseMs = 2000 }) {
         <h2 className="mt-4 text-2xl font-bold text-slate-950">
           {RESULT_LABELS[event.result] || event.result}
         </h2>
+        {event.unit_type && (
+          <p className="mt-1 text-base font-bold text-slate-700">
+            {UNIT_LABELS[event.unit_type] || event.unit_type}
+          </p>
+        )}
         <p className="mt-2 text-sm text-slate-500">
           الطقة على المربع {event.cell_index + 1}
-          {event.points_delta ? ` · النقاط ${event.points_delta}` : ""}
+          {event.points_delta ? ` · خسر ${Math.abs(event.points_delta)} نقطة` : ""}
         </p>
         <button
           type="button"

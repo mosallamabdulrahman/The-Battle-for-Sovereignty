@@ -18,10 +18,15 @@ export default function PaymentGateSection() {
       points: "١,٥٠٠",
       price: "٥ د.ك",
       description: "بداية ممتازة حق الربع والتحديات الخفيفة",
-      color: "from-cyan-500/10 to-sky-500/10 hover:from-cyan-500/15 hover:to-sky-500/15",
+      color:
+        "from-cyan-500/10 to-sky-500/10 hover:from-cyan-500/15 hover:to-sky-500/15",
       borderColor: "border-cyan-200/80 hover:border-cyan-400",
       iconColor: "text-cyan-600 bg-cyan-50",
-      features: ["١,٥٠٠ نقطة شحن فورية", "تشتغل بكل الغرف والتحديات", "صلاحية مفتوحة ما تنتهي"],
+      features: [
+        "١,٥٠٠ نقطة شحن فورية",
+        "تشتغل بكل الغرف والتحديات",
+        "صلاحية مفتوحة ما تنتهي",
+      ],
       tag: null,
     },
     {
@@ -29,7 +34,8 @@ export default function PaymentGateSection() {
       points: "٤,٠٠٠",
       price: "١٢ د.ك",
       description: "حق الطق السنع والتحديات القوية بين الفرق",
-      color: "from-orange-500/10 to-amber-500/10 hover:from-orange-500/15 hover:to-amber-500/15",
+      color:
+        "from-orange-500/10 to-amber-500/10 hover:from-orange-500/15 hover:to-amber-500/15",
       borderColor: "border-orange-200/80 hover:border-orange-400",
       iconColor: "text-orange-600 bg-orange-50",
       features: [
@@ -45,7 +51,8 @@ export default function PaymentGateSection() {
       points: "١٠,٠٠٠",
       price: "٢٥ د.ك",
       description: "حق التحديات الكبيرة والدواوين والنخبة",
-      color: "from-purple-500/10 to-indigo-500/10 hover:from-purple-500/15 hover:to-indigo-500/15",
+      color:
+        "from-purple-500/10 to-indigo-500/10 hover:from-purple-500/15 hover:to-indigo-500/15",
       borderColor: "border-purple-200/80 hover:border-purple-400",
       iconColor: "text-purple-600 bg-purple-50",
       features: [
@@ -59,7 +66,10 @@ export default function PaymentGateSection() {
   ];
 
   return (
-    <section id="payment-gate" className="py-20 bg-slate-50 relative overflow-hidden">
+    <section
+      id="payment-gate"
+      className="py-20 bg-slate-50 relative overflow-hidden"
+    >
       {/* Visual Background Accents */}
       <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-200/20 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-96 h-96 bg-orange-200/20 rounded-full blur-3xl pointer-events-none" />
@@ -74,7 +84,8 @@ export default function PaymentGateSection() {
             طرق الشحن وباقات النقاط السريعة
           </h2>
           <p className="text-slate-600 mt-4 text-base md:text-lg">
-            اشحن نقاطك وسلّح فريقك سيدة وبكل أمان! اختر الباقة اللي تناسب ديوانيتكم وابدأ اللعب والطق فوراً.
+            اشحن نقاطك وسلّح فريقك سيدة وبكل أمان! اختر الباقة اللي تناسب
+            ديوانيتكم وابدأ اللعب والطق فوراً.
           </p>
         </div>
 
@@ -97,8 +108,12 @@ export default function PaymentGateSection() {
                   <Coins className="w-7 h-7" />
                 </div>
                 <div className="text-right">
-                  <h3 className="text-lg font-bold text-slate-900">{pkg.name}</h3>
-                  <p className="text-xs text-slate-400 font-semibold">{pkg.description}</p>
+                  <h3 className="text-lg font-bold text-slate-900">
+                    {pkg.name}
+                  </h3>
+                  <p className="text-xs text-slate-400 font-semibold">
+                    {pkg.description}
+                  </p>
                 </div>
               </div>
 
@@ -107,18 +122,25 @@ export default function PaymentGateSection() {
                 <span className="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">
                   تحصل على
                 </span>
-                <span className="text-3xl font-black text-slate-800 flex items-center justify-center gap-1.5 mt-1">
+                <span className="text-3xl  text-slate-800 flex items-center justify-center gap-1.5 mt-1">
                   {pkg.points}
-                  <span className="text-xs font-bold text-slate-500">نقطة شحن</span>
+                  <span className="text-xs font-bold text-slate-500">
+                    نقطة شحن
+                  </span>
                 </span>
                 <div className="h-px bg-slate-200/60 my-3" />
-                <span className="text-xl font-bold text-cyan-600 block">{pkg.price}</span>
+                <span className="text-xl font-bold text-cyan-600 block">
+                  {pkg.price}
+                </span>
               </div>
 
               {/* Features List */}
               <ul className="space-y-3.5 flex-1 mb-8">
                 {pkg.features.map((feat, fIdx) => (
-                  <li key={fIdx} className="flex items-start gap-2.5 text-xs text-slate-600 text-right">
+                  <li
+                    key={fIdx}
+                    className="flex items-start gap-2.5 text-xs text-slate-600 text-right"
+                  >
                     <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
                     <span className="font-semibold">{feat}</span>
                   </li>
@@ -146,7 +168,9 @@ export default function PaymentGateSection() {
                 بوابات دفع مشفرة وآمنة ١٠٠٪
               </h4>
               <p className="text-xs text-slate-500 font-semibold leading-relaxed">
-                ندعم أفضل بوابات الدفع المحلية والعالمية عشان تشحن نقاطك سيدة وبأمان كامل. عمليات الدفع مشفرة بالكامل ولا يتم تخزين بيانات بطاقتك.
+                ندعم أفضل بوابات الدفع المحلية والعالمية عشان تشحن نقاطك سيدة
+                وبأمان كامل. عمليات الدفع مشفرة بالكامل ولا يتم تخزين بيانات
+                بطاقتك.
               </p>
             </div>
 
@@ -155,7 +179,9 @@ export default function PaymentGateSection() {
               {/* KNET Badge (Kuwait's National Gateway) */}
               <div className="bg-gradient-to-r from-blue-600 to-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm select-none border border-blue-500 flex items-center gap-1.5">
                 <span className="tracking-wide">KNET</span>
-                <span className="text-[10px] bg-white/20 px-1 py-0.5 rounded">كي نت</span>
+                <span className="text-[10px] bg-white/20 px-1 py-0.5 rounded">
+                  كي نت
+                </span>
               </div>
 
               {/* Apple Pay */}
@@ -171,9 +197,9 @@ export default function PaymentGateSection() {
 
               {/* Visa / MasterCard */}
               <div className="bg-slate-50 text-slate-700 px-4 py-2 rounded-xl text-xs font-bold shadow-sm select-none border border-slate-200 flex items-center gap-1.5 font-sans">
-                <span className="text-blue-700 italic font-black">VISA</span>
+                <span className="text-blue-700 italic ">VISA</span>
                 <span className="text-slate-300">|</span>
-                <span className="text-red-500 font-black">mastercard</span>
+                <span className="text-red-500 ">mastercard</span>
               </div>
             </div>
           </div>
@@ -183,7 +209,10 @@ export default function PaymentGateSection() {
           {/* Secure disclaimer */}
           <div className="flex items-center justify-center gap-2 text-[10px] text-slate-400 font-bold">
             <Shield className="w-3.5 h-3.5 text-emerald-500" />
-            <span>حماية أمان المعاملات المالية مشفرة عبر SSL من ديوانية الألعاب المشتركة</span>
+            <span>
+              حماية أمان المعاملات المالية مشفرة عبر SSL من ديوانية الألعاب
+              المشتركة
+            </span>
           </div>
         </div>
       </div>

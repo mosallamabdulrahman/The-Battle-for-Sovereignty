@@ -1,4 +1,12 @@
+import { Cairo } from "next/font/google";
 import "./globals.css";
+
+const cairo = Cairo({
+  subsets: ["arabic", "latin"],
+  weight: ["300", "400", "500", "600", "700", "800", "900"],
+  display: "swap",
+  variable: "--font-cairo",
+});
 
 export const metadata = {
   title: "حيلهم بينهم - اللعبة الاستراتيجية الثقافية",
@@ -14,7 +22,7 @@ export default function RootLayout({ children }) {
     <html
       lang="ar"
       dir="rtl"
-      className="scroll-smooth"
+      className={`scroll-smooth ${cairo.variable}`}
       suppressHydrationWarning
     >
       <head>
@@ -76,7 +84,7 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body
-        className="bg-slate-50 text-slate-800 font-sans min-h-screen antialiased selection:bg-cyan-500/20 selection:text-cyan-900"
+        className={`${cairo.className} bg-slate-50 text-slate-800 font-sans min-h-screen antialiased selection:bg-cyan-500/20 selection:text-cyan-900`}
         suppressHydrationWarning
       >
         {children}

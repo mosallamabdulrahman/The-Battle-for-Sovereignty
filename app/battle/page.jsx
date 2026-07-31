@@ -23,8 +23,7 @@ import {
   AbandonedGameView,
   CombatEventModal,
 } from "../../components/battle/CombatShared";
-import { JudgeCombatDashboard } from "../../components/battle/JudgeCombatDashboard";
-import { TeamCombatDashboard } from "../../components/battle/TeamCombatDashboard";
+import { RefereeGameScreen } from "../../components/battle/RefereeGameScreen";
 
 const TEAM_PUBLIC_COLUMNS = [
   "id",
@@ -67,6 +66,8 @@ export default function BattlePage() {
   const [roomId, setRoomId] = useState(null);
   const [teamIndex, setTeamIndex] = useState(null); // 1 or 2
   const [role, setRole] = useState(null); // 'judge' or null
+  const [teamToken, setTeamToken] = useState(null); // access token for no-account team links
+  const [teamLinkTokens, setTeamLinkTokens] = useState(null); // judge-only: {team_1_token, team_2_token}
 
   // Session user storage
   const [user, setUser] = useState(null);
@@ -81,20 +82,18 @@ export default function BattlePage() {
   const [combatEvents, setCombatEvents] = useState([]);
   const [dbLoading, setDbLoading] = useState(false);
   const [dbError, setDbError] = useState(null);
-  const [teamAccessIssue, setTeamAccessIssue] = useState(null);
-  const [activeAnswer, setActiveAnswer] = useState("");
+  const [activeAnswer, setActiveAnswer] = useState({
+    text: "",
+    imageUrl: "",
+  });
   const [isActionBusy, setIsActionBusy] = useState(false);
   const [isAutoFilling, setIsAutoFilling] = useState(false);
   const [latestCombatEvent, setLatestCombatEvent] = useState(null);
   const [radarCells, setRadarCells] = useState([]);
-  const [radarMode, setRadarMode] = useState(false);
-  const [activeRadarTool, setActiveRadarTool] = useState("radar_scan");
-  const [lifelineActive, setLifelineActive] = useState(false);
-  const [lifelineSeconds, setLifelineSeconds] = useState(60);
+  const [radarForTeam, setRadarForTeam] = useState(null);
   const [questionSeconds, setQuestionSeconds] = useState(60);
-  const [doubleChanceActive, setDoubleChanceActive] = useState(false);
-  const [holeActive, setHoleActive] = useState(false);
-  const [holeConfirmPending, setHoleConfirmPending] = useState(false);
+  const [timerPaused, setTimerPaused] = useState(false);
+  const [timerOverrideStart, setTimerOverrideStart] = useState(null);
   const [lastPlacedCell, setLastPlacedCell] = useState(null);
   const lastActiveQuestionIdRef = useRef(null);
   const questionStartedAtRef = useRef(null);
@@ -111,23 +110,50 @@ export default function BattlePage() {
 
   // Equipment pricing & icons list (mines are free — hidden danger)
   const unitSpecs = {
-    infantry: { name: "جندي مشاة", cost: 10, emoji: "👥" },
-    tank: { name: "دبابة", cost: 50, emoji: "🚜" },
-    aircraft: { name: "طيارة قتالية", cost: 100, emoji: "✈️" },
-    submarine: { name: "غواصة", cost: 200, emoji: "⛵" },
-    mine: { name: "لغم", cost: 0, emoji: "💥" },
+    infantry: {
+      name: "جندي",
+      cost: 20,
+      emoji: "👥",
+      description: "وحدة مشاة أساسية",
+    },
+    armored: {
+      name: "مدرعة",
+      cost: 100,
+      emoji: "🛡️",
+      description: "مركبة مدرعة خفيفة",
+    },
+    tank: { name: "دبابة", cost: 200, emoji: "🚜", description: "دبابة ثقيلة" },
+    aircraft: {
+      name: "طائرة",
+      cost: 400,
+      emoji: "✈️",
+      description: "طائرة قتالية جوية",
+    },
+    submarine: {
+      name: "غواصة",
+      cost: 500,
+      emoji: "⛵",
+      description: "غواصة بحرية ثقيلة",
+    },
+    mine: {
+      name: "لغم",
+      cost: 0,
+      emoji: "💥",
+      description: "لغم أرضي (يخصم 250 نقطة)",
+    },
   };
 
   // Limits per type — totals to exactly 33 (board must have 33 occupied, 3 empty)
   const unitLimits = {
-    infantry: 25,
-    tank: 3,
-    aircraft: 2,
-    submarine: 1,
+    infantry: 15,
+    armored: 7,
+    tank: 4,
+    aircraft: 3,
+    submarine: 2,
     mine: 2,
   };
 
-  const STARTING_POINTS = 1000;
+  const STARTING_POINTS = 4000;
 
   const getAudioContext = useCallback(() => {
     if (typeof window === "undefined") return null;
@@ -214,56 +240,44 @@ export default function BattlePage() {
   );
 
   useEffect(() => {
-    if (!lifelineActive) return undefined;
-    if (lifelineSeconds <= 0) {
-      const timeout = window.setTimeout(() => {
-        setLifelineActive(false);
-        setLifelineSeconds(60);
-      }, 450);
-      return () => window.clearTimeout(timeout);
-    }
-
-    const interval = window.setInterval(() => {
-      setLifelineSeconds((seconds) => Math.max(0, seconds - 1));
-    }, 1000);
-
-    return () => window.clearInterval(interval);
-  }, [lifelineActive, lifelineSeconds]);
-
-  useEffect(() => {
     const currentQuestionId = room?.active_question_id || null;
     const previousQuestionId = lastActiveQuestionIdRef.current;
 
     if (currentQuestionId && currentQuestionId !== previousQuestionId) {
       setQuestionSeconds(60); // fallback — will be overridden by question_started_at sync below
+      setTimerPaused(false);
+      setTimerOverrideStart(null);
+      setRadarCells([]);
+      setRadarForTeam(null);
     }
 
     if (previousQuestionId && !currentQuestionId) {
-      setDoubleChanceActive(false);
-      setHoleConfirmPending(false);
       setQuestionSeconds(60);
-      if (holeActive) setHoleActive(false);
+      setTimerPaused(false);
+      setTimerOverrideStart(null);
       questionStartedAtRef.current = null;
     }
 
     lastActiveQuestionIdRef.current = currentQuestionId;
-  }, [room?.active_question_id, holeActive]);
+  }, [room?.active_question_id]);
 
-  // Synced countdown: every client (team or judge) recomputes the remaining
-  // time from the shared server timestamp on each tick instead of
-  // decrementing a local counter — this makes it self-correcting so
-  // screens never drift apart (background-tab throttling, timer jitter,
-  // clock skew, etc. all reset themselves on the very next tick).
+  // Synced countdown: recomputes the remaining time from the shared server
+  // timestamp on each tick instead of decrementing a local counter — this
+  // makes it self-correcting so screens never drift apart (background-tab
+  // throttling, timer jitter, clock skew, etc. all reset themselves on the
+  // very next tick). The referee can locally pause the tick or shift the
+  // effective start time (reset) without touching the server value.
   useEffect(() => {
     if (
       !room?.active_question_id ||
       !room?.question_started_at ||
-      room.status !== "playing"
+      room.status !== "playing" ||
+      timerPaused
     ) {
       return undefined;
     }
 
-    const startedAt = new Date(room.question_started_at).getTime();
+    const startedAt = timerOverrideStart ?? new Date(room.question_started_at).getTime();
     let lastPlayedSecond = null;
 
     const tick = () => {
@@ -292,7 +306,23 @@ export default function BattlePage() {
     room?.active_question_id,
     room?.question_started_at,
     room?.status,
+    timerPaused,
+    timerOverrideStart,
   ]);
+
+  const handlePauseTimer = () => setTimerPaused(true);
+
+  const handleResumeTimer = () => {
+    const elapsedAtPause = 60 - questionSeconds;
+    setTimerOverrideStart(Date.now() - elapsedAtPause * 1000);
+    setTimerPaused(false);
+  };
+
+  const handleResetTimer = () => {
+    setTimerOverrideStart(Date.now());
+    setTimerPaused(false);
+    setQuestionSeconds(60);
+  };
 
   useEffect(() => {
     if (!latestCombatEvent || latestCombatEvent.event_type !== "strike") return;
@@ -302,10 +332,15 @@ export default function BattlePage() {
   }, [latestCombatEvent, playGameSound]);
 
   const getTeamUrl = (rId, tIndex) => {
+    const token =
+      tIndex === 1
+        ? teamLinkTokens?.team_1_token
+        : teamLinkTokens?.team_2_token;
+    const tokenParam = token ? `&token=${token}` : "";
     if (typeof window !== "undefined") {
-      return `${window.location.origin}/battle?room_id=${rId}&team=${tIndex}`;
+      return `${window.location.origin}/battle?room_id=${rId}&team=${tIndex}${tokenParam}`;
     }
-    return `/battle?room_id=${rId}&team=${tIndex}`;
+    return `/battle?room_id=${rId}&team=${tIndex}${tokenParam}`;
   };
 
   const getCurrentBattlePath = () => {
@@ -338,6 +373,7 @@ export default function BattlePage() {
       const t = params.get("team");
       if (t) setTeamIndex(Number(t));
       setRole(params.get("role"));
+      setTeamToken(params.get("token"));
 
       if (params.get("room_id")) {
         window.localStorage.setItem(
@@ -399,10 +435,10 @@ export default function BattlePage() {
 
   // 2. Fetch Room & associated Team records from Supabase
   const loadDatabaseData = useCallback(async () => {
-    if (!roomId || !userId) return;
+    if (!roomId) return;
+    if (!userId && !(teamIndex && teamToken)) return;
     setDbLoading(true);
     setDbError(null);
-    setTeamAccessIssue(null);
 
     try {
       // Fetch Room
@@ -424,51 +460,9 @@ export default function BattlePage() {
 
       if (tError) throw tError;
       let visibleTeams = (tData || []).map((team) => ({ ...team, board: [] }));
-      let canLoadTeamBoard = true;
-
-      // 3. Mark team participants as joined in Database (optimistic write once scanned)
-      if (teamIndex && (teamIndex === 1 || teamIndex === 2)) {
-        if (rData.judge_id === userId) {
-          canLoadTeamBoard = false;
-          setTeamAccessIssue({
-            type: "referee",
-            message:
-              "أنت مسجل حاليًا بحساب حكم هذه الغرفة، لذلك لا يمكن حجز مقعد فريق بنفس الحساب.",
-          });
-        } else {
-          const { error: claimError } = await supabase.rpc("claim_team_slot", {
-            p_room_id: roomId,
-            p_team_index: teamIndex,
-          });
-
-          if (claimError) {
-            canLoadTeamBoard = false;
-            setTeamAccessIssue({
-              type: "occupied",
-              message: claimError.message?.includes("already assigned")
-                ? "الفريق هذا محجوز حق لاعب ثاني."
-                : claimError.message || "ما قدرنا ننضم حق هالفريق.",
-            });
-          } else {
-            const { data: claimedTeams, error: claimedTeamsError } =
-              await supabase
-                .from("teams")
-                .select(TEAM_PUBLIC_COLUMNS)
-                .eq("room_id", roomId)
-                .order("team_index");
-
-            if (claimedTeamsError) throw claimedTeamsError;
-            visibleTeams = claimedTeams.map((team) => ({ ...team, board: [] }));
-          }
-        }
-      }
 
       const visibleBoardIndexes =
-        role === "judge"
-          ? [1, 2]
-          : teamIndex && canLoadTeamBoard
-            ? [teamIndex]
-            : [];
+        role === "judge" ? [1, 2] : teamIndex ? [teamIndex] : [];
 
       for (const visibleTeamIndex of visibleBoardIndexes) {
         const { data: board, error: boardError } = await supabase.rpc(
@@ -476,6 +470,7 @@ export default function BattlePage() {
           {
             p_room_id: roomId,
             p_team_index: visibleTeamIndex,
+            p_token: visibleTeamIndex === teamIndex ? teamToken : null,
           },
         );
 
@@ -486,6 +481,13 @@ export default function BattlePage() {
       }
 
       setTeams(visibleTeams);
+
+      if (role === "judge" && rData.judge_id === userId) {
+        const { data: tokens } = await supabase.rpc("get_team_tokens", {
+          p_room_id: roomId,
+        });
+        if (tokens) setTeamLinkTokens(tokens);
+      }
 
       const { data: questionData, error: questionError } = await supabase
         .from("room_questions")
@@ -548,14 +550,15 @@ export default function BattlePage() {
     } finally {
       setDbLoading(false);
     }
-  }, [roomId, role, teamIndex, userId]);
+  }, [roomId, role, teamIndex, teamToken, userId]);
 
   // Load database rows when variables lock
   useEffect(() => {
-    if (roomId && userId && !authLoading) {
+    if (!roomId || authLoading) return;
+    if (userId || (teamIndex && teamToken)) {
       loadDatabaseData();
     }
-  }, [authLoading, roomId, userId, loadDatabaseData]);
+  }, [authLoading, roomId, userId, teamIndex, teamToken, loadDatabaseData]);
 
   // 4. Set up Supabase Realtime Channel Subscription to automatically receive board adjustments
   useEffect(() => {
@@ -644,7 +647,7 @@ export default function BattlePage() {
 
   useEffect(() => {
     if (role !== "judge" || !room?.active_question_id) {
-      setActiveAnswer("");
+      setActiveAnswer({ text: "", imageUrl: "" });
       return;
     }
 
@@ -658,7 +661,10 @@ export default function BattlePage() {
         return;
       }
 
-      setActiveAnswer(data);
+      setActiveAnswer({
+        text: data?.answer_text || "",
+        imageUrl: data?.answer_image_url || "",
+      });
     };
 
     loadAnswer();
@@ -687,7 +693,12 @@ export default function BattlePage() {
       { length: 36 },
       (_, i) => rawBoard[i] ?? null,
     );
-    let currentPoints = pendingState ? pendingState.points : activeTeam.points;
+    // Calculate current remaining points dynamically from STARTING_POINTS (4000)
+    const currentSpent = currentBoard.reduce(
+      (sum, unit) => sum + (unitSpecs[unit]?.cost || 0),
+      0,
+    );
+    let currentPoints = STARTING_POINTS - currentSpent;
 
     // A. Deletion Refund behavior if already populated
     if (currentBoard[cellIndex]) {
@@ -742,7 +753,7 @@ export default function BattlePage() {
         p_room_id: roomId,
         p_team_index: teamIndex,
         p_board: pending.board,
-        p_points: pending.points,
+        p_token: teamToken,
       });
       // Only touch pendingBoardRef/state if no newer click happened during this request
       if (pendingBoardRef.current === pending) {
@@ -761,6 +772,7 @@ export default function BattlePage() {
             supabase.rpc("get_team_board", {
               p_room_id: roomId,
               p_team_index: teamIndex,
+              p_token: teamToken,
             }),
           ]).then(([{ data: teamRows }, { data: board }]) => {
             if (!teamRows) return;
@@ -790,10 +802,11 @@ export default function BattlePage() {
     if (!activeTeam || activeTeam.is_ready) return;
 
     const unitsToPlace = [
-      ...Array(25).fill("infantry"),
-      ...Array(3).fill("tank"),
-      ...Array(2).fill("aircraft"),
-      ...Array(1).fill("submarine"),
+      ...Array(15).fill("infantry"),
+      ...Array(7).fill("armored"),
+      ...Array(4).fill("tank"),
+      ...Array(3).fill("aircraft"),
+      ...Array(2).fill("submarine"),
       ...Array(2).fill("mine"),
     ];
 
@@ -835,7 +848,7 @@ export default function BattlePage() {
       p_room_id: roomId,
       p_team_index: teamIndex,
       p_board: newBoard,
-      p_points: newPoints,
+      p_token: teamToken,
     });
     setIsAutoFilling(false);
 
@@ -852,8 +865,12 @@ export default function BattlePage() {
     const activeTeam = teams.find((t) => t.team_index === teamIndex);
     if (!activeTeam) return;
 
-    // Grid rule: exactly 33 occupied cells, 3 empty
-    const placedCount = (activeTeam.board || []).filter(Boolean).length;
+    // Use latest board (pending snapshot or team board)
+    const currentBoard = pendingBoardRef.current
+      ? pendingBoardRef.current.board
+      : activeTeam.board || [];
+    const placedCount = (currentBoard || []).filter(Boolean).length;
+
     if (placedCount !== 33) {
       showAlert(
         `لازم توزع 33 جندي بالضبط قبل لا تقفل (الحين حاط: ${placedCount}/33).`,
@@ -862,16 +879,32 @@ export default function BattlePage() {
       return;
     }
 
+    // Ensure any pending board updates are saved to server first
+    if (pendingBoardRef.current) {
+      clearTimeout(deploymentTimerRef.current);
+      const snapshot = pendingBoardRef.current;
+      pendingBoardRef.current = null;
+      await supabase.rpc("update_team_deployment", {
+        p_room_id: roomId,
+        p_team_index: teamIndex,
+        p_board: snapshot.board,
+        p_token: teamToken,
+      });
+    }
+
     // Apply Local state
     setTeams((prev) =>
       prev.map((t) =>
-        t.team_index === teamIndex ? { ...t, is_ready: true } : t,
+        t.team_index === teamIndex
+          ? { ...t, board: currentBoard, is_ready: true }
+          : t,
       ),
     );
 
     const { error } = await supabase.rpc("set_team_ready", {
       p_room_id: roomId,
       p_team_index: teamIndex,
+      p_token: teamToken,
     });
 
     if (error) {
@@ -893,10 +926,10 @@ export default function BattlePage() {
 
   const handleSelectQuestion = (question) =>
     runAction(async () => {
-      const unjoinedTeam = teams.find((t) => !t.joined);
-      if (unjoinedTeam) {
+      const notReadyTeam = teams.find((t) => !t.is_ready);
+      if (notReadyTeam) {
         throw new Error(
-          `ما تقدر تختار السؤال — ${unjoinedTeam.name} للحين ما دش اللعبة.`,
+          `ما تقدر تختار السؤال — ${notReadyTeam.name} للحين ما وزع جنوده.`,
         );
       }
       const { error } = await supabase.rpc("select_room_question", {
@@ -935,7 +968,7 @@ export default function BattlePage() {
       });
       if (error) throw error;
       await finalizeRoomIfComplete();
-      setActiveAnswer("");
+      setActiveAnswer({ text: "", imageUrl: "" });
     });
 
   // Draw: both teams answered correctly → both get strikes (p_winner_team_index=0)
@@ -948,7 +981,7 @@ export default function BattlePage() {
       });
       if (error) throw error;
       await finalizeRoomIfComplete();
-      setActiveAnswer("");
+      setActiveAnswer({ text: "", imageUrl: "" });
     });
 
   // Referee manually grants extra strikes to a specific team (via SECURITY DEFINER RPC)
@@ -961,45 +994,74 @@ export default function BattlePage() {
       });
       if (error) throw error;
       const team = teams.find((t) => t.team_index === grantTeamIndex);
+      const absCount = Math.abs(count);
       const label =
-        count === 1 ? "طقة وحدة" : count === 2 ? "طقتين" : `${count} طقات`;
-      showAlert(`✓ عطينا ${label} حق ${team?.name || "الفريق"}`, "success");
+        absCount === 1 ? "طقة وحدة" : absCount === 2 ? "طقتين" : `${absCount} طقات`;
+      showAlert(
+        `✓ ${count >= 0 ? "عطينا" : "خصمنا"} ${label} ${count >= 0 ? "حق" : "من"} ${team?.name || "الفريق"}`,
+        "success",
+      );
     });
 
-  // Soft exit: mark team as disconnected without destroying the room
-  const handleSoftExit = async () => {
-    try {
-      if (teamIndex) {
-        const activeTeam = teams.find((t) => t.team_index === teamIndex);
-        if (activeTeam) {
-          await supabase
-            .from("teams")
-            .update({ joined: false })
-            .eq("id", activeTeam.id);
-        }
-      }
-    } catch {
-      // non-blocking
-    }
-    window.localStorage.removeItem("sovereignty_active_battle_path");
-    window.location.assign("/");
+  // Referee manually grants (or deducts) points for a specific team
+  const handleGrantPoints = (grantTeamIndex, points) =>
+    runAction(async () => {
+      const { error } = await supabase.rpc("grant_team_points", {
+        p_room_id: roomId,
+        p_team_index: grantTeamIndex,
+        p_points: points,
+      });
+      if (error) throw error;
+      const team = teams.find((t) => t.team_index === grantTeamIndex);
+      showAlert(
+        `✓ ${points >= 0 ? "عطينا" : "خصمنا"} ${Math.abs(points)} نقطة ${points >= 0 ? "حق" : "من"} ${team?.name || "الفريق"}`,
+        "success",
+      );
+    });
+
+  // Referee flips whose turn it is (informational — the referee already
+  // controls question selection regardless of turn)
+  const handleSetCurrentTurn = (targetTeamIndex) =>
+    runAction(async () => {
+      const { error } = await supabase.rpc("set_current_turn", {
+        p_room_id: roomId,
+        p_team_index: targetTeamIndex,
+      });
+      if (error) throw error;
+    });
+
+  // Referee ends the match immediately — whoever has more points right now wins
+  const handleEndGameNow = () =>
+    runAction(async () => {
+      const { error } = await supabase.rpc("end_room_now", {
+        p_room_id: roomId,
+      });
+      if (error) throw error;
+    });
+
+  // Dismisses the radar result modal and clears the scan so a fresh scan
+  // starts clean next time
+  const handleClearRadar = () => {
+    setRadarCells([]);
+    setRadarForTeam(null);
   };
 
-  const handleStrike = (cellIndex) =>
+  // Referee executes a strike on behalf of whichever team the room says
+  // called it out
+  const handleStrike = (attackerTeamIndex, cellIndex) =>
     runAction(async () => {
       const { error } = await supabase.rpc("execute_strike", {
         p_room_id: roomId,
-        p_attacker_team_index: teamIndex,
+        p_attacker_team_index: attackerTeamIndex,
         p_cell_index: cellIndex,
       });
       if (error) throw error;
       await finalizeRoomIfComplete();
     });
 
-  const handleUseTool = (toolId, cellIndex) =>
+  // Referee activates a team's tool on their behalf
+  const handleUseTool = (forTeamIndex, toolId, cellIndex) =>
     runAction(async () => {
-      const activeTeam = teams.find((t) => t.team_index === teamIndex);
-
       // Shield and Extra Strike must be activated BEFORE question reveal
       if (
         (toolId === "shield" || toolId === "extra_strike") &&
@@ -1008,18 +1070,9 @@ export default function BattlePage() {
         throw new Error("لازم تشغل هالفزعة قبل لا تبطل السؤال.");
       }
 
-      if (
-        toolId === "extra_strike" &&
-        (!activeTeam || activeTeam.available_strikes <= 0)
-      ) {
-        throw new Error(
-          "تقدر تستخدم طقة زيادة بس لما يكون عندك طقات جاهزة للطق.",
-        );
-      }
-
       const { data, error } = await supabase.rpc("use_team_tool", {
         p_room_id: roomId,
-        p_team_index: teamIndex,
+        p_team_index: forTeamIndex,
         p_tool: toolId,
         p_cell_index: cellIndex,
       });
@@ -1027,30 +1080,16 @@ export default function BattlePage() {
 
       if (toolId === "radar_scan") {
         setRadarCells(data?.cells || []);
-        setRadarMode(false);
-        setActiveRadarTool("radar_scan");
-      } else if (toolId === "the_detector") {
-        setRadarCells(data?.cells || []);
-        setRadarMode(false);
-        setActiveRadarTool("radar_scan");
-      } else if (toolId === "lifeline_call") {
-        setLifelineSeconds(60);
-        setLifelineActive(true);
-      } else if (toolId === "double_chance") {
-        setDoubleChanceActive(true);
-      } else if (toolId === "the_hole") {
-        setHoleConfirmPending(true);
+        setRadarForTeam(forTeamIndex);
       }
     });
 
   const handleExitGame = () =>
     runAction(async () => {
-      const actorRole =
-        role === "judge" || room?.judge_id === user?.id ? "judge" : "team";
       const { error } = await supabase.rpc("abandon_game", {
         p_room_id: roomId,
-        p_actor_role: actorRole,
-        p_team_index: actorRole === "team" ? teamIndex : null,
+        p_actor_role: "judge",
+        p_team_index: null,
       });
       if (error) throw error;
 
@@ -1060,12 +1099,6 @@ export default function BattlePage() {
       // "abandoned"); the actor doesn't need to wait for that round trip.
       window.location.assign("/");
     });
-
-  const handleSwitchToTeamAccount = async () => {
-    await supabase.auth.signOut();
-    window.localStorage.removeItem("sovereignty_active_battle_path");
-    window.location.reload();
-  };
 
   // 8. Gateways & Loading Overlays
   if (!mounted || authLoading) {
@@ -1084,8 +1117,8 @@ export default function BattlePage() {
     );
   }
 
-  // Mandatory Authentication Check for rooms
-  if (roomId && !user) {
+  // Mandatory Authentication Check for rooms (team links with a token skip this — they never have an account)
+  if (roomId && !user && !(teamIndex && teamToken)) {
     return (
       <div className="min-h-screen bg-slate-50 py-16 px-4 flex flex-col justify-center items-center dir-rtl">
         <motion.div
@@ -1181,46 +1214,6 @@ export default function BattlePage() {
     );
   }
 
-  if (roomId && room && teamIndex && teamAccessIssue) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 dir-rtl">
-        <div className="w-full max-w-md rounded-3xl border border-amber-200 bg-white p-8 text-center shadow-xl">
-          <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto" />
-          <h2 className="mt-4 text-xl font-bold text-slate-950">
-            {teamAccessIssue.type === "referee"
-              ? "حساب الحكم ما يقدر يحجز فريق"
-              : "ما قدرنا ننضم للفريق"}
-          </h2>
-          <p className="mt-3 text-sm leading-relaxed text-slate-600">
-            {teamAccessIssue.message}
-          </p>
-
-          <div className="mt-7 space-y-3">
-            {teamAccessIssue.type === "referee" && (
-              <Link
-                href={`/battle?room_id=${roomId}&role=judge`}
-                className="block w-full rounded-xl bg-gradient-to-r from-cyan-600 to-sky-500 px-5 py-3 font-bold text-white"
-              >
-                ارجع لشاشة الحكم
-              </Link>
-            )}
-            <button
-              type="button"
-              onClick={handleSwitchToTeamAccount}
-              className="w-full rounded-xl border border-slate-200 bg-slate-100 px-5 py-3 font-bold text-slate-800"
-            >
-              اطلع وسجل دخول بحساب الفريق
-            </button>
-            <p className="text-[11px] leading-relaxed text-slate-400">
-              تقدر بعد تبطل رابط الفريق بصفحة خفية أو بجهاز ثاني وتدش بحساب
-              ثاني.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   if (roomId && room?.status === "abandoned") {
     return (
       <AbandonedGameView
@@ -1262,18 +1255,31 @@ export default function BattlePage() {
     return (
       <>
         <BattleAlert alert={alertMsg} />
-        <JudgeCombatDashboard
+        <RefereeGameScreen
           room={room}
           teams={teams}
           questions={questions}
           events={combatEvents}
-          answer={activeAnswer}
+          answerText={activeAnswer.text}
+          answerImageUrl={activeAnswer.imageUrl}
           isBusy={isActionBusy}
           questionSeconds={questionSeconds}
+          timerPaused={timerPaused}
+          radarCells={radarCells}
+          radarForTeam={radarForTeam}
           onSelectQuestion={handleSelectQuestion}
           onResolveQuestion={handleResolveQuestion}
           onResolveDraw={handleResolveDraw}
+          onSetCurrentTurn={handleSetCurrentTurn}
+          onStrike={handleStrike}
+          onUseTool={handleUseTool}
           onGrantExtraStrike={handleGrantExtraStrike}
+          onGrantPoints={handleGrantPoints}
+          onClearRadar={handleClearRadar}
+          onEndGameNow={handleEndGameNow}
+          onPauseTimer={handlePauseTimer}
+          onResumeTimer={handleResumeTimer}
+          onResetTimer={handleResetTimer}
           onExit={handleExitGame}
         />
         <CombatEventModal
@@ -1284,67 +1290,10 @@ export default function BattlePage() {
     );
   }
 
-  if (
-    roomId &&
-    room &&
-    ["playing", "finished"].includes(room.status) &&
-    teamIndex
-  ) {
-    const activeTeam = teams.find((team) => team.team_index === teamIndex);
-    const opponentTeam = teams.find((team) => team.team_index !== teamIndex);
-
-    if (activeTeam && opponentTeam) {
-      return (
-        <>
-          <BattleAlert alert={alertMsg} />
-          <TeamCombatDashboard
-            room={room}
-            activeTeam={activeTeam}
-            opponentTeam={opponentTeam}
-            questions={questions}
-            events={combatEvents}
-            radarCells={radarCells}
-            radarMode={radarMode}
-            activeRadarTool={activeRadarTool}
-            isBusy={isActionBusy}
-            questionSeconds={questionSeconds}
-            lifelineActive={lifelineActive}
-            lifelineSeconds={lifelineSeconds}
-            doubleChanceActive={doubleChanceActive}
-            holeActive={holeActive}
-            holeConfirmPending={holeConfirmPending}
-            onSelectQuestion={handleSelectQuestion}
-            onStrike={handleStrike}
-            onUseTool={handleUseTool}
-            onToggleRadar={(toolId = "radar_scan") => {
-              setActiveRadarTool(toolId);
-              setRadarMode((value) =>
-                activeRadarTool === toolId ? !value : true,
-              );
-            }}
-            onDismissLifeline={() => {
-              setLifelineActive(false);
-              setLifelineSeconds(60);
-            }}
-            onConfirmHole={() => {
-              setHoleConfirmPending(false);
-              setHoleActive(true);
-            }}
-            onCancelHole={() => {
-              setHoleConfirmPending(false);
-              showAlert("تم إلغاء الحفرة — الوسيلة استُهلكت", "warning");
-            }}
-            onExit={handleExitGame}
-            onSoftExit={handleSoftExit}
-          />
-          <CombatEventModal
-            event={latestCombatEvent}
-            onClose={() => setLatestCombatEvent(null)}
-          />
-        </>
-      );
-    }
-  }
+  // Token-based (no-account) teams never reach a per-team combat screen —
+  // once ready, they stay on the "waiting for the judge" card rendered by
+  // the deployment view below, since the referee now runs the whole match
+  // from one screen.
 
   // A. VIEW GATEWAY (when no team/role parameter is active as player or referee)
   if (roomId && room && !teamIndex && !role) {
@@ -1362,35 +1311,12 @@ export default function BattlePage() {
           </p>
 
           <div className="mt-8 space-y-4">
-            <Link
-              href={`/battle?room_id=${roomId}&team=1`}
-              className="w-full flex items-center justify-between p-4 rounded-2xl border border-cyan-100 hover:border-cyan-400 bg-cyan-50/20 hover:bg-cyan-50/70 transition-all text-right group"
-            >
-              <div>
-                <span className="font-extrabold text-sm text-cyan-900 block">
-                  دش كفريق: {room.team_1_name}
-                </span>
-                <span className="text-[10px] text-cyan-600 font-medium">
-                  تحكم بفريقك ووزع جنودك
-                </span>
-              </div>
-              <Gamepad2 className="w-5 h-5 text-cyan-500 group-hover:scale-110 transition-transform" />
-            </Link>
-
-            <Link
-              href={`/battle?room_id=${roomId}&team=2`}
-              className="w-full flex items-center justify-between p-4 rounded-2xl border border-orange-100 hover:border-orange-400 bg-orange-50/20 hover:bg-orange-50/70 transition-all text-right group"
-            >
-              <div>
-                <span className="font-extrabold text-sm text-orange-900 block">
-                  دش كفريق: {room.team_2_name}
-                </span>
-                <span className="text-[10px] text-orange-600 font-medium">
-                  تحكم بفريقك ووزع جنودك
-                </span>
-              </div>
-              <Gamepad2 className="w-5 h-5 text-orange-500 group-hover:scale-110 transition-transform" />
-            </Link>
+            {!(room.judge_id === user?.id) && (
+              <p className="text-xs text-slate-400 font-semibold leading-relaxed">
+                لازم تدش برابط فريقك الخاص (فيه رمز الدخول) اللي عطاك ياه
+                الحكم.
+              </p>
+            )}
 
             {room.judge_id === user?.id && (
               <>
@@ -1503,21 +1429,6 @@ export default function BattlePage() {
                 <div className="mt-5 space-y-4 flex-1">
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-slate-400 font-medium">
-                      حالة دخول الغرفة:
-                    </span>
-                    <span
-                      className={`px-2.5 py-1 rounded-lg font-bold text-[10px] ${
-                        team1Obj?.joined
-                          ? "bg-emerald-50 text-emerald-800"
-                          : "bg-slate-100 text-slate-400"
-                      }`}
-                    >
-                      {team1Obj?.joined ? "✓ دش الغرفة" : "○ ناطرين الفريق يدش"}
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-slate-400 font-medium">
                       توزيع الجنود والتموضع:
                     </span>
                     <span
@@ -1573,21 +1484,6 @@ export default function BattlePage() {
                 </h3>
 
                 <div className="mt-5 space-y-4 flex-1">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-slate-400 font-medium">
-                      حالة دخول الغرفة:
-                    </span>
-                    <span
-                      className={`px-2.5 py-1 rounded-lg font-bold text-[10px] ${
-                        team2Obj?.joined
-                          ? "bg-emerald-50 text-emerald-800"
-                          : "bg-slate-100 text-slate-400"
-                      }`}
-                    >
-                      {team2Obj?.joined ? "✓ دش الغرفة" : "○ ناطرين الفريق يدش"}
-                    </span>
-                  </div>
-
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-slate-400 font-medium">
                       توزيع الجنود والتموضع:
@@ -1681,11 +1577,22 @@ export default function BattlePage() {
   // C. VIEW TEAM PARTICIPANT BOARD DEPLOYMENT (Tasks 10, 11, 12, 13)
   if (roomId && room && teamIndex) {
     const activeTeam = teams.find((t) => t.team_index === teamIndex);
-    const opponentTeam = teams.find((t) => t.team_index !== teamIndex);
 
-    // Compute current unit counts per type
+    // Read current board (pending snapshot or team board)
+    const currentBoardState = pendingBoardRef.current
+      ? pendingBoardRef.current.board
+      : activeTeam?.board || [];
+
+    // Compute remaining points dynamically from STARTING_POINTS (4000)
+    const totalSpentCost = (currentBoardState || []).reduce(
+      (sum, unit) => sum + (unitSpecs[unit]?.cost || 0),
+      0,
+    );
+    const remainingPoints = Math.max(0, STARTING_POINTS - totalSpentCost);
+
+    // Compute current unit counts per type from active board
     const unitCounts = Object.keys(unitSpecs).reduce((acc, key) => {
-      acc[key] = (activeTeam?.board || []).filter(
+      acc[key] = (currentBoardState || []).filter(
         (cell) => cell === key,
       ).length;
       return acc;
@@ -1704,8 +1611,37 @@ export default function BattlePage() {
       );
     }
 
-    // Checking if battle has started and both teams ready
-    const isBattleLocked = activeTeam.is_ready;
+    // Once ready, the team's device has nothing left to do — the referee
+    // runs the rest of the match from one screen, so we replace the whole
+    // page with a static waiting card instead of the deployment UI.
+    if (activeTeam.is_ready) {
+      return (
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 dir-rtl">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="w-full max-w-md bg-white p-8 rounded-3xl border border-slate-200 shadow-2xl text-center"
+          >
+            <div className="bg-gradient-to-tr from-cyan-500 to-sky-400 text-white p-4 rounded-2xl inline-block mb-6 shadow-md">
+              <Crown className="w-10 h-10" />
+            </div>
+            <h2 className="text-xl font-bold text-slate-950 leading-tight">
+              وزعت جنودك بنجاح، والحين الحكم هو اللي متحكم بكل حاجة
+            </h2>
+            <p className="text-xs text-slate-500 mt-3 leading-relaxed font-semibold">
+              تابع اللعب من شاشة الحكم، وقول له شفهيًا أي مربع تبي تضرب أو أي
+              فزعة تبي تستخدم — ما فيه أي تفاعل تاني مطلوب منك بهالجهاز.
+            </p>
+            <Link
+              href="/"
+              className="mt-7 block w-full rounded-xl bg-gradient-to-r from-cyan-600 to-sky-500 py-3 font-bold text-white text-sm"
+            >
+              رجوع للصفحة الرئيسية
+            </Link>
+          </motion.div>
+        </div>
+      );
+    }
 
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col dir-rtl pb-16">
@@ -1746,20 +1682,12 @@ export default function BattlePage() {
             </div>
 
             <div className="flex items-center gap-4">
-              <button
-                type="button"
-                onClick={handleExitGame}
-                className="px-3 py-2 border border-rose-200 bg-rose-50 hover:bg-rose-100 font-bold rounded-xl text-[10px] transition-colors text-rose-700 flex items-center gap-1.5"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-                اطلع من اللعبة
-              </button>
               <div className="text-right">
                 <span className="text-[9px] text-slate-400 block font-bold">
                   النقاط الباقية لتسليح جنودك
                 </span>
                 <span className="text-base font-bold text-cyan-600">
-                  {activeTeam.points}ن
+                  {remainingPoints}ن
                 </span>
               </div>
               <div className="h-6 w-px bg-slate-200" />
@@ -1874,26 +1802,6 @@ export default function BattlePage() {
                     },
                   )}
                 </div>
-
-                {/* Secure Battle Lock Cover Shield (Task 13: Blur and covered overlay if both teams ready) */}
-                {isBattleLocked && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="absolute inset-0 bg-slate-950/90 backdrop-blur-md rounded-2xl flex flex-col justify-center items-center text-center p-6 text-white z-30"
-                  >
-                    <div className="bg-emerald-500 text-slate-950 p-4 rounded-full mb-4 animate-pulse">
-                      <Lock className="w-10 h-10 fill-slate-950" />
-                    </div>
-                    <h4 className="font-sans font-bold text-lg text-emerald-400">
-                      قفلنا خريطة اللعب لين تبدون
-                    </h4>
-                    <p className="text-xs text-slate-300 max-w-xs mt-2 leading-relaxed">
-                      وزعنا جنودك وخشيناهم بنجاح! ما حد يقدر يشوف توزيعك الحين
-                      لا ربعك ولا خصمك.
-                    </p>
-                  </motion.div>
-                )}
               </div>
             </div>
           </div>
@@ -1936,8 +1844,13 @@ export default function BattlePage() {
                           <span className="font-bold text-xs text-slate-900 block group-hover:text-cyan-600">
                             {unit.name}
                           </span>
+                          {unit.description && (
+                            <span className="text-[10px] text-slate-500 block leading-tight">
+                              {unit.description}
+                            </span>
+                          )}
                           <span
-                            className={`text-[10px] leading-tight block font-bold ${isFull ? "text-rose-500" : "text-slate-400"}`}
+                            className={`text-[10px] leading-tight block font-bold mt-0.5 ${isFull ? "text-rose-500" : "text-slate-400"}`}
                           >
                             {count} / {limit} {isFull ? "· خلصت أعدادهم" : ""}
                           </span>
@@ -1954,69 +1867,34 @@ export default function BattlePage() {
 
             {/* "تم بناء الجيش" Readiness Action button (Task 12) */}
             <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-md text-center">
-              {activeTeam.is_ready ? (
-                <div className="space-y-3">
-                  <CheckCircle className="w-10 h-10 text-emerald-500 mx-auto animate-bounce" />
-                  <h4 className="font-sans font-bold text-sm text-slate-800">
-                    وزعت جنودك وجهزت فريقك بنجاح!
-                  </h4>
-                  <p className="text-xs text-slate-400 font-semibold leading-relaxed">
-                    يا سلام! الحين ناطرين الفريق الثاني يخلص توزيع جنوده عشان
-                    تبدون اللعب والطق...
-                  </p>
-                  {opponentTeam && (
-                    <div className="mt-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                      <span className="text-[9px] text-slate-400 block font-bold">
-                        حالة الخصم:
-                      </span>
-                      <span
-                        className={`text-[10.5px] font-bold mt-1 block ${
-                          opponentTeam.is_ready
-                            ? "text-emerald-600"
-                            : "text-amber-600 animate-pulse"
-                        }`}
-                      >
-                        {opponentTeam.is_ready
-                          ? "● جاهز للطق واللعب"
-                          : "● للحين قاعد يوزع جنوده"}
-                      </span>
-                    </div>
+              <div className="space-y-4">
+                <div className="text-right bg-slate-50 p-4 rounded-2xl border border-slate-100 text-xs font-bold leading-relaxed text-slate-500">
+                  تبدأ بـ{" "}
+                  <strong className="text-slate-800">4000 نقطة</strong> ·
+                  الحدود: جندي (15) · مدرعة (7) · دبابة (4) · طائرة (3) ·
+                  غواصة (2) · لغم (2). إذا شلت جندي ترجع لك نقاطه.
+                </div>
+                <motion.button
+                  whileHover={!isAutoFilling ? { scale: 1.02 } : {}}
+                  whileTap={!isAutoFilling ? { scale: 0.98 } : {}}
+                  onClick={isAutoFilling ? undefined : handleSetTeamReady}
+                  disabled={isAutoFilling}
+                  className={`w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-sans font-bold text-sm py-4 rounded-2xl shadow-lg transition-opacity ${
+                    isAutoFilling
+                      ? "opacity-50 cursor-not-allowed"
+                      : "hover:shadow-emerald-500/25 cursor-pointer"
+                  }`}
+                >
+                  {isAutoFilling ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                      قاعدين نحفظ التوزيع...
+                    </span>
+                  ) : (
+                    "خلصت توزيع جنودي 🛡️"
                   )}
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="text-right bg-slate-50 p-4 rounded-2xl border border-slate-100 text-xs font-bold leading-relaxed text-slate-500">
-                    تبدأ بـ{" "}
-                    <strong className="text-slate-800">1000 نقطة</strong> · لازم
-                    تصرف{" "}
-                    <strong className="text-cyan-700">
-                      700 نقطة على الأقل
-                    </strong>
-                    . الحدود: جندي (10) · دبابة (4) · طائرة (3) · غواصة (2) ·
-                    لغم (2). إذا شلت جندي ترجع لك نقاطه.
-                  </div>
-                  <motion.button
-                    whileHover={!isAutoFilling ? { scale: 1.02 } : {}}
-                    whileTap={!isAutoFilling ? { scale: 0.98 } : {}}
-                    onClick={isAutoFilling ? undefined : handleSetTeamReady}
-                    disabled={isAutoFilling}
-                    className={`w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-sans font-bold text-sm py-4 rounded-2xl shadow-lg transition-opacity ${
-                      isAutoFilling
-                        ? "opacity-50 cursor-not-allowed"
-                        : "hover:shadow-emerald-500/25 cursor-pointer"
-                    }`}
-                  >
-                    {isAutoFilling ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <RefreshCw className="h-4 w-4 animate-spin" />
-                        قاعدين نحفظ التوزيع...
-                      </span>
-                    ) : (
-                      "خلصت توزيع جنودي 🛡️"
-                    )}
-                  </motion.button>
-                </div>
-              )}
+                </motion.button>
+              </div>
             </div>
           </div>
         </main>
