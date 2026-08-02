@@ -277,11 +277,12 @@ export default function BattlePage() {
       return undefined;
     }
 
-    const startedAt = timerOverrideStart ?? new Date(room.question_started_at).getTime();
+    const startedAt =
+      timerOverrideStart ?? new Date(room.question_started_at).getTime();
     let lastPlayedSecond = null;
 
     const tick = () => {
-      const elapsed = (Date.now() - startedAt) / 1000;
+      const elapsed = Math.max(0, (Date.now() - startedAt) / 1000);
       const remaining = Math.max(0, Math.ceil(60 - elapsed));
 
       setQuestionSeconds(remaining);
@@ -996,7 +997,11 @@ export default function BattlePage() {
       const team = teams.find((t) => t.team_index === grantTeamIndex);
       const absCount = Math.abs(count);
       const label =
-        absCount === 1 ? "طقة وحدة" : absCount === 2 ? "طقتين" : `${absCount} طقات`;
+        absCount === 1
+          ? "طقة وحدة"
+          : absCount === 2
+            ? "طقتين"
+            : `${absCount} طقات`;
       showAlert(
         `✓ ${count >= 0 ? "عطينا" : "خصمنا"} ${label} ${count >= 0 ? "حق" : "من"} ${team?.name || "الفريق"}`,
         "success",
@@ -1035,6 +1040,17 @@ export default function BattlePage() {
     runAction(async () => {
       const { error } = await supabase.rpc("end_room_now", {
         p_room_id: roomId,
+      });
+      if (error) throw error;
+    });
+
+  // Referee backs out of a question before resolving it — clears the
+  // selection server-side so it's not left highlighted/locked on the grid
+  const handleDeselectQuestion = (questionId) =>
+    runAction(async () => {
+      const { error } = await supabase.rpc("deselect_room_question", {
+        p_room_id: roomId,
+        p_question_id: questionId,
       });
       if (error) throw error;
     });
@@ -1277,6 +1293,7 @@ export default function BattlePage() {
           onGrantPoints={handleGrantPoints}
           onClearRadar={handleClearRadar}
           onEndGameNow={handleEndGameNow}
+          onDeselectQuestion={handleDeselectQuestion}
           onPauseTimer={handlePauseTimer}
           onResumeTimer={handleResumeTimer}
           onResetTimer={handleResetTimer}
@@ -1313,8 +1330,7 @@ export default function BattlePage() {
           <div className="mt-8 space-y-4">
             {!(room.judge_id === user?.id) && (
               <p className="text-xs text-slate-400 font-semibold leading-relaxed">
-                لازم تدش برابط فريقك الخاص (فيه رمز الدخول) اللي عطاك ياه
-                الحكم.
+                لازم تدش برابط فريقك الخاص (فيه رمز الدخول) اللي عطاك ياه الحكم.
               </p>
             )}
 
@@ -1325,7 +1341,7 @@ export default function BattlePage() {
                   className="w-full flex items-center justify-between p-4 rounded-2xl border border-slate-200 hover:border-slate-400 bg-slate-50 hover:bg-slate-100 transition-all text-right group"
                 >
                   <div>
-                    <span className="font-extrabold text-sm text-slate-800 block">
+                    <span className="font-bold text-sm text-slate-800 block">
                       دش كحكم حق المباراة (شاشة المتابعة)
                     </span>
                     <span className="text-[10px] text-slate-500 font-medium">
@@ -1869,9 +1885,8 @@ export default function BattlePage() {
             <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-md text-center">
               <div className="space-y-4">
                 <div className="text-right bg-slate-50 p-4 rounded-2xl border border-slate-100 text-xs font-bold leading-relaxed text-slate-500">
-                  تبدأ بـ{" "}
-                  <strong className="text-slate-800">4000 نقطة</strong> ·
-                  الحدود: جندي (15) · مدرعة (7) · دبابة (4) · طائرة (3) ·
+                  تبدأ بـ <strong className="text-slate-800">4000 نقطة</strong>{" "}
+                  · الحدود: جندي (15) · مدرعة (7) · دبابة (4) · طائرة (3) ·
                   غواصة (2) · لغم (2). إذا شلت جندي ترجع لك نقاطه.
                 </div>
                 <motion.button

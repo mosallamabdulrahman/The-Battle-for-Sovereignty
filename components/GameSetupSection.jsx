@@ -355,7 +355,7 @@ export default function GameSetupSection() {
                   <div className="mt-3">
                     <a
                       href="/login"
-                      className="px-4 py-1.5 bg-cyan-500 hover:bg-cyan-600 font-extrabold text-slate-950 text-[11px] rounded transition-colors"
+                      className="px-4 py-1.5 bg-cyan-500 hover:bg-cyan-600 font-bold text-slate-950 text-[11px] rounded transition-colors"
                     >
                       ⚡ الدخول السريع
                     </a>

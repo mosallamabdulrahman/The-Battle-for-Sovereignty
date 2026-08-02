@@ -30,31 +30,43 @@ const UNIT_EMOJI = {
   mine: "💥",
 };
 
+const UNIT_NAMES = {
+  infantry: "جندي",
+  armored: "مدرعة",
+  tank: "دبابة",
+  aircraft: "طائرة",
+  submarine: "غواصة",
+  mine: "لغم",
+};
+
 function TimerPill({ seconds, isPaused, onPause, onResume, onReset }) {
   const mm = String(Math.floor(Math.max(0, seconds) / 60)).padStart(2, "0");
   const ss = String(Math.max(0, seconds) % 60).padStart(2, "0");
   return (
-    <div className="flex items-center gap-2 rounded-full bg-slate-950 px-3 py-1.5 text-white">
+    <div className="flex items-center gap-2 sm:gap-3 rounded-full bg-slate-950 px-3.5 py-1.5 sm:px-6 sm:py-2.5 text-white shadow-2xl">
       <button
         type="button"
-        onClick={isPaused ? onResume : onPause}
-        className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20"
+        onClick={onReset}
+        className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center transition active:scale-95 shrink-0"
+        title="إعادة ضبط"
       >
-        {isPaused ? (
-          <Play className="w-3.5 h-3.5" />
-        ) : (
-          <Pause className="w-3.5 h-3.5" />
-        )}
+        <RotateCcw className="w-5 h-5 sm:w-9 sm:h-9 text-slate-300" />
       </button>
-      <span className="font-mono font-bold text-sm tabular-nums w-12 text-center">
+
+      <span className="text-xl sm:text-2xl md:text-3xl tabular-nums drop-shadow-md min-w-[3.8rem] sm:min-w-[5rem] text-center tracking-wider">
         {mm}:{ss}
       </span>
       <button
         type="button"
-        onClick={onReset}
-        className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20"
+        onClick={isPaused ? onResume : onPause}
+        className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition active:scale-95 shrink-0"
+        title={isPaused ? "تشغيل" : "إيقاف مؤقت"}
       >
-        <RotateCcw className="w-3.5 h-3.5" />
+        {isPaused ? (
+          <Play className="w-5 h-5 sm:w-9 sm:h-9 ml-0.5 fill-white" />
+        ) : (
+          <Pause className="w-5 h-5 sm:w-9 sm:h-9 fill-white" />
+        )}
       </button>
     </div>
   );
@@ -103,7 +115,7 @@ function TeamPillBar({ team, isBusy, onGrantPoints, onOpenStrike }) {
             type="button"
             disabled={isBusy}
             onClick={() => onOpenStrike(team.team_index)}
-            className="bg-amber-400 text-slate-950 px-2 py-0.5 rounded-full text-[10px] font-extrabold animate-pulse hover:bg-amber-300"
+            className="bg-amber-400 text-slate-950 px-2 py-0.5 rounded-full text-[10px] font-bold animate-pulse hover:bg-amber-300"
           >
             🎯 ({team.available_strikes})
           </button>
@@ -116,22 +128,74 @@ function TeamPillBar({ team, isBusy, onGrantPoints, onOpenStrike }) {
           type="button"
           disabled={isBusy}
           onClick={() => onGrantPoints(team.team_index, -50)}
-          className="w-6 h-6 rounded-full bg-[#a30000] hover:bg-[#800000] text-white font-extrabold text-sm flex items-center justify-center transition disabled:opacity-40 shrink-0"
+          className="w-6 h-6 rounded-full bg-[#a30000] hover:bg-[#800000] text-white font-bold text-sm flex items-center justify-center transition disabled:opacity-40 shrink-0"
         >
           −
         </button>
-        <span className="font-extrabold text-base sm:text-lg text-[#a30000] tabular-nums px-2">
+        <span className="font-bold text-base sm:text-lg text-[#a30000] tabular-nums px-2">
           {team.score}
         </span>
         <button
           type="button"
           disabled={isBusy}
           onClick={() => onGrantPoints(team.team_index, 50)}
-          className="w-6 h-6 rounded-full bg-[#a30000] hover:bg-[#800000] text-white font-extrabold text-sm flex items-center justify-center transition disabled:opacity-40 shrink-0"
+          className="w-6 h-6 rounded-full bg-[#a30000] hover:bg-[#800000] text-white font-bold text-sm flex items-center justify-center transition disabled:opacity-40 shrink-0"
         >
           +
         </button>
       </div>
+    </div>
+  );
+}
+
+function TeamStrikeStepper({ team, isBusy, onGrantExtraStrike }) {
+  const [pending, setPending] = useState(0);
+
+  const commit = () => {
+    if (pending === 0) return;
+    onGrantExtraStrike(team.team_index, pending);
+    setPending(0);
+  };
+
+  return (
+    <div className="flex flex-col items-center gap-1">
+      {/* Label pill — same style as the team name pill */}
+      <div className="w-full bg-[#a30000] text-white font-bold text-xs sm:text-sm text-center py-1 px-4 sm:px-6 rounded-full shadow-sm">
+        اضافة طقات زيادة
+      </div>
+
+      {/* One-unit +/- stepper — stages the amount locally, not sent yet */}
+      <div className="flex items-center justify-between gap-2 bg-white border-2 border-[#a30000] rounded-full px-1.5 py-0.5 shadow-sm min-w-[130px] sm:min-w-[150px]">
+        <button
+          type="button"
+          disabled={isBusy || pending <= 0}
+          onClick={() => setPending((p) => Math.max(0, p - 1))}
+          className="w-6 h-6 rounded-full bg-[#a30000] hover:bg-[#800000] text-white font-bold text-sm flex items-center justify-center transition disabled:opacity-40 shrink-0"
+        >
+          −
+        </button>
+        <span className="font-bold text-base sm:text-lg text-[#a30000] tabular-nums px-2">
+          {pending}
+        </span>
+        <button
+          type="button"
+          disabled={isBusy || pending >= 10}
+          onClick={() => setPending((p) => Math.min(10, p + 1))}
+          className="w-6 h-6 rounded-full bg-[#a30000] hover:bg-[#800000] text-white font-bold text-sm flex items-center justify-center transition disabled:opacity-40 shrink-0"
+        >
+          +
+        </button>
+      </div>
+
+      {/* Commit button */}
+      <button
+        type="button"
+        disabled={isBusy || pending === 0}
+        onClick={commit}
+        className="w-full rounded-full bg-[#a30000] hover:bg-[#800000] text-white font-bold text-xs sm:text-sm py-1.5 shadow-sm transition disabled:opacity-40"
+      >
+        إضافة
+      </button>
     </div>
   );
 }
@@ -199,6 +263,7 @@ export function GameBottomFooter({
   onOpenStrike,
   onUseTool,
   onGrantPoints,
+  onGrantExtraStrike,
 }) {
   return (
     <div className="w-full mt-8 bg-[#e2e8f0] p-3 sm:p-4 flex flex-col md:flex-row items-center justify-between gap-4">
@@ -216,6 +281,11 @@ export function GameBottomFooter({
           onOpenRadar={onOpenRadar}
           onUseTool={onUseTool}
         />
+        <TeamStrikeStepper
+          team={team1}
+          isBusy={isBusy}
+          onGrantExtraStrike={onGrantExtraStrike}
+        />
       </div>
 
       {/* Center Logo Section */}
@@ -225,6 +295,11 @@ export function GameBottomFooter({
 
       {/* Team 2 Section (Left side in RTL) */}
       <div className="flex items-center gap-3 sm:gap-4 flex-wrap justify-center md:justify-end">
+        <TeamStrikeStepper
+          team={team2}
+          isBusy={isBusy}
+          onGrantExtraStrike={onGrantExtraStrike}
+        />
         <HelperToolsSection
           team={team2}
           isBusy={isBusy}
@@ -251,7 +326,7 @@ function TeamToolsCard({ team, isBusy, onOpenRadar, onOpenStrike, onUseTool }) {
       : ["phone_friend", "ask_audience", "swap_question"];
 
   return (
-    <div className="flex flex-col items-center gap-2 py-4 px-3 bg-white rounded-3xl border border-slate-200 shadow-sm w-full text-center">
+    <div className="flex flex-col items-center gap-2 py-4 px-3 bg-white rounded-3xl border border-slate-200 shadow-sm w-full text h-fit-center">
       {/* Team Red Pill Badge */}
       <div className="w-full bg-[#a30000] text-white font-bold text-sm sm:text-base py-1.5 px-4 rounded-full shadow-sm text-center truncate">
         {team.name ||
@@ -259,7 +334,7 @@ function TeamToolsCard({ team, isBusy, onOpenRadar, onOpenStrike, onUseTool }) {
       </div>
 
       {/* Current Score */}
-      <span className="font-extrabold text-2xl text-[#a30000] tabular-nums">
+      <span className="font-bold text-2xl text-[#a30000] tabular-nums">
         {team.score}
       </span>
 
@@ -317,7 +392,7 @@ function TeamToolsCard({ team, isBusy, onOpenRadar, onOpenStrike, onUseTool }) {
           animate={{ scale: [1, 1.05, 1] }}
           transition={{ repeat: Infinity, duration: 1.1 }}
           onClick={() => onOpenStrike(team.team_index)}
-          className="mt-1 rounded-full bg-amber-400 text-slate-950 px-4 py-1 text-xs font-extrabold shadow hover:bg-amber-300 transition"
+          className="mt-1 rounded-full bg-amber-400 text-slate-950 px-4 py-1 text-xs font-bold shadow hover:bg-amber-300 transition"
         >
           🎯 اضرب الآن ({team.available_strikes})
         </motion.button>
@@ -388,8 +463,10 @@ export function RefereeGameScreen({
   onStrike,
   onUseTool,
   onGrantPoints,
+  onGrantExtraStrike,
   onClearRadar,
   onEndGameNow,
+  onDeselectQuestion,
   onPauseTimer,
   onResumeTimer,
   onResetTimer,
@@ -421,7 +498,12 @@ export function RefereeGameScreen({
   // A team with pending strikes always takes over the strike modal —
   // referee cannot proceed until it's used up (auto-opens, auto-switches
   // between teams if both have strikes pending, auto-closes when done).
-  const teamsWithStrikes = teams.filter((t) => t.available_strikes > 0);
+  // Once the game has actually finished, leftover strikes no longer matter —
+  // otherwise the modal would keep blocking the finished screen forever.
+  const teamsWithStrikes =
+    room.status === "playing"
+      ? teams.filter((t) => t.available_strikes > 0)
+      : [];
   const strikeModalTeamStillPending = teamsWithStrikes.some(
     (t) => t.team_index === strikeModalTeam,
   );
@@ -471,9 +553,12 @@ export function RefereeGameScreen({
   const strikeCellResults = new Map(
     strikeEvents.map((event) => [event.cell_index, event.result]),
   );
+  const strikeCellUnits = new Map(
+    strikeEvents.map((event) => [event.cell_index, event.unit_type]),
+  );
 
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col justify-between gap-4 dir-rtl">
+    <div className="min-h-screen bg-slate-100 flex flex-col gap-4 dir-rtl">
       <header className="bg-gradient-to-l from-cyan-800 via-cyan-700 to-cyan-600 shadow-lg">
         <div className="max-w-[98rem] mx-auto px-3 sm:px-6 py-2.5 sm:py-3.5 flex flex-wrap md:flex-nowrap items-center justify-between gap-3 sm:gap-4">
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
@@ -488,7 +573,7 @@ export function RefereeGameScreen({
               className="rounded-full bg-cyan-950/70 border border-white/20 px-3.5 sm:px-5 py-1.5 sm:py-2 text-xs sm:text-sm md:text-base font-bold text-white shadow-inner flex items-center gap-1.5 hover:bg-cyan-950/90 transition disabled:opacity-60"
             >
               <span className="whitespace-nowrap">دور فريق :</span>
-              <span className="text-amber-300 font-extrabold truncate max-w-[100px] sm:max-w-[160px]">
+              <span className="text-amber-300 font-bold truncate max-w-[100px] sm:max-w-[160px]">
                 {currentTeam?.name || "—"}
               </span>
             </button>
@@ -518,6 +603,7 @@ export function RefereeGameScreen({
                   setShowAnswer(false);
                   setTeamSelectOpen(false);
                   setForceGridView(true);
+                  if (activeQuestion) onDeselectQuestion(activeQuestion.id);
                 }}
                 className="inline-flex items-center gap-1.5 hover:text-cyan-200 transition"
               >
@@ -562,9 +648,9 @@ export function RefereeGameScreen({
             </motion.div>
           </AnimatePresence>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 md:gap-8 lg:gap-12 mt-6">
             {team1 && team2 && (
-              <div className="lg:col-span-1 w-full flex flex-col gap-4">
+              <div className="md:col-span-1 w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-4">
                 <TeamToolsCard
                   team={team1}
                   isBusy={isBusy}
@@ -582,7 +668,7 @@ export function RefereeGameScreen({
               </div>
             )}
 
-            <div className="lg:col-span-3 w-full">
+            <div className="md:col-span-3 w-full">
               <AnimatePresence mode="wait">
                 {step === "question" && activeQuestion && (
                   <motion.div
@@ -591,10 +677,10 @@ export function RefereeGameScreen({
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -16 }}
                     transition={{ duration: 0.25 }}
-                    className="relative mx-auto rounded-[2.5rem] border-4 border-cyan-500 bg-white p-8 sm:p-12 text-center shadow-2xl"
+                    className="relative mx-auto rounded-[2rem] sm:rounded-[2.5rem] border-4 border-cyan-500 bg-white p-4 sm:p-10 md:px-12 text-center shadow-2xl"
                   >
                     {/* Top Center: TimerPill on top border */}
-                    <div className="absolute -top-6 left-1/2 -translate-x-1/2 z-20">
+                    <div className="absolute -top-6 sm:-top-7 left-1/2 -translate-x-1/2 z-20 shrink-0">
                       <TimerPill
                         seconds={questionSeconds}
                         isPaused={timerPaused}
@@ -604,13 +690,12 @@ export function RefereeGameScreen({
                       />
                     </div>
 
-                    {/* Top Right: Strikes badge (this question's strike count) */}
-                    <span className="absolute -top-5 right-6 sm:right-8 z-20 rounded-xl bg-slate-950 px-4 sm:px-6 py-2 text-sm sm:text-base font-extrabold text-white shadow-md">
-                      {activeQuestion.strikes}{" "}
-                      {activeQuestion.strikes === 1 ? "طقة" : "طقات"}
+                    {/* Top Right: Points badge */}
+                    <span className="absolute -top-4 sm:-top-5 right-3 sm:right-6 md:right-8 z-20 rounded-xl bg-slate-950 px-3 py-1.5 sm:px-5 sm:py-2 text-xs sm:text-sm md:text-base font-bold text-white shadow-lg">
+                      {activeQuestion.points} نقطة
                     </span>
 
-                    <h2 className="mt-6 text-xl sm:text-2xl font-bold text-slate-950 leading-relaxed px-2 py-4">
+                    <h2 className="text-lg sm:text-2xl md:text-3xl font-bold text-slate-950 leading-relaxed px-2">
                       {activeQuestion.question_text}
                     </h2>
                     <MediaPlayer
@@ -619,7 +704,7 @@ export function RefereeGameScreen({
                     />
 
                     {/* Bottom Right: Category badge */}
-                    <span className="absolute -bottom-5 right-6 sm:right-8 z-20 rounded-xl bg-rose-500 px-4 sm:px-6 py-2 text-xs sm:text-sm font-bold text-white shadow-md">
+                    <span className="absolute -bottom-4 sm:-bottom-5 right-3 sm:right-6 md:right-8 z-20 rounded-xl bg-rose-500 px-3 py-1.5 sm:px-5 sm:py-2 text-xs sm:text-sm font-bold text-white shadow-lg">
                       {activeQuestion.category_name}
                     </span>
 
@@ -627,7 +712,7 @@ export function RefereeGameScreen({
                     <button
                       type="button"
                       onClick={() => setShowAnswer(true)}
-                      className="absolute -bottom-5 left-6 sm:left-8 z-20 rounded-xl bg-cyan-600 hover:bg-cyan-700 px-6 sm:px-8 py-2.5 text-xs sm:text-sm font-bold text-white shadow-md transition"
+                      className="absolute -bottom-4 sm:-bottom-5 left-3 sm:left-6 md:left-8 z-20 rounded-xl bg-cyan-600 hover:bg-cyan-700 active:scale-95 px-4 py-2 sm:px-7 sm:py-2.5 text-xs sm:text-sm font-bold text-white shadow-lg transition"
                     >
                       إظهار الإجابة
                     </button>
@@ -641,24 +726,9 @@ export function RefereeGameScreen({
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -16 }}
                     transition={{ duration: 0.25 }}
-                    className="relative mx-auto rounded-[2.5rem] border-4 border-emerald-500 bg-white p-8 sm:p-12 text-center shadow-2xl my-6"
+                    className="relative mx-auto rounded-[2rem] sm:rounded-[2.5rem] border-4 border-emerald-500 bg-white p-4 sm:p-10 md:px-12 text-center shadow-2xl"
                   >
-                    {/* Top Center: TimerPill on top border */}
-                    <div className="absolute -top-6 left-1/2 -translate-x-1/2 z-20">
-                      <TimerPill
-                        seconds={questionSeconds}
-                        isPaused={timerPaused}
-                        onPause={onPauseTimer}
-                        onResume={onResumeTimer}
-                        onReset={onResetTimer}
-                      />
-                    </div>
-
-                    {/* Top Right: Points badge */}
-                    <span className="absolute -top-5 right-6 sm:right-8 z-20 rounded-xl bg-slate-950 px-4 sm:px-6 py-2 text-sm sm:text-base font-extrabold text-white shadow-md">
-                      {activeQuestion.points} نقطة
-                    </span>
-                    <div className="mt-3 max-h-72 text-lg font-bold text-slate-900 leading-relaxed">
+                    <div className="text-base sm:text-xl md:text-2xl font-bold text-slate-900 leading-relaxed">
                       {answerText || "قاعدين نحمل الإجابة..."}
                       {answerImageUrl && (
                         <img
@@ -669,28 +739,23 @@ export function RefereeGameScreen({
                       )}
                     </div>
 
-                    {/* Bottom Right: Category badge */}
-                    <span className="absolute -bottom-5 right-6 sm:right-8 z-20 rounded-xl bg-rose-500 px-4 sm:px-6 py-2 text-xs sm:text-sm font-bold text-white shadow-md">
-                      {activeQuestion.category_name}
-                    </span>
+                    {/* Bottom Right: Return to Question button (was the category label spot) */}
+                    <button
+                      type="button"
+                      onClick={() => setShowAnswer(false)}
+                      className="absolute -bottom-4 sm:-bottom-5 right-3 sm:right-6 md:right-8 z-20 rounded-xl px-3 py-1.5 sm:px-5 sm:py-2 text-xs sm:text-sm font-bold text-white shadow-lg hover:shadow-xl transition active:scale-95 disabled:opacity-60 bg-red-800 hover:bg-red-900"
+                    >
+                      ارجع للسؤال
+                    </button>
 
-                    {/* Bottom Left: Action buttons on same bottom border line */}
-                    <div className="absolute -bottom-5 left-6 sm:left-8 z-20 flex items-center gap-2 sm:gap-3">
-                      <button
-                        type="button"
-                        onClick={() => setShowAnswer(false)}
-                        className="rounded-xl border-2 border-slate-300 bg-white px-4 sm:px-6 py-2 text-xs sm:text-sm font-bold text-slate-700 hover:bg-slate-50 shadow-md"
-                      >
-                        ارجع للسؤال
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setTeamSelectOpen(true)}
-                        className="rounded-xl bg-cyan-600 hover:bg-cyan-700 px-5 sm:px-7 py-2 text-xs sm:text-sm font-bold text-white shadow-md"
-                      >
-                        أي فريق؟
-                      </button>
-                    </div>
+                    {/* Bottom Left: Which team? */}
+                    <button
+                      type="button"
+                      onClick={() => setTeamSelectOpen(true)}
+                      className="absolute -bottom-4 sm:-bottom-5 left-3 sm:left-6 md:left-8 z-20 rounded-xl bg-cyan-600 hover:bg-cyan-700 px-3.5 py-1.5 sm:px-6 sm:py-2 text-xs sm:text-sm font-bold text-white shadow-lg transition active:scale-95"
+                    >
+                      أي فريق؟
+                    </button>
                   </motion.div>
                 )}
 
@@ -701,40 +766,46 @@ export function RefereeGameScreen({
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -16 }}
                     transition={{ duration: 0.25 }}
-                    className="relative mx-auto rounded-[2.5rem] border-4 border-cyan-500 bg-white p-8 sm:p-10 text-center shadow-2xl"
+                    className="relative mx-auto rounded-[2rem] sm:rounded-[2.5rem] border-4 border-rose-500 bg-white pt-10 sm:pt-14 pb-14 sm:pb-16 px-6 sm:px-12 text-center shadow-2xl"
                   >
-                    <h2 className="text-xl  text-slate-950 mb-8">
-                      أي فريق جاوب صح؟
+                    <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-950 mb-8 sm:mb-10">
+                      أي فريق جاوب صح ؟
                     </h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {teams.map((team) => (
-                        <button
-                          key={team.id}
-                          type="button"
-                          disabled={isBusy}
-                          onClick={() => handlePickWinner(team.team_index)}
-                          className={`rounded-2xl py-5 text-base  text-white disabled:opacity-60 ${
-                            team.team_index === 1
-                              ? "bg-cyan-600 hover:bg-cyan-700"
-                              : "bg-orange-600 hover:bg-orange-700"
-                          }`}
-                        >
-                          {team.name}
-                        </button>
-                      ))}
+
+                    <div className="max-w-xl mx-auto flex flex-col gap-4 sm:gap-5">
+                      <div className="grid grid-cols-2 gap-4 sm:gap-6">
+                        {teams.map((team) => (
+                          <button
+                            key={team.id}
+                            type="button"
+                            disabled={isBusy}
+                            onClick={() => handlePickWinner(team.team_index)}
+                            className={`rounded-full py-4 sm:py-5 px-4 text-sm sm:text-lg font-bold text-white shadow-lg hover:shadow-xl transition active:scale-95 disabled:opacity-60 ${
+                              team.team_index === 1
+                                ? "bg-red-800 hover:bg-red-900"
+                                : "bg-red-800 hover:bg-red-900"
+                            }`}
+                          >
+                            {team.name}
+                          </button>
+                        ))}
+                      </div>
+
+                      <button
+                        type="button"
+                        disabled={isBusy}
+                        onClick={() => handlePickWinner("none")}
+                        className="w-full rounded-full bg-slate-500 hover:bg-slate-600 py-4 sm:py-5 text-sm sm:text-lg font-bold text-white shadow-lg transition active:scale-95 disabled:opacity-60"
+                      >
+                        ولا أحد
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      disabled={isBusy}
-                      onClick={() => handlePickWinner("none")}
-                      className="mt-3 w-full rounded-2xl bg-slate-700 hover:bg-slate-600 py-4 text-sm  text-white disabled:opacity-60"
-                    >
-                      ولا حد جاوب صح
-                    </button>
+
+                    {/* Bottom Left: Back to answer */}
                     <button
                       type="button"
                       onClick={() => setTeamSelectOpen(false)}
-                      className="mt-6 text-xs font-bold text-slate-400 underline"
+                      className="absolute -bottom-4 sm:-bottom-5 left-4 sm:left-8 z-20 rounded-full bg-emerald-900 hover:bg-emerald-950 px-5 sm:px-7 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-white shadow-lg transition active:scale-95"
                     >
                       العودة للإجابة
                     </button>
@@ -754,6 +825,7 @@ export function RefereeGameScreen({
           onOpenStrike={setStrikeModalTeam}
           onUseTool={onUseTool}
           onGrantPoints={onGrantPoints}
+          onGrantExtraStrike={onGrantExtraStrike}
         />
       )}
 
@@ -827,6 +899,7 @@ export function RefereeGameScreen({
           <div className="grid grid-cols-6 gap-1.5">
             {Array.from({ length: 36 }, (_, cellIndex) => {
               const result = strikeCellResults.get(cellIndex);
+              const hitUnit = strikeCellUnits.get(cellIndex);
               const canClick =
                 !isBusy && !result && strikeAttacker.available_strikes > 0;
               return (
@@ -835,7 +908,12 @@ export function RefereeGameScreen({
                   type="button"
                   disabled={!canClick}
                   onClick={() => onStrike(strikeModalTeam, cellIndex)}
-                  className={`aspect-square rounded-lg border text-[10px] font-bold transition-all ${
+                  title={
+                    result === "hit"
+                      ? UNIT_NAMES[hitUnit] || hitUnit || "أصبت"
+                      : undefined
+                  }
+                  className={`relative aspect-square rounded-lg border text-[10px] font-bold transition-all ${
                     result === "hit"
                       ? "border-rose-500 bg-rose-500 text-white"
                       : result === "miss"
@@ -849,15 +927,24 @@ export function RefereeGameScreen({
                               : "border-slate-200 bg-slate-100 text-slate-400"
                   }`}
                 >
-                  {result === "hit"
-                    ? "✕"
-                    : result === "miss"
-                      ? "○"
-                      : result === "mine"
-                        ? "💥"
-                        : result === "blocked"
-                          ? "🛡"
-                          : cellIndex + 1}
+                  {result === "hit" ? (
+                    <>
+                      <span className="text-xl sm:text-2xl leading-none opacity-90">
+                        {UNIT_EMOJI[hitUnit] || "❓"}
+                      </span>
+                      <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <X className="w-3 h-3 sm:w-4 sm:h-4 stroke-[3.5] text-slate-950 drop-shadow-sm" />
+                      </span>
+                    </>
+                  ) : result === "miss" ? (
+                    "○"
+                  ) : result === "mine" ? (
+                    "💥"
+                  ) : result === "blocked" ? (
+                    "🛡"
+                  ) : (
+                    cellIndex + 1
+                  )}
                 </button>
               );
             })}

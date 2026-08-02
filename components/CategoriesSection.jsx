@@ -16,8 +16,7 @@ export default function CategoriesSection() {
   const categories = [
     {
       name: "معلومات عامة",
-      description:
-        "اختبار الذكاء العام والمعلومات المتنوعة من كل مكان.",
+      description: "اختبار الذكاء العام والمعلومات المتنوعة من كل مكان.",
       icon: Brain,
       color: "from-cyan-400 to-sky-500",
       iconColor: "bg-cyan-50 text-cyan-600",
@@ -25,8 +24,7 @@ export default function CategoriesSection() {
     },
     {
       name: "الجغرافيا والدول",
-      description:
-        "معلومات عن الدول، الجبال والأنهار، العواصم وأعلام الدول.",
+      description: "معلومات عن الدول، الجبال والأنهار، العواصم وأعلام الدول.",
       icon: Globe,
       color: "from-emerald-400 to-teal-500",
       iconColor: "bg-emerald-50 text-emerald-600",
@@ -75,14 +73,15 @@ export default function CategoriesSection() {
         {/* Section Heading */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-12 gap-6">
           <div className="text-right max-w-2xl">
-            <span className="text-cyan-600 font-extrabold text-sm uppercase tracking-wider bg-cyan-100 px-4 py-1.5 rounded-full inline-block mb-4">
+            <span className="text-cyan-600 font-bold text-sm uppercase tracking-wider bg-cyan-100 px-4 py-1.5 rounded-full inline-block mb-4">
               فئات التحدي والأسئلة
             </span>
             <h2 className="text-3xl md:text-4xl font-bold text-slate-900 leading-tight">
               اختار تخصصك والأسئلة اللي تحبها
             </h2>
             <p className="text-slate-600 mt-3 text-lg">
-              اختار الفئات اللي تحس نفسك قوي فيها. كل فئة فيها 6 أسئلة تتدرج بالصعوبة (سهل، متوسط، صعب).
+              اختار الفئات اللي تحس نفسك قوي فيها. كل فئة فيها 6 أسئلة تتدرج
+              بالصعوبة (سهل، متوسط، صعب).
             </p>
           </div>
 

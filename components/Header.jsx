@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Shield, Menu, X, LogOut, User, Zap } from "lucide-react";
+import { Shield, Menu, X, LogOut, User, Zap, History } from "lucide-react";
 import Link from "next/link";
 import { supabase } from "../lib/supabase";
 import { getUserDisplayName } from "../lib/auth";
@@ -100,6 +100,13 @@ export default function Header() {
               <div className="h-9 w-28 bg-slate-100 rounded-xl animate-pulse" />
             ) : user ? (
               <div className="flex items-center gap-3">
+                <Link
+                  href="/my-games"
+                  className="flex items-center gap-1.5 text-slate-600 hover:text-cyan-600 font-bold text-sm border border-slate-200 hover:border-cyan-200 hover:bg-cyan-50 px-3.5 py-1.5 rounded-xl transition-all"
+                >
+                  <History className="w-4 h-4" />
+                  ألعابي
+                </Link>
                 <span className="flex items-center gap-1.5 text-slate-700 font-bold text-sm bg-cyan-50 border border-cyan-100 px-3.5 py-1.5 rounded-xl">
                   <User className="w-4 h-4 text-cyan-500" />
                   {getUserDisplayName(user)}
@@ -180,6 +187,14 @@ export default function Header() {
                     <span className="text-center font-bold text-slate-700 text-sm bg-cyan-50 p-2.5 rounded-xl border border-cyan-100">
                       {getUserDisplayName(user)}
                     </span>
+                    <Link
+                      href="/my-games"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="w-full text-center py-2.5 bg-white hover:bg-slate-50 text-slate-700 font-bold rounded-xl transition-colors border border-slate-200 flex items-center justify-center gap-1.5"
+                    >
+                      <History className="w-4 h-4" />
+                      ألعابي
+                    </Link>
                     <button
                       type="button"
                       onClick={() => {

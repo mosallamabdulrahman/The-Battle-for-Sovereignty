@@ -105,14 +105,15 @@ export default function HowToPlaySection() {
       <div className="max-w-[85rem] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Heading */}
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <span className="text-orange-600 font-extrabold text-sm uppercase tracking-wider bg-orange-100 px-4 py-1.5 rounded-full inline-block">
+          <span className="text-orange-600 font-bold text-sm uppercase tracking-wider bg-orange-100 px-4 py-1.5 rounded-full inline-block">
             دليل التكتيك واللعب التكتيكي
           </span>
           <h2 className="text-3xl md:text-5xl font-bold text-slate-900 mt-4 mb-4">
             شرح اللعبة: شلون ترتب جنودك وتفوز في حيلهم بينهم؟
           </h2>
           <p className="text-slate-600 text-lg leading-relaxed">
-            اجمع بين الذكاء والتخطيط السنع. اعرف الخطوات عشان توزع فريقك وتهجم بقوة التفكير والأسئلة.
+            اجمع بين الذكاء والتخطيط السنع. اعرف الخطوات عشان توزع فريقك وتهجم
+            بقوة التفكير والأسئلة.
           </p>
         </div>
 
@@ -163,7 +164,8 @@ export default function HowToPlaySection() {
               الفزعات ووسائل المساعدة
             </h3>
             <p className="text-slate-500 mt-2 text-md">
-              الفزعات اللي تنقذك بأصعب الأسئلة. استخدمها بذكاء عشان تقلب اللعبة لصالحك.
+              الفزعات اللي تنقذك بأصعب الأسئلة. استخدمها بذكاء عشان تقلب اللعبة
+              لصالحك.
             </p>
           </div>
 
@@ -178,7 +180,7 @@ export default function HowToPlaySection() {
                   <div className={`p-3 rounded-full ${aid.color} shadow-inner`}>
                     <Icon className="w-5 h-5" />
                   </div>
-                  <h4 className="font-extrabold text-[16px] text-slate-900">
+                  <h4 className="font-bold text-[16px] text-slate-900">
                     {aid.name}
                   </h4>
                   <p className="text-xs text-slate-500 leading-relaxed">

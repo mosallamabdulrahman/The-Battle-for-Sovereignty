@@ -77,7 +77,7 @@ export default function PaymentGateSection() {
       <div className="max-w-[85rem] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Section Heading */}
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <span className="text-cyan-600 font-extrabold text-sm uppercase tracking-wider bg-cyan-100 px-4 py-1.5 rounded-full inline-block mb-4">
+          <span className="text-cyan-600 font-bold text-sm uppercase tracking-wider bg-cyan-100 px-4 py-1.5 rounded-full inline-block mb-4">
             شحن النقاط والتسليح 💳
           </span>
           <h2 className="text-3xl md:text-4xl font-bold text-slate-900 leading-tight">
@@ -191,7 +191,7 @@ export default function PaymentGateSection() {
 
               {/* Google Pay */}
               <div className="bg-slate-100 text-slate-800 px-4 py-2 rounded-xl text-xs font-bold shadow-sm select-none border border-slate-200 flex items-center gap-1.5 font-sans">
-                <span className="text-blue-500 font-extrabold">G</span>
+                <span className="text-blue-500 font-bold">G</span>
                 <span className="text-slate-600 font-bold">Pay</span>
               </div>
 

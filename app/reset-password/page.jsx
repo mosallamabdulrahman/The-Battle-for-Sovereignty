@@ -108,7 +108,7 @@ export default function ResetPasswordPage() {
             <GameLogo className="w-14 h-14" />
           </div>
         </div>
-        <h1 className="mt-6 text-center text-2xl font-extrabold text-slate-900 tracking-tight">
+        <h1 className="mt-6 text-center text-2xl font-bold text-slate-900 tracking-tight">
           ضبط باسورد جديد
         </h1>
       </div>
@@ -134,7 +134,7 @@ export default function ResetPasswordPage() {
               <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4">
                 <AlertTriangle className="w-9 h-9 text-rose-500" />
               </div>
-              <p className="text-lg font-extrabold text-slate-900">
+              <p className="text-lg font-bold text-slate-900">
                 الرابط ده منتهي أو مش صحيح
               </p>
               <p className="text-sm text-slate-500 font-medium">
@@ -154,7 +154,7 @@ export default function ResetPasswordPage() {
               <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4">
                 <CheckCircle2 className="w-9 h-9 text-emerald-500" />
               </div>
-              <p className="text-lg font-extrabold text-slate-900">
+              <p className="text-lg font-bold text-slate-900">
                 تم حفظ الباسورد الجديد
               </p>
               <p className="text-sm text-slate-500 font-medium">

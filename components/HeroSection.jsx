@@ -88,7 +88,7 @@ export default function HeroSection() {
             >
               <Link
                 href="/battle"
-                className="flex-1 sm:flex-initial flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-500 via-cyan-600 to-sky-500 text-white font-extrabold px-4  sm:px-8 py-2 sm:py-4 rounded-2xl shadow-lg shadow-cyan-600/20 hover:shadow-cyan-600/35 hover:-translate-y-0.5 transition-all duration-300 text-base sm:text-xl"
+                className="flex-1 sm:flex-initial flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-500 via-cyan-600 to-sky-500 text-white font-bold px-4  sm:px-8 py-2 sm:py-4 rounded-2xl shadow-lg shadow-cyan-600/20 hover:shadow-cyan-600/35 hover:-translate-y-0.5 transition-all duration-300 text-base sm:text-xl"
               >
                 <Swords className="w-5 h-5" />
                 بلش التحدي الحين

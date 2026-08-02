@@ -539,10 +539,14 @@ function QuestionModal({
 }) {
   const [form, setForm] = useState(() => {
     if (question) {
-      const hasValidCategory = categories.some((c) => String(c.id) === String(question.category_id));
+      const hasValidCategory = categories.some(
+        (c) => String(c.id) === String(question.category_id),
+      );
       return {
         ...question,
-        category_id: hasValidCategory ? question.category_id : (categories[0]?.id || ""),
+        category_id: hasValidCategory
+          ? question.category_id
+          : categories[0]?.id || "",
       };
     }
     const initialCategoryId = categories[0]?.id || "";
@@ -581,7 +585,7 @@ function QuestionModal({
   // current highest slot instead of leaving it on whatever the previous
   // category last had (avoids colliding with an already-used position).
   const handleCategoryChange = (categoryId) => {
-    const targetCategoryId = categoryId || (categories[0]?.id || "");
+    const targetCategoryId = categoryId || categories[0]?.id || "";
     if (question) {
       set("category_id", targetCategoryId);
       return;
@@ -825,7 +829,9 @@ function HelpModal({ onClose }) {
         <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-slate-50/50">
           <div className="flex items-center gap-2">
             <HelpCircle className="h-5 w-5 text-cyan-600 animate-pulse" />
-            <h2 className="font-bold text-slate-900 text-base">دليل استخدام لوحة التحكم</h2>
+            <h2 className="font-bold text-slate-900 text-base">
+              دليل استخدام لوحة التحكم
+            </h2>
           </div>
           <button
             type="button"
@@ -839,38 +845,57 @@ function HelpModal({ onClose }) {
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-4 leading-relaxed text-slate-600 text-sm">
           <div className="border-b border-slate-100 pb-3">
-            <h3 className="font-bold text-slate-800 text-sm mb-1">🎮 نظرة عامة</h3>
+            <h3 className="font-bold text-slate-800 text-sm mb-1">
+              🎮 نظرة عامة
+            </h3>
             <p className="text-xs">
-              مرحباً بك في لوحة تحكم لعبة **حيلهم بينهم**. يمكنك من هنا إعداد بنك الأسئلة بالكامل وإدارة غرف اللعب والمستخدمين.
+              مرحباً بك في لوحة تحكم لعبة **حيلهم بينهم**. يمكنك من هنا إعداد
+              بنك الأسئلة بالكامل وإدارة غرف اللعب والمستخدمين.
             </p>
           </div>
 
           <div className="space-y-3">
             <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
-              <h4 className="font-bold text-slate-900 text-xs mb-1">📊 لوحة التحكم (الرئيسية)</h4>
+              <h4 className="font-bold text-slate-900 text-xs mb-1">
+                📊 لوحة التحكم (الرئيسية)
+              </h4>
               <p className="text-[11px]">
-                تعرض إحصائيات سريعة للأسئلة المتاحة ومستويات الصعوبة، بالإضافة إلى إحصائية لعدد مرات اختيار ولعب كل تصنيف في غرف اللعب السابقة.
+                تعرض إحصائيات سريعة للأسئلة المتاحة ومستويات الصعوبة، بالإضافة
+                إلى إحصائية لعدد مرات اختيار ولعب كل تصنيف في غرف اللعب السابقة.
               </p>
             </div>
 
             <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
-              <h4 className="font-bold text-slate-900 text-xs mb-1">❓ إدارة الأسئلة</h4>
+              <h4 className="font-bold text-slate-900 text-xs mb-1">
+                ❓ إدارة الأسئلة
+              </h4>
               <p className="text-[11px]">
-                تمكنك من إضافة أسئلة جديدة وتعديلها أو حذفها. كما يمكنك تعيين مستويات الصعوبة (سهل، متوسط، صعب)، وإضافة صور أو ملفات صوتية لكل سؤال. نظام الفحص يمنع إضافة سؤال مكرر بنفس التصنيف تلقائياً لتفادي التشابه.
+                تمكنك من إضافة أسئلة جديدة وتعديلها أو حذفها. كما يمكنك تعيين
+                مستويات الصعوبة (سهل، متوسط، صعب)، وإضافة صور أو ملفات صوتية لكل
+                سؤال. نظام الفحص يمنع إضافة سؤال مكرر بنفس التصنيف تلقائياً
+                لتفادي التشابه.
               </p>
             </div>
 
             <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
-              <h4 className="font-bold text-slate-900 text-xs mb-1">🏷️ تصنيفات الأسئلة</h4>
+              <h4 className="font-bold text-slate-900 text-xs mb-1">
+                🏷️ تصنيفات الأسئلة
+              </h4>
               <p className="text-[11px]">
-                تعديل رموز التصنيف (Emoji)، الأسماء، الأوصاف، وترتيب ظهورها عند إنشاء غرف اللعب. كما يُعرض أمام كل تصنيف إحصائية إجمالي مرات اختياره في ألعاب اللعبة.
+                تعديل رموز التصنيف (Emoji)، الأسماء، الأوصاف، وترتيب ظهورها عند
+                إنشاء غرف اللعب. كما يُعرض أمام كل تصنيف إحصائية إجمالي مرات
+                اختياره في ألعاب اللعبة.
               </p>
             </div>
 
             <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
-              <h4 className="font-bold text-slate-900 text-xs mb-1">👥 إدارة المستخدمين</h4>
+              <h4 className="font-bold text-slate-900 text-xs mb-1">
+                👥 إدارة المستخدمين
+              </h4>
               <p className="text-[11px]">
-                تتيح لك إضافة حسابات جديدة للحكّام أو اللاعبين، تعديل كلمات المرور الخاصة بهم، أو تعيين وتعديل الصلاحيات أو حذف المستخدمين كلياً.
+                تتيح لك إضافة حسابات جديدة للحكّام أو اللاعبين، تعديل كلمات
+                المرور الخاصة بهم، أو تعيين وتعديل الصلاحيات أو حذف المستخدمين
+                كلياً.
               </p>
             </div>
           </div>
@@ -891,14 +916,19 @@ function HelpModal({ onClose }) {
   );
 }
 
-
 // ─── Main Admin Page ────────────────────────────────────────────
 export default function AdminPage() {
   const [tab, setTabState] = useState(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const urlTab = params.get("tab");
-      const validTabs = ["dashboard", "questions", "categories", "users", "stats"];
+      const validTabs = [
+        "dashboard",
+        "questions",
+        "categories",
+        "users",
+        "stats",
+      ];
       if (urlTab && validTabs.includes(urlTab)) {
         return urlTab;
       }
@@ -925,7 +955,13 @@ export default function AdminPage() {
     const handlePopState = () => {
       const params = new URLSearchParams(window.location.search);
       const urlTab = params.get("tab");
-      const validTabs = ["dashboard", "questions", "categories", "users", "stats"];
+      const validTabs = [
+        "dashboard",
+        "questions",
+        "categories",
+        "users",
+        "stats",
+      ];
       if (urlTab && validTabs.includes(urlTab)) {
         setTabState(urlTab);
       }
@@ -937,6 +973,7 @@ export default function AdminPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [categories, setCategories] = useState([]);
   const [questions, setQuestions] = useState([]);
+  const [questionStats, setQuestionStats] = useState({});
   const [categoryUsage, setCategoryUsage] = useState({});
   const [filterCategory, setFilterCategory] = useState("");
   const [loading, setLoading] = useState(true);
@@ -981,6 +1018,36 @@ export default function AdminPage() {
     setQuestions(data || []);
   }, [notify]);
 
+  // Per-question performance: how many times each bank question has been
+  // played, and of those, how many were actually answered correctly —
+  // computed client-side from room_questions since it's already broadly
+  // readable to any authenticated session (same as loadCategoryUsage below).
+  const loadQuestionStats = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from("room_questions")
+        .select("question_bank_id, is_used, answered_correctly")
+        .not("question_bank_id", "is", null);
+      if (error) {
+        console.error("Error loading question statistics:", error);
+        return;
+      }
+      const stats = {};
+      (data || []).forEach((row) => {
+        if (!row.is_used) return;
+        const key = row.question_bank_id;
+        const s = stats[key] || { used: 0, correct: 0, incorrect: 0 };
+        s.used += 1;
+        if (row.answered_correctly === true) s.correct += 1;
+        else if (row.answered_correctly === false) s.incorrect += 1;
+        stats[key] = s;
+      });
+      setQuestionStats(stats);
+    } catch (err) {
+      console.error("Error loading question statistics:", err);
+    }
+  }, []);
+
   const loadCategoryUsage = useCallback(async () => {
     try {
       const { data, error } = await supabase
@@ -1008,13 +1075,14 @@ export default function AdminPage() {
       loadCategories(),
       loadQuestions(),
       loadCategoryUsage(),
+      loadQuestionStats(),
     ]).finally(() => {
       if (active) setLoading(false);
     });
     return () => {
       active = false;
     };
-  }, [loadCategories, loadQuestions, loadCategoryUsage]);
+  }, [loadCategories, loadQuestions, loadCategoryUsage, loadQuestionStats]);
 
   // ── Categories CRUD
   const saveCategory = async (form) => {
@@ -1179,9 +1247,7 @@ export default function AdminPage() {
         )}
       </AnimatePresence>
       <AnimatePresence>
-        {helpOpen && (
-          <HelpModal onClose={() => setHelpOpen(false)} />
-        )}
+        {helpOpen && <HelpModal onClose={() => setHelpOpen(false)} />}
       </AnimatePresence>
 
       <div className="flex flex-1 min-h-[calc(100vh-32px)]">
@@ -1432,7 +1498,6 @@ export default function AdminPage() {
             </motion.div>
           )}
 
-
           {/* ───────────────── TAB: Questions ───────────────── */}
           {tab === "questions" && (
             <motion.div
@@ -1481,6 +1546,7 @@ export default function AdminPage() {
                       <th className="p-3 text-right">الصعوبة</th>
                       <th className="p-3 text-right">الموضع</th>
                       <th className="p-3 text-right">الوسائط</th>
+                      <th className="p-3 text-right">الأداء</th>
                       <th className="p-3 text-right">الحالة</th>
                     </tr>
                   </thead>
@@ -1488,7 +1554,7 @@ export default function AdminPage() {
                     {filteredQuestions.length === 0 ? (
                       <tr>
                         <td
-                          colSpan="6"
+                          colSpan="7"
                           className="p-8 text-center text-slate-400"
                         >
                           لا توجد أسئلة تطابق البحث أو التصنيف المختار.
@@ -1496,7 +1562,19 @@ export default function AdminPage() {
                       </tr>
                     ) : (
                       filteredQuestions.map((q) => {
-                        const cat = (q.category_id ? categoryMap[String(q.category_id)] : null) || categories[0];
+                        const cat =
+                          (q.category_id
+                            ? categoryMap[String(q.category_id)]
+                            : null) || categories[0];
+                        const stat = questionStats[q.id];
+                        const suggestedDifficulty =
+                          stat && stat.used > 0
+                            ? stat.correct / stat.used >= 0.66
+                              ? "easy"
+                              : stat.correct / stat.used >= 0.33
+                                ? "medium"
+                                : "hard"
+                            : null;
                         return (
                           <tr
                             key={q.id}
@@ -1579,6 +1657,36 @@ export default function AdminPage() {
                                 </a>
                               ) : (
                                 <span className="text-slate-400">—</span>
+                              )}
+                            </td>
+                            <td className="p-3">
+                              {stat && stat.used > 0 ? (
+                                <div className="space-y-1">
+                                  <div className="text-[11px] text-slate-600 font-semibold whitespace-nowrap">
+                                    {stat.correct} / {stat.used} إجابة صح
+                                    {stat.incorrect > 0 && (
+                                      <span className="text-rose-500">
+                                        {" "}
+                                        · {stat.incorrect} بدون إجابة
+                                      </span>
+                                    )}
+                                  </div>
+                                  <span
+                                    className={`inline-block font-semibold px-2 py-0.5 rounded text-[10px] ${
+                                      suggestedDifficulty === "easy"
+                                        ? "bg-emerald-50 text-emerald-600 border border-emerald-200"
+                                        : suggestedDifficulty === "medium"
+                                          ? "bg-amber-50 text-amber-600 border border-amber-200"
+                                          : "bg-rose-50 text-rose-600 border border-rose-200"
+                                    }`}
+                                  >
+                                    مقترح: {DIFFICULTY_AR[suggestedDifficulty]}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-slate-300 text-[11px]">
+                                  لا بيانات بعد
+                                </span>
                               )}
                             </td>
                             <td className="p-3">
@@ -1723,8 +1831,13 @@ export default function AdminPage() {
                             </td>
                             <td className="p-3 font-semibold text-slate-700">
                               <span className="inline-flex items-center gap-1.5 bg-purple-50 border border-purple-200 text-purple-800 px-2.5 py-1 rounded-full font-bold text-[11px]">
-                                🎮 {categoryUsage[cat.id] || categoryUsage[cat.name] || 0}{" "}
-                                {(categoryUsage[cat.id] || categoryUsage[cat.name] || 0) === 1
+                                🎮{" "}
+                                {categoryUsage[cat.id] ||
+                                  categoryUsage[cat.name] ||
+                                  0}{" "}
+                                {(categoryUsage[cat.id] ||
+                                  categoryUsage[cat.name] ||
+                                  0) === 1
                                   ? "مرة"
                                   : "مرات"}
                               </span>
@@ -1776,9 +1889,13 @@ export default function AdminPage() {
               {/* Category Usage Statistics */}
               <div className="bg-white border border-[#ccd0d4] p-8 shadow-sm">
                 <h3 className="font-semibold text-slate-900 border-b pb-3 mb-5 text-base flex items-center justify-between">
-                  <span>🎮 إحصائيات اختيار التصنيفات في ألعاب اللعبة (كم مرة انلعب كل تصنيف)</span>
+                  <span>
+                    🎮 إحصائيات اختيار التصنيفات في ألعاب اللعبة (كم مرة انلعب
+                    كل تصنيف)
+                  </span>
                   <span className="text-[12px] text-slate-400 font-normal">
-                    محسوبة تلقائياً من غرف اللعب الحالية والسابقة بقاعدة البيانات
+                    محسوبة تلقائياً من غرف اللعب الحالية والسابقة بقاعدة
+                    البيانات
                   </span>
                 </h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
@@ -1799,7 +1916,7 @@ export default function AdminPage() {
                             {cat.name}
                           </div>
                         </div>
-                        <div className="mt-4 text-xs font-extrabold text-purple-700 bg-purple-100/70 border border-purple-200 rounded-xl py-1.5 px-2">
+                        <div className="mt-4 text-xs font-bold text-purple-700 bg-purple-100/70 border border-purple-200 rounded-xl py-1.5 px-2">
                           {usageCount} {usageCount === 1 ? "مرة" : "مرات"}
                         </div>
                       </div>

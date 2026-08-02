@@ -603,7 +603,7 @@ export function CombatEventModal({ event, onClose, autoCloseMs = 2000 }) {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/75 p-4 dir-rtl cursor-pointer"
+      className="fixed inset-0 z-[300] flex items-center justify-center bg-slate-950/75 p-4 dir-rtl cursor-pointer"
       onClick={onClose}
     >
       <motion.div

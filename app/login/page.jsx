@@ -307,7 +307,7 @@ export default function QuickLoginPage() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1, duration: 0.5 }}
-          className="mt-6 text-center text-3xl font-extrabold text-slate-900 tracking-tight"
+          className="mt-6 text-center text-3xl font-bold text-slate-900 tracking-tight"
         >
           {tab === "login" ? "يا هلا فيك" : "دش اللعبة"}
         </motion.h1>
@@ -337,7 +337,7 @@ export default function QuickLoginPage() {
                   </div>
                 </div>
                 <div>
-                  <h2 className="text-xl font-extrabold text-slate-900 mb-2">
+                  <h2 className="text-xl font-bold text-slate-900 mb-2">
                     {successMode === "reset"
                       ? "شيك على إيميلك!"
                       : "خطوة وحدة باقية!"}
@@ -393,7 +393,11 @@ export default function QuickLoginPage() {
                       <motion.span
                         layoutId="activeTab"
                         className="absolute inset-0 bg-white rounded-lg shadow-sm -z-10"
-                        transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                        transition={{
+                          type: "spring",
+                          stiffness: 350,
+                          damping: 25,
+                        }}
                       />
                     )}
                     <UserPlus className="w-4 h-4" />
@@ -412,7 +416,11 @@ export default function QuickLoginPage() {
                       <motion.span
                         layoutId="activeTab"
                         className="absolute inset-0 bg-white rounded-lg shadow-sm -z-10"
-                        transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                        transition={{
+                          type: "spring",
+                          stiffness: 350,
+                          damping: 25,
+                        }}
                       />
                     )}
                     <LogIn className="w-4 h-4" />
@@ -637,9 +645,7 @@ export default function QuickLoginPage() {
                             />
                             <button
                               type="button"
-                              onClick={() =>
-                                setShowRegisterPassword((v) => !v)
-                              }
+                              onClick={() => setShowRegisterPassword((v) => !v)}
                               className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 hover:text-slate-600"
                             >
                               {showRegisterPassword ? (
@@ -662,8 +668,8 @@ export default function QuickLoginPage() {
                           </button>
                         </div>
                         <p className="text-[11px] text-slate-400 mt-1.5 font-medium">
-                          6 أحرف على الأقل — هتستخدمه في تسجيل الدخول بعد كده
-                          من غير أي إيميل
+                          6 أحرف على الأقل — هتستخدمه في تسجيل الدخول بعد كده من
+                          غير أي إيميل
                         </p>
                       </div>
 
