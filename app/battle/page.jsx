@@ -1102,12 +1102,18 @@ export default function BattlePage() {
 
   const handleExitGame = () =>
     runAction(async () => {
-      const { error } = await supabase.rpc("abandon_game", {
-        p_room_id: roomId,
-        p_actor_role: "judge",
-        p_team_index: null,
-      });
-      if (error) throw error;
+      // A truly finished game has nothing left to abandon — the server
+      // already no-ops this (abandon_game only touches setup/playing rooms),
+      // but skipping the call here keeps a finished room's status clean of
+      // any "game_abandoned" combat_events noise.
+      if (room?.status !== "finished") {
+        const { error } = await supabase.rpc("abandon_game", {
+          p_room_id: roomId,
+          p_actor_role: "judge",
+          p_team_index: null,
+        });
+        if (error) throw error;
+      }
 
       window.localStorage.removeItem("sovereignty_active_room");
       window.localStorage.removeItem("sovereignty_active_battle_path");

@@ -444,6 +444,52 @@ function BoardModal({
   );
 }
 
+function ConfirmModal({ title, message, confirmLabel, onConfirm, onCancel }) {
+  return (
+    <div
+      className="fixed inset-0 z-[400] flex items-center justify-center bg-slate-950/70 p-4 dir-rtl"
+      onClick={onCancel}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.92 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-bold text-slate-950">{title}</h3>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center shrink-0"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="border-t border-slate-100 pt-4">
+          <p className="text-sm font-bold text-slate-700 mb-5">{message}</p>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="rounded-xl border-2 border-slate-200 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 transition"
+            >
+              تكملة
+            </button>
+            <button
+              type="button"
+              onClick={onConfirm}
+              className="rounded-xl bg-rose-700 hover:bg-rose-800 py-2.5 text-sm font-bold text-white transition"
+            >
+              {confirmLabel}
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
 export function RefereeGameScreen({
   room,
   teams,
@@ -478,6 +524,7 @@ export function RefereeGameScreen({
   const [lastQuestionId, setLastQuestionId] = useState(room.active_question_id);
   const [radarModalTeam, setRadarModalTeam] = useState(null);
   const [strikeModalTeam, setStrikeModalTeam] = useState(null);
+  const [confirmAction, setConfirmAction] = useState(null); // null | "end" | "exit"
 
   const activeQuestion = questions.find(
     (question) => question.id === room.active_question_id,
@@ -588,7 +635,7 @@ export function RefereeGameScreen({
           <div className="flex items-center gap-3 sm:gap-5 text-white font-bold text-xs sm:text-sm shrink-0 order-2 md:order-3">
             <button
               type="button"
-              onClick={onEndGameNow}
+              onClick={() => setConfirmAction("end")}
               disabled={isBusy || room.status !== "playing"}
               className="inline-flex items-center gap-1.5 hover:text-amber-200 transition disabled:opacity-50"
             >
@@ -614,7 +661,7 @@ export function RefereeGameScreen({
 
             <button
               type="button"
-              onClick={onExit}
+              onClick={() => setConfirmAction("exit")}
               className="inline-flex items-center gap-1.5 hover:text-rose-200 transition"
             >
               <LogOut className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-white shrink-0" />
@@ -961,6 +1008,32 @@ export function RefereeGameScreen({
             </p>
           )}
         </BoardModal>
+      )}
+
+      {confirmAction === "end" && (
+        <ConfirmModal
+          title="إنهاء اللعبة"
+          message="هل تريد إنهاء اللعبة؟"
+          confirmLabel="إنهاء اللعبة"
+          onCancel={() => setConfirmAction(null)}
+          onConfirm={() => {
+            setConfirmAction(null);
+            onEndGameNow();
+          }}
+        />
+      )}
+
+      {confirmAction === "exit" && (
+        <ConfirmModal
+          title="خروج"
+          message="هل تريد الخروج من اللعبة ؟"
+          confirmLabel="خروج"
+          onCancel={() => setConfirmAction(null)}
+          onConfirm={() => {
+            setConfirmAction(null);
+            onExit();
+          }}
+        />
       )}
     </div>
   );

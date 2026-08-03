@@ -204,6 +204,11 @@ export default function GameSetupSection() {
       return;
     }
 
+    if (team1Name.trim().toLowerCase() === team2Name.trim().toLowerCase()) {
+      triggerToast("لازم اسم الفريق الأول يختلف عن اسم الفريق الثاني.", "error");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const selectedCategoryRecords = categoriesList.filter((category) =>

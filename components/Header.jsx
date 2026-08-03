@@ -45,10 +45,10 @@ export default function Header() {
   };
 
   const navLinks = [
-    { name: "الرئيسية", href: "#hero" },
-    { name: "طريقة اللعب", href: "#how-to-play" },
-    { name: "التصنيفات", href: "#categories" },
-    { name: "باقات الشحن", href: "#payment-gate" },
+    { name: "الرئيسية", href: "/#hero" },
+    { name: "طريقة اللعب", href: "/#how-to-play" },
+    { name: "التصنيفات", href: "/#categories" },
+    { name: "باقات الشحن", href: "/#payment-gate" },
   ];
 
   return (
