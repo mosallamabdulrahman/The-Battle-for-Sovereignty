@@ -575,10 +575,16 @@ function QuestionModal({
     if (q.category_id !== form.category_id) return false;
     if (question && q.id === question.id) return false;
     if (form.id && q.id === form.id) return false;
-    return (
+    const sameText =
       q.question_text?.trim().toLowerCase() ===
-      form.question_text?.trim().toLowerCase()
-    );
+      form.question_text?.trim().toLowerCase();
+    const sameAnswer =
+      (q.answer_text?.trim().toLowerCase() || "") ===
+      (form.answer_text?.trim().toLowerCase() || "");
+    const sameAnswerImage =
+      (q.answer_image_url?.trim() || "") ===
+      (form.answer_image_url?.trim() || "");
+    return sameText && sameAnswer && sameAnswerImage;
   });
 
   // New question, category changed: jump the position past that category's
@@ -1132,7 +1138,11 @@ export default function AdminPage() {
         q.category_id === form.category_id &&
         q.id !== form.id &&
         q.question_text?.trim().toLowerCase() ===
-          form.question_text?.trim().toLowerCase(),
+          form.question_text?.trim().toLowerCase() &&
+        (q.answer_text?.trim().toLowerCase() || "") ===
+          (form.answer_text?.trim().toLowerCase() || "") &&
+        (q.answer_image_url?.trim() || "") ===
+          (form.answer_image_url?.trim() || ""),
     );
     if (isDup) {
       notify(
@@ -1661,18 +1671,27 @@ export default function AdminPage() {
                             </td>
                             <td className="p-3">
                               {stat && stat.used > 0 ? (
-                                <div className="space-y-1">
-                                  <div className="text-[11px] text-slate-600 font-semibold whitespace-nowrap">
-                                    {stat.correct} / {stat.used} إجابة صح
-                                    {stat.incorrect > 0 && (
-                                      <span className="text-rose-500">
-                                        {" "}
-                                        · {stat.incorrect} بدون إجابة
-                                      </span>
-                                    )}
+                                <div className="space-y-1 min-w-[150px]">
+                                  <div className="flex items-center justify-between gap-3 text-[11px] font-semibold text-slate-600">
+                                    <span>عدد مرات الاختيار</span>
+                                    <span className="font-bold text-slate-900">
+                                      {stat.used}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center justify-between gap-3 text-[11px] font-semibold text-emerald-700">
+                                    <span>تمت الإجابة صح</span>
+                                    <span className="font-bold">
+                                      {stat.correct}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center justify-between gap-3 text-[11px] font-semibold text-rose-600">
+                                    <span>لم تتم الإجابة صح</span>
+                                    <span className="font-bold">
+                                      {stat.incorrect}
+                                    </span>
                                   </div>
                                   <span
-                                    className={`inline-block font-semibold px-2 py-0.5 rounded text-[10px] ${
+                                    className={`inline-block w-full text-center font-semibold px-2 py-0.5 rounded text-[10px] mt-1.5 ${
                                       suggestedDifficulty === "easy"
                                         ? "bg-emerald-50 text-emerald-600 border border-emerald-200"
                                         : suggestedDifficulty === "medium"
@@ -1680,7 +1699,7 @@ export default function AdminPage() {
                                           : "bg-rose-50 text-rose-600 border border-rose-200"
                                     }`}
                                   >
-                                    مقترح: {DIFFICULTY_AR[suggestedDifficulty]}
+                                    مستوى مقترح: {DIFFICULTY_AR[suggestedDifficulty]}
                                   </span>
                                 </div>
                               ) : (
