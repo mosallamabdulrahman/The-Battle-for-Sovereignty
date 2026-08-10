@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable react-hooks/set-state-in-effect */
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Shield,
@@ -19,6 +19,7 @@ import {
 import { supabase } from "../../lib/supabase";
 import { QRCodeSVG } from "qrcode.react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   AbandonedGameView,
   CombatEventModal,
@@ -59,7 +60,9 @@ function BattleAlert({ alert }) {
   );
 }
 
-export default function BattlePage() {
+function BattlePageInner() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [mounted, setMounted] = useState(false);
 
   // Routing / Query States
@@ -355,34 +358,41 @@ export default function BattlePage() {
     setTimeout(() => setAlertMsg(null), 4000);
   };
 
-  // 1. Initial State Parsing & Auth checking
+  // 1a. Parse routing/query state from the URL — reactive to `searchParams`
+  // (not mount-only) so a same-route client-side navigation into a different
+  // room/team link always resets roomId/teamIndex/role/teamToken instead of
+  // leaving the previous room's identifiers stuck in state.
   useEffect(() => {
-    let isActive = true;
-    setMounted(true);
-    if (typeof window !== "undefined") {
-      let params = new URLSearchParams(window.location.search);
+    if (typeof window === "undefined") return;
+
+    if (!searchParams.get("room_id")) {
       const savedPath = window.localStorage.getItem(
         "sovereignty_active_battle_path",
       );
-
-      if (!params.get("room_id") && savedPath?.startsWith("/battle?")) {
-        window.history.replaceState({}, "", savedPath);
-        params = new URLSearchParams(window.location.search);
-      }
-
-      setRoomId(params.get("room_id"));
-      const t = params.get("team");
-      if (t) setTeamIndex(Number(t));
-      setRole(params.get("role"));
-      setTeamToken(params.get("token"));
-
-      if (params.get("room_id")) {
-        window.localStorage.setItem(
-          "sovereignty_active_battle_path",
-          `${window.location.pathname}${window.location.search}`,
-        );
+      if (savedPath?.startsWith("/battle?")) {
+        router.replace(savedPath);
+        return;
       }
     }
+
+    setRoomId(searchParams.get("room_id"));
+    const t = searchParams.get("team");
+    setTeamIndex(t ? Number(t) : null);
+    setRole(searchParams.get("role"));
+    setTeamToken(searchParams.get("token"));
+
+    if (searchParams.get("room_id")) {
+      window.localStorage.setItem(
+        "sovereignty_active_battle_path",
+        `${window.location.pathname}?${searchParams.toString()}`,
+      );
+    }
+  }, [searchParams, router]);
+
+  // 1b. Auth checking (mount-only)
+  useEffect(() => {
+    let isActive = true;
+    setMounted(true);
 
     const restoreSession = async () => {
       const recentlyLoggedIn = Boolean(
@@ -880,17 +890,26 @@ export default function BattlePage() {
       return;
     }
 
-    // Ensure any pending board updates are saved to server first
+    // Ensure any pending board updates are saved to server first — if this
+    // flush fails, the server board would still hold the previous (fewer
+    // than 33 units) state, so readiness must NOT proceed silently.
     if (pendingBoardRef.current) {
       clearTimeout(deploymentTimerRef.current);
       const snapshot = pendingBoardRef.current;
       pendingBoardRef.current = null;
-      await supabase.rpc("update_team_deployment", {
-        p_room_id: roomId,
-        p_team_index: teamIndex,
-        p_board: snapshot.board,
-        p_token: teamToken,
-      });
+      const { error: flushError } = await supabase.rpc(
+        "update_team_deployment",
+        {
+          p_room_id: roomId,
+          p_team_index: teamIndex,
+          p_board: snapshot.board,
+          p_token: teamToken,
+        },
+      );
+      if (flushError) {
+        showAlert(flushError.message, "error");
+        return;
+      }
     }
 
     // Apply Local state
@@ -1954,5 +1973,26 @@ export default function BattlePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function BattlePageLoading() {
+  return (
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center dir-rtl">
+      <div className="text-center">
+        <RefreshCw className="w-10 h-10 animate-spin text-cyan-600 mx-auto" />
+        <h3 className="text-sm font-bold text-slate-800 mt-4">
+          قاعدين نشيك على حسابك وتصاريح الدخول...
+        </h3>
+      </div>
+    </div>
+  );
+}
+
+export default function BattlePage() {
+  return (
+    <Suspense fallback={<BattlePageLoading />}>
+      <BattlePageInner />
+    </Suspense>
   );
 }

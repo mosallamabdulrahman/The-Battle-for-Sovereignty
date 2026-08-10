@@ -10,6 +10,7 @@ import {
   Crown,
   Zap,
   Copy,
+  ImageIcon,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { QRCodeSVG } from "qrcode.react";
@@ -205,7 +206,10 @@ export default function GameSetupSection() {
     }
 
     if (team1Name.trim().toLowerCase() === team2Name.trim().toLowerCase()) {
-      triggerToast("لازم اسم الفريق الأول يختلف عن اسم الفريق الثاني.", "error");
+      triggerToast(
+        "لازم اسم الفريق الأول يختلف عن اسم الفريق الثاني.",
+        "error",
+      );
       return;
     }
 
@@ -414,38 +418,30 @@ export default function GameSetupSection() {
                   return (
                     <motion.button
                       key={cat.id}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
+                      whileTap={{ scale: 0.97 }}
                       onClick={() => handleCategoryClick(cat.id)}
-                      className={`p-5 rounded-2xl border text-right transition-all flex flex-col justify-between h-34 relative overflow-hidden group cursor-pointer ${
+                      className={`rounded-2xl text-right flex flex-col relative overflow-hidden cursor-pointer transition-all ${
                         isSelected
-                          ? "bg-gradient-to-br from-cyan-50/70 to-cyan-100/50 border-cyan-500 ring-2 ring-cyan-500/20 shadow-md shadow-cyan-100/50"
-                          : "bg-white border-slate-200 hover:border-slate-350 hover:shadow-lg"
+                          ? "border-4 border-amber-400 shadow-lg shadow-amber-400/25"
+                          : "border-4 border-transparent"
                       }`}
                     >
-                      <span className="flex justify-between items-start w-full">
-                        <span className="text-2xl">{cat.emoji}</span>
-                        {isSelected && (
-                          <span className="bg-cyan-500 text-white p-1 rounded-lg block">
-                            <Check className="w-3.5 h-3.5" />
+                      <span className="w-full h-28 sm:h-32 md:h-36 overflow-hidden bg-slate-50 block shrink-0">
+                        {cat.image_url ? (
+                          <img
+                            src={cat.image_url}
+                            alt={cat.name}
+                            className="h-full w-full"
+                          />
+                        ) : (
+                          <span className="flex h-full w-full items-center justify-center text-slate-300">
+                            <ImageIcon className="w-4 h-4" />
                           </span>
                         )}
                       </span>
-                      <span className="mt-4 block w-full text-right">
-                        <span className="font-sans font-bold text-xs text-slate-900 leading-tight block group-hover:text-cyan-600 transition-colors">
+                      <span className="bg-gradient-to-r from-cyan-500 via-cyan-600 to-sky-500 py-1.5 sm:py-2 px-2 text-center w-full block">
+                        <span className="font-bold text-sm sm:text-base text-white leading-tight">
                           {cat.name}
-                        </span>
-                        {cat.image_url && (
-                          <span className="mt-2 block h-12 overflow-hidden rounded-xl border border-slate-100">
-                            <img
-                              src={cat.image_url}
-                              alt={cat.name}
-                              className="h-full w-full object-cover"
-                            />
-                          </span>
-                        )}
-                        <span className="text-[10px] text-slate-400 mt-1 line-clamp-2 leading-tight block">
-                          {cat.desc}
                         </span>
                       </span>
                     </motion.button>

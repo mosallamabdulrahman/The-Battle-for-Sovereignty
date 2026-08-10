@@ -150,20 +150,17 @@ function TeamPillBar({ team, isBusy, onGrantPoints, onOpenStrike }) {
 
 function TeamStrikeStepper({ team, isBusy, onGrantExtraStrike }) {
   const [pending, setPending] = useState(0);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const commit = () => {
     if (pending === 0) return;
     onGrantExtraStrike(team.team_index, pending);
     setPending(0);
+    setMobileOpen(false);
   };
 
-  return (
-    <div className="flex flex-col items-center gap-1">
-      {/* Label pill — same style as the team name pill */}
-      <div className="w-full bg-[#a30000] text-white font-bold text-xs sm:text-sm text-center py-1 px-4 sm:px-6 rounded-full shadow-sm">
-        اضافة طقات زيادة
-      </div>
-
+  const stepperControls = (
+    <>
       {/* One-unit +/- stepper — stages the amount locally, not sent yet */}
       <div className="flex items-center justify-between gap-2 bg-white border-2 border-[#a30000] rounded-full px-1.5 py-0.5 shadow-sm min-w-[130px] sm:min-w-[150px]">
         <button
@@ -196,6 +193,42 @@ function TeamStrikeStepper({ team, isBusy, onGrantExtraStrike }) {
       >
         إضافة
       </button>
+    </>
+  );
+
+  return (
+    <div className="flex flex-col items-center gap-1">
+      {/* Label pill — same style as the team name pill (sm+ only) */}
+      <div className="hidden sm:block w-full bg-[#a30000] text-white font-bold text-xs sm:text-sm text-center py-1 px-4 sm:px-6 rounded-full shadow-sm">
+        اضافة طقات زيادة
+      </div>
+
+      {/* sm and up: inline controls, unchanged */}
+      <div className="hidden sm:flex flex-col items-center gap-1 w-full">
+        {stepperControls}
+      </div>
+
+      {/* Below sm: single compact trigger that opens a popover with the same controls */}
+      <div className="relative sm:hidden">
+        <button
+          type="button"
+          onClick={() => setMobileOpen((open) => !open)}
+          className="rounded-full bg-[#a30000] hover:bg-[#800000] text-white font-bold text-xs px-4 py-1.5 shadow-sm transition"
+        >
+          طقات زيادة{pending > 0 ? ` (${pending})` : ""}
+        </button>
+        {mobileOpen && (
+          <>
+            <div
+              className="fixed inset-0 z-30"
+              onClick={() => setMobileOpen(false)}
+            />
+            <div className="absolute bottom-full left-1/2 z-40 mb-2 flex w-[150px] -translate-x-1/2 flex-col items-center gap-1.5">
+              {stepperControls}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
@@ -863,18 +896,28 @@ export function RefereeGameScreen({
           </div>
         )}
       </main>
-      {step === "grid" && team1 && team2 && (
-        <GameBottomFooter
-          team1={team1}
-          team2={team2}
-          isBusy={isBusy}
-          onOpenRadar={setRadarModalTeam}
-          onOpenStrike={setStrikeModalTeam}
-          onUseTool={onUseTool}
-          onGrantPoints={onGrantPoints}
-          onGrantExtraStrike={onGrantExtraStrike}
-        />
-      )}
+      <AnimatePresence>
+        {room.status === "playing" && step === "grid" && team1 && team2 && (
+          <motion.div
+            key="footer"
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 24 }}
+            transition={{ duration: 0.25 }}
+          >
+            <GameBottomFooter
+              team1={team1}
+              team2={team2}
+              isBusy={isBusy}
+              onOpenRadar={setRadarModalTeam}
+              onOpenStrike={setStrikeModalTeam}
+              onUseTool={onUseTool}
+              onGrantPoints={onGrantPoints}
+              onGrantExtraStrike={onGrantExtraStrike}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {radarModalTeam && (
         <BoardModal

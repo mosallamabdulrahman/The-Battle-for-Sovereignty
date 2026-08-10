@@ -86,13 +86,19 @@ export default function HeroSection() {
               transition={{ duration: 0.6, delay: 0.3 }}
               className="flex flex-wrap gap-4 w-full sm:w-auto"
             >
-              <Link
-                href="/battle"
-                className="flex-1 sm:flex-initial flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-500 via-cyan-600 to-sky-500 text-white font-bold px-4  sm:px-8 py-2 sm:py-4 rounded-2xl shadow-lg shadow-cyan-600/20 hover:shadow-cyan-600/35 hover:-translate-y-0.5 transition-all duration-300 text-base sm:text-xl"
+              <a
+                href="#categories"
+                onClick={(e) => {
+                  e.preventDefault();
+                  document
+                    .getElementById("game-setup")
+                    ?.scrollIntoView({ behavior: "smooth" });
+                }}
+                className="flex-1 sm:flex-initial flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-500 via-cyan-600 to-sky-500 text-white font-bold px-4  sm:px-8 py-2 sm:py-4 rounded-2xl shadow-lg shadow-cyan-600/20 hover:shadow-cyan-600/35 hover:-translate-y-0.5 transition-all duration-300 text-base sm:text-xl cursor-pointer"
               >
                 <Swords className="w-5 h-5" />
                 بلش التحدي الحين
-              </Link>
+              </a>
               <a
                 href="#how-to-play"
                 className="flex-1 sm:flex-initial flex items-center justify-center gap-2 bg-white text-slate-700 font-bold border-2 border-slate-200/80 hover:border-cyan-400 hover:text-cyan-600 px-4  sm:px-8 py-2 sm:py-4 rounded-2xl shadow-sm transition-all duration-300 text-base sm:text-xl"
@@ -153,15 +159,15 @@ export default function HeroSection() {
                     النقاط المتوفرة
                   </span>
                   <span className="text-sm font-bold text-slate-800">
-                    1000 نقطة حرب
+                    4000 نقطة حرب
                   </span>
                 </div>
                 <div className="flex gap-2">
                   <span className="bg-white px-2 py-1 rounded-lg text-xs font-bold border border-slate-200">
-                    👥 مشاة (10ن)
+                    👥 مشاة (20ن)
                   </span>
                   <span className="bg-white px-2 py-1 rounded-lg text-xs font-bold border border-slate-200">
-                    🚜 دبابة (50ن)
+                    🚜 دبابة (200ن)
                   </span>
                 </div>
               </div>

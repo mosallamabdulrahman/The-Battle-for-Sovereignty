@@ -68,7 +68,7 @@ export default function CategoriesSection() {
   ];
 
   return (
-    <section id="categories" className="py-16 bg-white">
+    <section id="categories" className="py-16 bg-white scroll-mt-20">
       <div className="max-w-[85rem] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Heading */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-12 gap-6">
