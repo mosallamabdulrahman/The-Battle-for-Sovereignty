@@ -16,7 +16,12 @@ export async function middleware(request) {
   const token = request.cookies.get(GATE_COOKIE_NAME)?.value;
   const isValid = await verifyGateToken(token, secret);
   if (isValid) {
-    return NextResponse.next();
+    const response = NextResponse.next();
+    // Never let a reverse proxy/CDN in front of the app cache a gated
+    // page — otherwise one visitor's unlocked response could get served
+    // back to someone who never passed the gate.
+    response.headers.set("Cache-Control", "no-store");
+    return response;
   }
 
   const gateUrl = new URL("/gate", request.url);
@@ -24,7 +29,9 @@ export async function middleware(request) {
   if (target && target !== "/") {
     gateUrl.searchParams.set("redirect", target);
   }
-  return NextResponse.redirect(gateUrl);
+  const response = NextResponse.redirect(gateUrl);
+  response.headers.set("Cache-Control", "no-store");
+  return response;
 }
 
 export const config = {
