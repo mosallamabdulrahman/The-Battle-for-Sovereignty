@@ -106,7 +106,7 @@ function TeamPillBar({ team, isBusy, onGrantPoints, onOpenStrike }) {
   return (
     <div className="flex flex-col items-center gap-1">
       {/* Top Red Team Pill Badge */}
-      <div className="w-full bg-[#a30000] text-white font-bold text-xs sm:text-sm text-center py-1 px-4 sm:px-6 rounded-full shadow-sm flex items-center justify-center gap-2">
+      <div className="w-full bg-[#a30000] text-white font-bold text-sm sm:text-base text-center p-4 sm:px-8 rounded-full shadow-sm flex items-center justify-center gap-2">
         <span className="truncate max-w-[120px]">
           {team.name || (team.team_index === 1 ? "فريق 1" : "فريق 2")}
         </span>
@@ -123,7 +123,7 @@ function TeamPillBar({ team, isBusy, onGrantPoints, onOpenStrike }) {
       </div>
 
       {/* Bottom Score Stepper Container (Matching reference screenshot) */}
-      <div className="flex items-center justify-between gap-2 bg-white border-2 border-[#a30000] rounded-full px-1.5 py-0.5 shadow-sm min-w-[130px] sm:min-w-[150px]">
+      <div className="flex items-center justify-between gap-2 bg-white border-2 border-[#a30000] rounded-full p-1 shadow-sm w-full">
         <button
           type="button"
           disabled={isBusy}
@@ -150,85 +150,76 @@ function TeamPillBar({ team, isBusy, onGrantPoints, onOpenStrike }) {
 
 function TeamStrikeStepper({ team, isBusy, onGrantExtraStrike }) {
   const [pending, setPending] = useState(0);
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [popoverOpen, setPopoverOpen] = useState(false);
 
   const commit = () => {
     if (pending === 0) return;
     onGrantExtraStrike(team.team_index, pending);
     setPending(0);
-    setMobileOpen(false);
+    setPopoverOpen(false);
   };
 
-  const stepperControls = (
-    <>
-      {/* One-unit +/- stepper — stages the amount locally, not sent yet */}
-      <div className="flex items-center justify-between gap-2 bg-white border-2 border-[#a30000] rounded-full px-1.5 py-0.5 shadow-sm min-w-[130px] sm:min-w-[150px]">
-        <button
-          type="button"
-          disabled={isBusy || pending <= 0}
-          onClick={() => setPending((p) => Math.max(0, p - 1))}
-          className="w-6 h-6 rounded-full bg-[#a30000] hover:bg-[#800000] text-white font-bold text-sm flex items-center justify-center transition disabled:opacity-40 shrink-0"
-        >
-          −
-        </button>
-        <span className="font-bold text-base sm:text-lg text-[#a30000] tabular-nums px-2">
-          {pending}
-        </span>
-        <button
-          type="button"
-          disabled={isBusy || pending >= 10}
-          onClick={() => setPending((p) => Math.min(10, p + 1))}
-          className="w-6 h-6 rounded-full bg-[#a30000] hover:bg-[#800000] text-white font-bold text-sm flex items-center justify-center transition disabled:opacity-40 shrink-0"
-        >
-          +
-        </button>
-      </div>
-
-      {/* Commit button */}
+  return (
+    <div className="relative w-full">
+      {/* Compact trigger — a different color from the red points controls
+          above it so the two are easy to tell apart at a glance. */}
       <button
         type="button"
-        disabled={isBusy || pending === 0}
-        onClick={commit}
-        className="w-full rounded-full bg-[#a30000] hover:bg-[#800000] text-white font-bold text-xs sm:text-sm py-1.5 shadow-sm transition disabled:opacity-40"
+        onClick={() => setPopoverOpen((open) => !open)}
+        className="w-full rounded-full bg-cyan-700 hover:bg-cyan-800 text-white font-bold text-xs sm:text-sm py-1.5 px-4 shadow-sm transition"
       >
-        إضافة
+        اضف طاقات زياده{pending > 0 ? ` (${pending})` : ""}
       </button>
-    </>
-  );
 
-  return (
-    <div className="flex flex-col items-center gap-1">
-      {/* Label pill — same style as the team name pill (sm+ only) */}
-      <div className="hidden sm:block w-full bg-[#a30000] text-white font-bold text-xs sm:text-sm text-center py-1 px-4 sm:px-6 rounded-full shadow-sm">
-        اضافة طقات زيادة
-      </div>
-
-      {/* sm and up: inline controls, unchanged */}
-      <div className="hidden sm:flex flex-col items-center gap-1 w-full">
-        {stepperControls}
-      </div>
-
-      {/* Below sm: single compact trigger that opens a popover with the same controls */}
-      <div className="relative sm:hidden">
-        <button
-          type="button"
-          onClick={() => setMobileOpen((open) => !open)}
-          className="rounded-full bg-[#a30000] hover:bg-[#800000] text-white font-bold text-xs px-4 py-1.5 shadow-sm transition"
-        >
-          طقات زيادة{pending > 0 ? ` (${pending})` : ""}
-        </button>
-        {mobileOpen && (
-          <>
-            <div
-              className="fixed inset-0 z-30"
-              onClick={() => setMobileOpen(false)}
-            />
-            <div className="absolute bottom-full left-1/2 z-40 mb-2 flex w-[150px] -translate-x-1/2 flex-col items-center gap-1.5">
-              {stepperControls}
+      {popoverOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-30"
+            onClick={() => setPopoverOpen(false)}
+          />
+          {/* Opaque card so the grid behind it never shows through */}
+          <div className="absolute bottom-full left-1/2 z-40 mb-2 w-[170px] -translate-x-1/2 rounded-2xl border border-slate-200 bg-white p-3 shadow-2xl flex flex-col items-center gap-2">
+            <div className="w-full bg-[#a30000] text-white font-bold text-xs text-center py-1 px-3 rounded-full shadow-sm">
+              اضافة طقات زيادة
             </div>
-          </>
-        )}
-      </div>
+
+            {/* One-unit +/- stepper — stages the amount locally, not sent yet */}
+            <div className="flex items-center justify-between gap-2 bg-white border-2 border-[#a30000] rounded-full px-1.5 py-0.5 shadow-sm w-full">
+              <button
+                type="button"
+                disabled={isBusy || pending <= 0}
+                onClick={() => setPending((p) => Math.max(0, p - 1))}
+                className="w-6 h-6 rounded-full bg-[#a30000] hover:bg-[#800000] text-white font-bold text-sm flex items-center justify-center transition disabled:opacity-40 shrink-0"
+              >
+                −
+              </button>
+              <span className="font-bold text-base text-[#a30000] tabular-nums px-2">
+                {pending}
+              </span>
+              <button
+                type="button"
+                disabled={isBusy || pending >= 10}
+                onClick={() => setPending((p) => Math.min(10, p + 1))}
+                className="w-6 h-6 rounded-full bg-[#a30000] hover:bg-[#800000] text-white font-bold text-sm flex items-center justify-center transition disabled:opacity-40 shrink-0"
+              >
+                +
+              </button>
+            </div>
+
+            {/* Commit button — grants the strikes and closes the popover;
+                the referee screen auto-opens the strike board once
+                available_strikes > 0, so no extra step is needed here. */}
+            <button
+              type="button"
+              disabled={isBusy || pending === 0}
+              onClick={commit}
+              className="w-full rounded-full bg-[#a30000] hover:bg-[#800000] text-white font-bold text-xs py-1.5 shadow-sm transition disabled:opacity-40"
+            >
+              إضافة
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -299,52 +290,60 @@ export function GameBottomFooter({
   onGrantExtraStrike,
 }) {
   return (
-    <div className="w-full mt-8 bg-[#e2e8f0] p-3 sm:p-4 flex flex-col md:flex-row items-center justify-between gap-4">
+    <div className="w-full mt-4 sm:mt-8 bg-[#e2e8f0] p-3 sm:p-4 flex flex-col md:flex-row items-center justify-between gap-4">
       {/* Team 1 Section (Right side in RTL) */}
-      <div className="flex items-center gap-3 sm:gap-4 flex-wrap justify-center md:justify-start">
-        <TeamPillBar
-          team={team1}
-          isBusy={isBusy}
-          onGrantPoints={onGrantPoints}
-          onOpenStrike={onOpenStrike}
-        />
-        <HelperToolsSection
-          team={team1}
-          isBusy={isBusy}
-          onOpenRadar={onOpenRadar}
-          onUseTool={onUseTool}
-        />
-        <TeamStrikeStepper
-          team={team1}
-          isBusy={isBusy}
-          onGrantExtraStrike={onGrantExtraStrike}
-        />
+      <div className="flex items-center gap-3 sm:gap-4 flex-row-reverse flex-wrap justify-center md:justify-start">
+        <div className="flex flex-col items-center gap-2 w-[130px] sm:w-[150px]">
+          <TeamPillBar
+            team={team1}
+            isBusy={isBusy}
+            onGrantPoints={onGrantPoints}
+            onOpenStrike={onOpenStrike}
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <HelperToolsSection
+            team={team1}
+            isBusy={isBusy}
+            onOpenRadar={onOpenRadar}
+            onUseTool={onUseTool}
+          />
+          <TeamStrikeStepper
+            team={team1}
+            isBusy={isBusy}
+            onGrantExtraStrike={onGrantExtraStrike}
+          />
+        </div>
       </div>
 
       {/* Center Logo Section */}
-      <div className="flex flex-col items-center justify-center shrink-0 px-2">
-        <GameLogo className="w-18 h-18" />
+      <div className="flex flex-col items-center justify-center shrink-0 px-2 hidden sm:block">
+        <GameLogo className="w-22 h-22 " />
       </div>
 
       {/* Team 2 Section (Left side in RTL) */}
       <div className="flex items-center gap-3 sm:gap-4 flex-wrap justify-center md:justify-end">
-        <TeamStrikeStepper
-          team={team2}
-          isBusy={isBusy}
-          onGrantExtraStrike={onGrantExtraStrike}
-        />
-        <HelperToolsSection
-          team={team2}
-          isBusy={isBusy}
-          onOpenRadar={onOpenRadar}
-          onUseTool={onUseTool}
-        />
-        <TeamPillBar
-          team={team2}
-          isBusy={isBusy}
-          onGrantPoints={onGrantPoints}
-          onOpenStrike={onOpenStrike}
-        />
+        <div className="flex flex-col gap-2">
+          <HelperToolsSection
+            team={team2}
+            isBusy={isBusy}
+            onOpenRadar={onOpenRadar}
+            onUseTool={onUseTool}
+          />
+          <TeamStrikeStepper
+            team={team2}
+            isBusy={isBusy}
+            onGrantExtraStrike={onGrantExtraStrike}
+          />
+        </div>
+        <div className="flex flex-col items-center gap-2 w-[130px] sm:w-[150px]">
+          <TeamPillBar
+            team={team2}
+            isBusy={isBusy}
+            onGrantPoints={onGrantPoints}
+            onOpenStrike={onOpenStrike}
+          />
+        </div>
       </div>
     </div>
   );

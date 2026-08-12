@@ -452,7 +452,7 @@ export function QuestionGrid({
   }, {});
 
   return (
-    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
       {Object.entries(categories).map(([categoryId, category]) => {
         const rows = DIFFICULTY_ROW_ORDER.map((difficulty) =>
           category.questions
@@ -631,7 +631,9 @@ export function CombatEventModal({ event, onClose, autoCloseMs = 2000 }) {
         )}
         <p className="mt-2 text-sm text-slate-500">
           الطقة على المربع {event.cell_index + 1}
-          {event.points_delta ? ` · خسر ${Math.abs(event.points_delta)} نقطة` : ""}
+          {event.points_delta
+            ? ` · خسر ${Math.abs(event.points_delta)} نقطة`
+            : ""}
         </p>
         <button
           type="button"

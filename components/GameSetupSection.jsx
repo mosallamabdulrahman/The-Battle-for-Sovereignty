@@ -318,7 +318,7 @@ export default function GameSetupSection() {
   return (
     <section
       id="game-setup"
-      className="py-20 bg-slate-50 border-t border-slate-200 relative overflow-hidden dir-rtl"
+      className="py-16 bg-slate-50 border-t border-slate-200 relative overflow-hidden dir-rtl"
     >
       {/* Decorative vectors */}
       <div className="absolute top-20 left-10 w-64 h-64 bg-cyan-100/40 rounded-full blur-3xl pointer-events-none" />

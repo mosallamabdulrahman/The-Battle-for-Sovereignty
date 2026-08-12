@@ -1617,6 +1617,32 @@ function BattlePageInner() {
 
   // C. VIEW TEAM PARTICIPANT BOARD DEPLOYMENT (Tasks 10, 11, 12, 13)
   if (roomId && room && teamIndex) {
+    // The judge must not be able to deploy a team's board from their own
+    // logged-in session — a team link is meant for that team's own device,
+    // not the judge doubling as both the referee and a team.
+    if (user?.id && room.judge_id && user.id === room.judge_id) {
+      return (
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 dir-rtl">
+          <div className="w-full max-w-md rounded-3xl border border-rose-100 bg-white p-8 text-center shadow-lg">
+            <Lock className="w-12 h-12 text-rose-500 mx-auto" />
+            <h2 className="mt-4 text-xl font-bold text-slate-950">
+              افتح رابط الفريق من جهاز أو متصفح ثاني
+            </h2>
+            <p className="mt-3 text-xs leading-relaxed text-slate-400">
+              إنت مسجل دخولك كحكم هذي الغرفة على هذا المتصفح — رابط توزيع
+              الفريق لازم يتفتح من جهاز الفريق نفسه، مو من نفس حسابك.
+            </p>
+            <Link
+              href="/"
+              className="mt-7 block w-full rounded-xl bg-gradient-to-r from-cyan-600 to-sky-500 py-3 font-bold text-white text-xs"
+            >
+              ارجع للرئيسية
+            </Link>
+          </div>
+        </div>
+      );
+    }
+
     const activeTeam = teams.find((t) => t.team_index === teamIndex);
 
     // Read current board (pending snapshot or team board)
