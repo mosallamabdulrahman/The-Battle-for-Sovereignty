@@ -179,28 +179,24 @@ function TeamStrikeStepper({ team, isBusy, onGrantExtraStrike }) {
           />
           {/* Opaque card so the grid behind it never shows through */}
           <div className="absolute bottom-full left-1/2 z-40 mb-2 w-[170px] -translate-x-1/2 rounded-2xl border border-slate-200 bg-white p-3 shadow-2xl flex flex-col items-center gap-2">
-            <div className="w-full bg-[#a30000] text-white font-bold text-xs text-center py-1 px-3 rounded-full shadow-sm">
-              اضافة طقات زيادة
-            </div>
-
             {/* One-unit +/- stepper — stages the amount locally, not sent yet */}
-            <div className="flex items-center justify-between gap-2 bg-white border-2 border-[#a30000] rounded-full px-1.5 py-0.5 shadow-sm w-full">
+            <div className="flex items-center justify-between gap-2 bg-white border-2 border-cyan-700 rounded-full px-1.5 py-0.5 shadow-sm w-full">
               <button
                 type="button"
                 disabled={isBusy || pending <= 0}
                 onClick={() => setPending((p) => Math.max(0, p - 1))}
-                className="w-6 h-6 rounded-full bg-[#a30000] hover:bg-[#800000] text-white font-bold text-sm flex items-center justify-center transition disabled:opacity-40 shrink-0"
+                className="w-6 h-6 rounded-full bg-cyan-700 hover:bg-cyan-800 text-white font-bold text-sm flex items-center justify-center transition disabled:opacity-40 shrink-0"
               >
                 −
               </button>
-              <span className="font-bold text-base text-[#a30000] tabular-nums px-2">
+              <span className="font-bold text-base text-cyan-700 tabular-nums px-2">
                 {pending}
               </span>
               <button
                 type="button"
                 disabled={isBusy || pending >= 10}
                 onClick={() => setPending((p) => Math.min(10, p + 1))}
-                className="w-6 h-6 rounded-full bg-[#a30000] hover:bg-[#800000] text-white font-bold text-sm flex items-center justify-center transition disabled:opacity-40 shrink-0"
+                className="w-6 h-6 rounded-full bg-cyan-700 hover:bg-cyan-800 text-white font-bold text-sm flex items-center justify-center transition disabled:opacity-40 shrink-0"
               >
                 +
               </button>
@@ -213,7 +209,7 @@ function TeamStrikeStepper({ team, isBusy, onGrantExtraStrike }) {
               type="button"
               disabled={isBusy || pending === 0}
               onClick={commit}
-              className="w-full rounded-full bg-[#a30000] hover:bg-[#800000] text-white font-bold text-xs py-1.5 shadow-sm transition disabled:opacity-40"
+              className="w-full rounded-full bg-cyan-700 hover:bg-cyan-800 text-white font-bold text-xs py-1.5 shadow-sm transition disabled:opacity-40"
             >
               إضافة
             </button>
@@ -292,7 +288,7 @@ export function GameBottomFooter({
   return (
     <div className="w-full mt-4 sm:mt-8 bg-[#e2e8f0] p-3 sm:p-4 flex flex-col md:flex-row items-center justify-between gap-4">
       {/* Team 1 Section (Right side in RTL) */}
-      <div className="flex items-center gap-3 sm:gap-4 flex-row-reverse flex-wrap justify-center md:justify-start">
+      <div className="flex items-center gap-3 sm:gap-6 flex-row-reverse md:flex-row flex-wrap justify-center md:justify-start">
         <div className="flex flex-col items-center gap-2 w-[130px] sm:w-[150px]">
           <TeamPillBar
             team={team1}
@@ -727,9 +723,9 @@ export function RefereeGameScreen({
             </motion.div>
           </AnimatePresence>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 md:gap-8 lg:gap-12 mt-6">
+          <div className="flex flex-col-reverse md:grid grid-cols-1 md:grid-cols-4 gap-6 md:gap-8 lg:gap-12 mt-0 sm:mt-6">
             {team1 && team2 && (
-              <div className="md:col-span-1 w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-4">
+              <div className="md:col-span-1 w-full grid grid-cols-2 md:grid-cols-1 gap-4">
                 <TeamToolsCard
                   team={team1}
                   isBusy={isBusy}
@@ -756,7 +752,7 @@ export function RefereeGameScreen({
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -16 }}
                     transition={{ duration: 0.25 }}
-                    className="relative mx-auto rounded-[2rem] sm:rounded-[2.5rem] border-4 border-cyan-500 bg-white p-4 sm:p-10 md:px-12 text-center shadow-2xl"
+                    className="relative mx-auto rounded-[2rem] sm:rounded-[2.5rem] border-4 border-cyan-500 bg-white p-8 sm:p-10 md:px-12 text-center shadow-2xl"
                   >
                     {/* Top Center: TimerPill on top border */}
                     <div className="absolute -top-6 sm:-top-7 left-1/2 -translate-x-1/2 z-20 shrink-0">

@@ -419,7 +419,7 @@ function QuestionSlotButton({
       type="button"
       disabled={isDisabled}
       onClick={() => onSelect(question)}
-      className={`h-14 sm:h-16 w-full ${roundedClass} border-2 text-center text-base sm:text-lg font-bold transition-all shadow-sm flex items-center justify-center ${
+      className={`h-14 sm:h-16 w-full ${roundedClass} border-2 border-transparent text-center text-base sm:text-lg font-bold transition-all flex items-center justify-center ${
         question.is_used
           ? "border-slate-200 bg-slate-200 text-slate-400 line-through"
           : isActive
@@ -478,7 +478,7 @@ export function QuestionGrid({
               ))}
             </div>
 
-            <div className="w-32 sm:w-36 shrink-0 relative bg-cyan-50 flex flex-col justify-end">
+            <div className="w-38 sm:w-40 shrink-0 relative bg-cyan-50 flex flex-col justify-end">
               <img
                 src={category.imageUrl || FALLBACK_CATEGORY_IMAGE}
                 alt={category.name}
@@ -492,7 +492,7 @@ export function QuestionGrid({
               </div>
             </div>
 
-            <div className="flex-1 flex flex-col justify-between gap-1">
+            <div className="flex-1 flex flex-col justify-between gap-0.5">
               {rows.map(([, leftQuestion], row) => (
                 <QuestionSlotButton
                   key={`left-${row}`}
