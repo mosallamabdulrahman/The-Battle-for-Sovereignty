@@ -92,8 +92,11 @@ function BattlePageInner() {
   const [isActionBusy, setIsActionBusy] = useState(false);
   const [isAutoFilling, setIsAutoFilling] = useState(false);
   const [latestCombatEvent, setLatestCombatEvent] = useState(null);
-  const [radarCells, setRadarCells] = useState([]);
-  const [radarForTeam, setRadarForTeam] = useState(null);
+  // Radar reveals, keyed by the TARGET team whose board was scanned (mirrors
+  // how strike events are keyed by target_team_index) — accumulated and kept
+  // for the whole game so a revealed cell stays visible later at strike
+  // time too, instead of being thrown away when the radar modal closes.
+  const [radarRevealsByTeam, setRadarRevealsByTeam] = useState({});
   const [questionSeconds, setQuestionSeconds] = useState(60);
   const [timerPaused, setTimerPaused] = useState(false);
   const [timerOverrideStart, setTimerOverrideStart] = useState(null);
@@ -250,8 +253,6 @@ function BattlePageInner() {
       setQuestionSeconds(60); // fallback — will be overridden by question_started_at sync below
       setTimerPaused(false);
       setTimerOverrideStart(null);
-      setRadarCells([]);
-      setRadarForTeam(null);
     }
 
     if (previousQuestionId && !currentQuestionId) {
@@ -263,6 +264,12 @@ function BattlePageInner() {
 
     lastActiveQuestionIdRef.current = currentQuestionId;
   }, [room?.active_question_id]);
+
+  // Radar reveals belong to a specific room — clear them out if this same
+  // mounted page instance ever navigates into a different room.
+  useEffect(() => {
+    setRadarRevealsByTeam({});
+  }, [roomId]);
 
   // Synced countdown: recomputes the remaining time from the shared server
   // timestamp on each tick instead of decrementing a local counter — this
@@ -1074,13 +1081,6 @@ function BattlePageInner() {
       if (error) throw error;
     });
 
-  // Dismisses the radar result modal and clears the scan so a fresh scan
-  // starts clean next time
-  const handleClearRadar = () => {
-    setRadarCells([]);
-    setRadarForTeam(null);
-  };
-
   // Referee executes a strike on behalf of whichever team the room says
   // called it out
   const handleStrike = (attackerTeamIndex, cellIndex) =>
@@ -1114,8 +1114,23 @@ function BattlePageInner() {
       if (error) throw error;
 
       if (toolId === "radar_scan") {
-        setRadarCells(data?.cells || []);
-        setRadarForTeam(forTeamIndex);
+        // Radar reveals the OPPONENT's board (same attacker→target
+        // direction as a strike) — stored keyed by that target team so it
+        // stays available later at strike time too.
+        const newCells = data?.cells || [];
+        const targetTeam = teams.find((t) => t.team_index !== forTeamIndex);
+        if (targetTeam) {
+          setRadarRevealsByTeam((prev) => {
+            const existing = prev[targetTeam.team_index] || [];
+            const merged = [...existing];
+            newCells.forEach((cell) => {
+              if (!merged.some((c) => c.cell_index === cell.cell_index)) {
+                merged.push(cell);
+              }
+            });
+            return { ...prev, [targetTeam.team_index]: merged };
+          });
+        }
       }
     });
 
@@ -1306,8 +1321,7 @@ function BattlePageInner() {
           isBusy={isActionBusy}
           questionSeconds={questionSeconds}
           timerPaused={timerPaused}
-          radarCells={radarCells}
-          radarForTeam={radarForTeam}
+          radarRevealsByTeam={radarRevealsByTeam}
           onSelectQuestion={handleSelectQuestion}
           onResolveQuestion={handleResolveQuestion}
           onResolveDraw={handleResolveDraw}
@@ -1316,7 +1330,6 @@ function BattlePageInner() {
           onUseTool={handleUseTool}
           onGrantExtraStrike={handleGrantExtraStrike}
           onGrantPoints={handleGrantPoints}
-          onClearRadar={handleClearRadar}
           onEndGameNow={handleEndGameNow}
           onDeselectQuestion={handleDeselectQuestion}
           onPauseTimer={handlePauseTimer}

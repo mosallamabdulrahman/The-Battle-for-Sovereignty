@@ -62,41 +62,6 @@ export default function GameSetupSection() {
   }, []);
 
   useEffect(() => {
-    if (!user) return;
-
-    const restoreActiveRoom = async () => {
-      const savedRaw = window.localStorage.getItem("sovereignty_active_room");
-      if (!savedRaw) return;
-
-      const saved = JSON.parse(savedRaw);
-
-      const { data } = await supabase
-        .from("game_rooms")
-        .select("*")
-        .eq("id", saved.id)
-        .eq("judge_id", user.id)
-        .in("status", ["setup", "playing"])
-        .maybeSingle();
-
-      if (data) {
-        setCreatedRoom(data);
-        setSelectedCategories(data.selected_categories || []);
-        setGameName(data.game_name || "");
-        setTeam1Name(data.team_1_name);
-        setTeam2Name(data.team_2_name);
-        setTeamTokens({
-          team_1_token: saved.team_1_token,
-          team_2_token: saved.team_2_token,
-        });
-      } else {
-        window.localStorage.removeItem("sovereignty_active_room");
-      }
-    };
-
-    restoreActiveRoom();
-  }, [user]);
-
-  useEffect(() => {
     if (!createdRoom?.id) return;
 
     const channel = supabase

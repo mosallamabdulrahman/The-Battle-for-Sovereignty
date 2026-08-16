@@ -39,6 +39,73 @@ const UNIT_NAMES = {
   mine: "لغم",
 };
 
+// Shared cell look for both the strike board and the radar board, so a
+// board reads exactly the same whichever modal shows it. `result` (from an
+// actual strike) always wins over a radar `reveal` — radar only fills in
+// cells that haven't actually been struck yet, and never gets the ✕ mark.
+function getCombatCellVisual({ result, unit, revealed, canClick }) {
+  if (result === "hit") {
+    return {
+      className: "border-rose-500 bg-rose-500 text-white",
+      content: (
+        <>
+          <span className="text-xl sm:text-2xl leading-none opacity-90">
+            {UNIT_EMOJI[unit] || "❓"}
+          </span>
+          <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <X className="w-3 h-3 sm:w-4 sm:h-4 stroke-[3.5] text-slate-950 drop-shadow-sm" />
+          </span>
+        </>
+      ),
+    };
+  }
+  if (result === "miss") {
+    return {
+      className: "border-slate-400 bg-slate-300 text-slate-700",
+      content: "○",
+    };
+  }
+  if (result === "mine") {
+    return {
+      className: "border-amber-500 bg-amber-400 text-slate-950",
+      content: "💥",
+    };
+  }
+  if (result === "blocked") {
+    return {
+      className: "border-cyan-500 bg-cyan-500 text-white",
+      content: "🛡",
+    };
+  }
+  if (revealed) {
+    // Known via radar, not struck yet — a distinct color from an actual
+    // hit (rose) or miss (slate) so it can't be mistaken for either.
+    return unit
+      ? {
+          className: "border-amber-400 bg-amber-100 text-amber-900",
+          content: (
+            <span className="text-lg sm:text-xl leading-none">
+              {UNIT_EMOJI[unit] || "●"}
+            </span>
+          ),
+        }
+      : {
+          className: "border-emerald-300 bg-emerald-50 text-emerald-700",
+          content: "○",
+        };
+  }
+  return canClick
+    ? {
+        className:
+          "border-slate-600 bg-slate-800 text-slate-200 hover:bg-rose-800 hover:border-rose-500",
+        content: null,
+      }
+    : {
+        className: "border-slate-200 bg-slate-100 text-slate-400",
+        content: null,
+      };
+}
+
 function TimerPill({ seconds, isPaused, onPause, onResume, onReset }) {
   const mm = String(Math.floor(Math.max(0, seconds) / 60)).padStart(2, "0");
   const ss = String(Math.max(0, seconds) % 60).padStart(2, "0");
@@ -528,8 +595,7 @@ export function RefereeGameScreen({
   isBusy,
   questionSeconds,
   timerPaused,
-  radarCells,
-  radarForTeam,
+  radarRevealsByTeam,
   onSelectQuestion,
   onResolveQuestion,
   onResolveDraw,
@@ -538,7 +604,6 @@ export function RefereeGameScreen({
   onUseTool,
   onGrantPoints,
   onGrantExtraStrike,
-  onClearRadar,
   onEndGameNow,
   onDeselectQuestion,
   onPauseTimer,
@@ -598,16 +663,27 @@ export function RefereeGameScreen({
         ? "question"
         : "grid";
 
-  const radarRevealMap =
-    radarCells && radarCells.length > 0
-      ? new Map(radarCells.map((cell) => [cell.cell_index, cell.unit_type]))
-      : null;
-  const radarResultReady =
-    radarModalTeam && radarForTeam === radarModalTeam && radarRevealMap;
+  // Radar reveals the OPPONENT's board (same attacker→target direction as
+  // a strike) — the label shows who used the tool, the grid shows the
+  // target's board, matching the strike modal's own attacker/target split.
+  const radarAttacker = radarModalTeam
+    ? teams.find((t) => t.team_index === radarModalTeam)
+    : null;
+  const radarTarget = radarModalTeam
+    ? teams.find((t) => t.team_index !== radarModalTeam)
+    : null;
+  const radarRevealMap = radarTarget
+    ? new Map(
+        (radarRevealsByTeam?.[radarTarget.team_index] || []).map((cell) => [
+          cell.cell_index,
+          cell.unit_type,
+        ]),
+      )
+    : new Map();
+  const radarHasResult = radarRevealMap.size > 0;
 
   const handleCloseRadar = () => {
     setRadarModalTeam(null);
-    onClearRadar?.();
   };
 
   const handlePickWinner = (choice) => {
@@ -631,6 +707,16 @@ export function RefereeGameScreen({
   const strikeCellUnits = new Map(
     strikeEvents.map((event) => [event.cell_index, event.unit_type]),
   );
+  // Cells already known via radar for this same target — shown as
+  // "revealed" (no ✕) unless they've since actually been struck.
+  const strikeRadarRevealMap = strikeTarget
+    ? new Map(
+        (radarRevealsByTeam?.[strikeTarget.team_index] || []).map((cell) => [
+          cell.cell_index,
+          cell.unit_type,
+        ]),
+      )
+    : new Map();
 
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col gap-4 dir-rtl">
@@ -916,60 +1002,57 @@ export function RefereeGameScreen({
 
       {radarModalTeam && (
         <BoardModal
-          title={`رادار ${teams.find((t) => t.team_index === radarModalTeam)?.name}`}
+          title={`رادار ${radarAttacker?.name || ""}`}
           subtitle={
-            radarResultReady
+            radarHasResult
               ? "المربعات اللي اتكشفت"
-              : "دوس المربع اللي تبي تمسحه"
+              : "دوس المربع اللي تبي تمسحه — نفس خريطة الضرب بالظبط"
           }
           onClose={handleCloseRadar}
         >
-          {!radarResultReady ? (
-            <div className="grid grid-cols-6 gap-1.5">
-              {Array.from({ length: 36 }, (_, cellIndex) => (
+          <div className="grid grid-cols-6 gap-1.5">
+            {Array.from({ length: 36 }, (_, cellIndex) => {
+              const revealed = !radarHasResult
+                ? false
+                : radarRevealMap.has(cellIndex);
+              const unit = radarRevealMap.get(cellIndex);
+              const canClick = !isBusy && !radarHasResult;
+              const visual = getCombatCellVisual({
+                result: undefined,
+                unit,
+                revealed,
+                canClick,
+              });
+              return (
                 <button
                   key={cellIndex}
                   type="button"
-                  disabled={isBusy}
+                  disabled={!canClick}
                   onClick={() =>
                     onUseTool(radarModalTeam, "radar_scan", cellIndex)
                   }
-                  className="aspect-square rounded-lg border border-slate-300 bg-slate-50 text-[10px] font-bold text-slate-500 hover:bg-amber-50 hover:border-amber-400"
+                  title={
+                    revealed
+                      ? unit
+                        ? UNIT_NAMES[unit] || unit
+                        : "فاضي"
+                      : undefined
+                  }
+                  className={`relative aspect-square rounded-lg border text-[10px] font-bold transition-all ${visual.className}`}
                 >
-                  {cellIndex + 1}
+                  {visual.content ?? cellIndex + 1}
                 </button>
-              ))}
-            </div>
-          ) : (
-            <>
-              <div className="grid grid-cols-6 gap-1.5">
-                {Array.from({ length: 36 }, (_, cellIndex) => {
-                  const hasReveal = radarRevealMap.has(cellIndex);
-                  const unit = radarRevealMap.get(cellIndex);
-                  return (
-                    <div
-                      key={cellIndex}
-                      className={`aspect-square rounded-lg border flex items-center justify-center text-sm font-bold ${
-                        hasReveal
-                          ? unit
-                            ? "border-amber-400 bg-amber-100"
-                            : "border-emerald-300 bg-emerald-50"
-                          : "border-slate-200 bg-slate-100 text-slate-300"
-                      }`}
-                    >
-                      {hasReveal ? (unit ? UNIT_EMOJI[unit] || "●" : "○") : ""}
-                    </div>
-                  );
-                })}
-              </div>
-              <button
-                type="button"
-                onClick={handleCloseRadar}
-                className="mt-4 w-full rounded-2xl bg-slate-950 py-3 text-sm font-bold text-white hover:bg-slate-800"
-              >
-                إغلاق
-              </button>
-            </>
+              );
+            })}
+          </div>
+          {radarHasResult && (
+            <button
+              type="button"
+              onClick={handleCloseRadar}
+              className="mt-4 w-full rounded-2xl bg-slate-950 py-3 text-sm font-bold text-white hover:bg-slate-800"
+            >
+              إغلاق
+            </button>
           )}
         </BoardModal>
       )}
@@ -985,8 +1068,16 @@ export function RefereeGameScreen({
             {Array.from({ length: 36 }, (_, cellIndex) => {
               const result = strikeCellResults.get(cellIndex);
               const hitUnit = strikeCellUnits.get(cellIndex);
+              const revealed = !result && strikeRadarRevealMap.has(cellIndex);
+              const revealedUnit = strikeRadarRevealMap.get(cellIndex);
               const canClick =
                 !isBusy && !result && strikeAttacker.available_strikes > 0;
+              const visual = getCombatCellVisual({
+                result,
+                unit: result ? hitUnit : revealedUnit,
+                revealed,
+                canClick,
+              });
               return (
                 <button
                   key={cellIndex}
@@ -996,40 +1087,13 @@ export function RefereeGameScreen({
                   title={
                     result === "hit"
                       ? UNIT_NAMES[hitUnit] || hitUnit || "أصبت"
-                      : undefined
+                      : revealed
+                        ? "معروف بالرادار — لسا ما انضرب"
+                        : undefined
                   }
-                  className={`relative aspect-square rounded-lg border text-[10px] font-bold transition-all ${
-                    result === "hit"
-                      ? "border-rose-500 bg-rose-500 text-white"
-                      : result === "miss"
-                        ? "border-slate-400 bg-slate-300 text-slate-700"
-                        : result === "mine"
-                          ? "border-amber-500 bg-amber-400 text-slate-950"
-                          : result === "blocked"
-                            ? "border-cyan-500 bg-cyan-500 text-white"
-                            : canClick
-                              ? "border-slate-600 bg-slate-800 text-slate-200 hover:bg-rose-800 hover:border-rose-500"
-                              : "border-slate-200 bg-slate-100 text-slate-400"
-                  }`}
+                  className={`relative aspect-square rounded-lg border text-[10px] font-bold transition-all ${visual.className}`}
                 >
-                  {result === "hit" ? (
-                    <>
-                      <span className="text-xl sm:text-2xl leading-none opacity-90">
-                        {UNIT_EMOJI[hitUnit] || "❓"}
-                      </span>
-                      <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <X className="w-3 h-3 sm:w-4 sm:h-4 stroke-[3.5] text-slate-950 drop-shadow-sm" />
-                      </span>
-                    </>
-                  ) : result === "miss" ? (
-                    "○"
-                  ) : result === "mine" ? (
-                    "💥"
-                  ) : result === "blocked" ? (
-                    "🛡"
-                  ) : (
-                    cellIndex + 1
-                  )}
+                  {visual.content ?? cellIndex + 1}
                 </button>
               );
             })}
