@@ -5,7 +5,7 @@ import React from "react";
 export default function GameLogo({ className = "w-10 h-10", ...props }) {
   return (
     <img
-      src="/images/logo-2.png"
+      src="/images/logo.png"
       alt="حيلهم بينهم"
       className={`object-contain ${className}`}
       {...props}

@@ -25,6 +25,9 @@ import {
   CombatEventModal,
 } from "../../components/battle/CombatShared";
 import { RefereeGameScreen } from "../../components/battle/RefereeGameScreen";
+import { UNIT_IMAGES, UNIT_NAMES } from "../../lib/game-data";
+import GameLogo from "@/components/GameLogo";
+import Image from "next/image";
 
 const TEAM_PUBLIC_COLUMNS = [
   "id",
@@ -119,32 +122,37 @@ function BattlePageInner() {
     infantry: {
       name: "جندي",
       cost: 20,
-      emoji: "👥",
+      image: UNIT_IMAGES.infantry,
       description: "وحدة مشاة أساسية",
     },
     armored: {
       name: "مدرعة",
       cost: 100,
-      emoji: "🛡️",
+      image: UNIT_IMAGES.armored,
       description: "مركبة مدرعة خفيفة",
     },
-    tank: { name: "دبابة", cost: 200, emoji: "🚜", description: "دبابة ثقيلة" },
+    tank: {
+      name: "دبابة",
+      cost: 200,
+      image: UNIT_IMAGES.tank,
+      description: "دبابة ثقيلة",
+    },
     aircraft: {
       name: "طائرة",
       cost: 400,
-      emoji: "✈️",
+      image: UNIT_IMAGES.aircraft,
       description: "طائرة قتالية جوية",
     },
     submarine: {
       name: "غواصة",
       cost: 500,
-      emoji: "⛵",
+      image: UNIT_IMAGES.submarine,
       description: "غواصة بحرية ثقيلة",
     },
     mine: {
       name: "لغم",
       cost: 0,
-      emoji: "💥",
+      image: UNIT_IMAGES.mine,
       description: "لغم أرضي (يخصم 250 نقطة)",
     },
   };
@@ -1433,9 +1441,7 @@ function BattlePageInner() {
         <header className="bg-white border-b border-slate-200 py-4 shadow-sm">
           <div className="max-w-[85rem] mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-tr from-cyan-500 to-sky-400 text-white p-2.5 rounded-xl shadow-md">
-                <Crown className="w-6 h-6 animate-pulse" />
-              </div>
+              <GameLogo className="w-14 h-14 sm:w-18 sm:h-18 shrink-0" />
               <div className="text-right">
                 <h1 className="font-sans font-bold text-lg text-slate-950">
                   شاشة الحكم الحية لمتابعة اللعب
@@ -1642,8 +1648,8 @@ function BattlePageInner() {
               افتح رابط الفريق من جهاز أو متصفح ثاني
             </h2>
             <p className="mt-3 text-xs leading-relaxed text-slate-400">
-              إنت مسجل دخولك كحكم هذي الغرفة على هذا المتصفح — رابط توزيع
-              الفريق لازم يتفتح من جهاز الفريق نفسه، مو من نفس حسابك.
+              إنت مسجل دخولك كحكم هذي الغرفة على هذا المتصفح — رابط توزيع الفريق
+              لازم يتفتح من جهاز الفريق نفسه، مو من نفس حسابك.
             </p>
             <Link
               href="/"
@@ -1748,9 +1754,7 @@ function BattlePageInner() {
         <header className="bg-white border-b border-slate-200 py-4 shadow-sm relative z-20">
           <div className="max-w-[85rem] mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-tr from-cyan-500 to-sky-400 text-white p-2.5 rounded-xl shadow-md">
-                <Shield className="w-6 h-6" />
-              </div>
+              <GameLogo className="w-14 h-14 sm:w-18 sm:h-18 shrink-0" />
               <div className="text-right">
                 <h1 className="font-sans font-bold text-base text-slate-950">
                   لوحة توزيع فريق: {activeTeam.name}
@@ -1844,7 +1848,7 @@ function BattlePageInner() {
                               : "bg-slate-50 hover:bg-slate-100/70 border-slate-150"
                           }`}
                         >
-                          {/* Unit Emoji display */}
+                          {/* Unit Image display */}
                           {cellUnit ? (
                             <motion.span
                               key={`${idx}-${cell}`}
@@ -1863,18 +1867,22 @@ function BattlePageInner() {
                                   : { scale: 1, rotate: 0, opacity: 1 }
                               }
                               transition={{ duration: 0.45, ease: "easeOut" }}
-                              className="flex flex-col items-center"
+                              className="flex flex-col items-center justify-center relative w-full h-full p-1"
                             >
-                              <span className="drop-shadow-sm">
-                                {cellUnit.emoji}
-                              </span>
-                              <span className="text-[8px] absolute bottom-1 text-cyan-700 font-bold tracking-tight scale-90">
+                              <Image
+                                src={UNIT_IMAGES[cell] || cellUnit.image}
+                                alt={cellUnit.name}
+                                width={28}
+                                height={28}
+                                className="w-6 h-6 sm:w-7 sm:h-7 object-contain drop-shadow-sm"
+                              />
+                              <span className="text-[8px] absolute bottom-0.5 text-cyan-700 font-bold tracking-tight scale-90">
                                 {cellUnit.cost}ن
                               </span>
                             </motion.span>
                           ) : (
                             <span className="text-slate-300 group-hover:text-cyan-600 text-xs font-bold transition-colors">
-                              {idx}
+                              {idx + 1}
                             </span>
                           )}
                         </motion.button>
@@ -1919,7 +1927,15 @@ function BattlePageInner() {
                       }`}
                     >
                       <span className="flex items-center gap-3">
-                        <span className="text-2xl">{unit.emoji}</span>
+                        <span className="w-8 h-8 flex items-center justify-center shrink-0">
+                          <Image
+                            src={UNIT_IMAGES[key] || unit.image}
+                            alt={unit.name}
+                            width={32}
+                            height={32}
+                            className="w-7 h-7 object-contain"
+                          />
+                        </span>
                         <span className="block text-right">
                           <span className="font-bold text-xs text-slate-900 block group-hover:text-cyan-600">
                             {unit.name}

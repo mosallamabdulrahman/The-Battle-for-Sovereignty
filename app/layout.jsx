@@ -13,7 +13,7 @@ export const metadata = {
   description:
     "حيلهم بينهم اهي لعبة أسئلة وتحديات استراتيجية تنافسية بين فريقين.",
   icons: {
-    icon: "/images/logo-2.png",
+    icon: "/images/logo.png",
   },
 };
 

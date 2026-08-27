@@ -18,26 +18,13 @@ import {
   X,
 } from "lucide-react";
 import { FinishedCelebration, MediaPlayer, QuestionGrid } from "./CombatShared";
-import { TACTICAL_TOOL_DETAILS } from "../../lib/game-data";
+import {
+  TACTICAL_TOOL_DETAILS,
+  UNIT_IMAGES,
+  UNIT_NAMES,
+} from "../../lib/game-data";
 import GameLogo from "../GameLogo";
-
-const UNIT_EMOJI = {
-  infantry: "👥",
-  armored: "🛡️",
-  tank: "🚜",
-  aircraft: "✈️",
-  submarine: "⛵",
-  mine: "💥",
-};
-
-const UNIT_NAMES = {
-  infantry: "جندي",
-  armored: "مدرعة",
-  tank: "دبابة",
-  aircraft: "طائرة",
-  submarine: "غواصة",
-  mine: "لغم",
-};
+import Image from "next/image";
 
 // Shared cell look for both the strike board and the radar board, so a
 // board reads exactly the same whichever modal shows it. `result` (from an
@@ -46,14 +33,24 @@ const UNIT_NAMES = {
 function getCombatCellVisual({ result, unit, revealed, canClick }) {
   if (result === "hit") {
     return {
-      className: "border-rose-500 bg-rose-500 text-white",
+      className: "border-2 border-rose-500 bg-rose-100 text-rose-950 shadow-sm",
       content: (
         <>
-          <span className="text-xl sm:text-2xl leading-none opacity-90">
-            {UNIT_EMOJI[unit] || "❓"}
+          <span className="leading-none flex items-center justify-center p-0.5">
+            {UNIT_IMAGES[unit] ? (
+              <Image
+                width={36}
+                height={36}
+                src={UNIT_IMAGES[unit]}
+                alt={UNIT_NAMES[unit] || unit}
+                className="w-9 h-9 sm:w-11 sm:h-11 object-contain drop-shadow-sm"
+              />
+            ) : (
+              "❓"
+            )}
           </span>
           <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <X className="w-3 h-3 sm:w-4 sm:h-4 stroke-[3.5] text-slate-950 drop-shadow-sm" />
+            <X className="w-5 h-5 sm:w-6 sm:h-6 stroke-[3.5] text-rose-600 drop-shadow-sm" />
           </span>
         </>
       ),
@@ -67,14 +64,29 @@ function getCombatCellVisual({ result, unit, revealed, canClick }) {
   }
   if (result === "mine") {
     return {
-      className: "border-amber-500 bg-amber-400 text-slate-950",
-      content: "💥",
+      className:
+        "border-2 border-amber-500 bg-amber-100 text-slate-950 shadow-sm",
+      content: (
+        <span className="leading-none flex items-center justify-center p-0.5">
+          <Image
+            width={36}
+            height={36}
+            src={UNIT_IMAGES.mine}
+            alt={UNIT_NAMES.mine || "لغم"}
+            className="w-7 h-7 sm:w-8 sm:h-8 object-contain drop-shadow-sm"
+          />
+        </span>
+      ),
     };
   }
   if (result === "blocked") {
     return {
-      className: "border-cyan-500 bg-cyan-500 text-white",
-      content: "🛡",
+      className: "border-2 border-cyan-500 bg-cyan-100 text-cyan-900",
+      content: (
+        <span className="leading-none flex items-center justify-center">
+          <Shield className="w-6 h-6 sm:w-7 sm:h-7 stroke-[2.5] text-cyan-600" />
+        </span>
+      ),
     };
   }
   if (revealed) {
@@ -82,10 +94,21 @@ function getCombatCellVisual({ result, unit, revealed, canClick }) {
     // hit (rose) or miss (slate) so it can't be mistaken for either.
     return unit
       ? {
-          className: "border-amber-400 bg-amber-100 text-amber-900",
+          className:
+            "border-2 border-amber-400 bg-amber-100 text-amber-900 shadow-sm",
           content: (
-            <span className="text-lg sm:text-xl leading-none">
-              {UNIT_EMOJI[unit] || "●"}
+            <span className="leading-none flex items-center justify-center p-0.5">
+              {UNIT_IMAGES[unit] ? (
+                <Image
+                  width={36}
+                  height={36}
+                  src={UNIT_IMAGES[unit]}
+                  alt={UNIT_NAMES[unit] || unit}
+                  className="w-7 h-7 sm:w-8 sm:h-8 object-contain drop-shadow-sm"
+                />
+              ) : (
+                "●"
+              )}
             </span>
           ),
         }

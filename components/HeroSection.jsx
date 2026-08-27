@@ -3,6 +3,8 @@
 import { motion } from "motion/react";
 import { Swords, Info, Compass, ShieldAlert, Zap } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
+import { UNIT_IMAGES, UNIT_NAMES } from "../lib/game-data";
 
 export default function HeroSection() {
   // Let's create a model representation of a 6x6 coordinate grid for illustration
@@ -10,26 +12,26 @@ export default function HeroSection() {
     const row = Math.floor(i / 6);
     const col = i % 6;
     // Put some mock items at specific coordinates
-    let unitType = null;
+    let unitKey = null;
     let unitColor = "";
     if (row === 1 && col === 2) {
-      unitType = "✈️";
+      unitKey = "aircraft";
       unitColor = "bg-sky-100 border-sky-400 text-sky-600 animate-pulse";
     }
     if (row === 3 && col === 4) {
-      unitType = "⛵";
+      unitKey = "submarine";
       unitColor = "bg-emerald-100 border-emerald-400 text-emerald-600";
     }
     if (row === 4 && col === 1) {
-      unitType = "🚜";
+      unitKey = "tank";
       unitColor = "bg-amber-100 border-amber-400 text-amber-600 shadow-sm";
     }
     if (row === 2 && col === 5) {
-      unitType = "👤";
+      unitKey = "infantry";
       unitColor = "bg-rose-100 border-rose-400 text-rose-600";
     }
 
-    return { id: i, row, col, unitType, unitColor };
+    return { id: i, row, col, unitKey, unitColor };
   });
 
   return (
@@ -43,7 +45,7 @@ export default function HeroSection() {
 
       <div className="max-w-[85rem] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Adjusted content to offset header height gracefully while maintaining requested pt-0 */}
-        <div className="pt-28 md:pt-36 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+        <div className="pt-28 md:pt-36 grid grid-cols-1 lg:grid-cols-12 gap-12">
           {/* Hero text */}
           <div className="lg:col-span-7 flex flex-col items-start text-right">
             <motion.div
@@ -128,20 +130,24 @@ export default function HeroSection() {
                   <div
                     key={cell.id}
                     className={`aspect-square border border-slate-100 rounded-xl flex items-center justify-center text-lg sm:text-xl relative transition-all duration-300 cursor-default ${
-                      cell.unitType
-                        ? cell.unitColor + " border-2 font-bold shadow"
+                      cell.unitKey
+                        ? cell.unitColor + " border-2 font-bold shadow p-1"
                         : "bg-slate-50/50 hover:bg-cyan-50 hover:border-cyan-200"
                     }`}
                   >
-                    {!cell.unitType && (
+                    {!cell.unitKey && (
                       <span className="text-[10px] text-slate-300 font-mono tracking-tighter">
                         {cell.row},{cell.col}
                       </span>
                     )}
-                    {cell.unitType && (
-                      <span className="drop-shadow-sm select-none">
-                        {cell.unitType}
-                      </span>
+                    {cell.unitKey && UNIT_IMAGES[cell.unitKey] && (
+                      <Image
+                        src={UNIT_IMAGES[cell.unitKey]}
+                        alt={UNIT_NAMES[cell.unitKey] || "وحدة"}
+                        width={28}
+                        height={28}
+                        className="w-6 h-6 sm:w-7 sm:h-7 object-contain drop-shadow-sm select-none"
+                      />
                     )}
 
                     {/* Show a cool radar scope effect on one square */}
@@ -163,11 +169,25 @@ export default function HeroSection() {
                   </span>
                 </div>
                 <div className="flex gap-2">
-                  <span className="bg-white px-2 py-1 rounded-lg text-xs font-bold border border-slate-200">
-                    👥 مشاة (20ن)
+                  <span className="bg-white px-2 py-1 rounded-lg text-xs font-bold border border-slate-200 flex items-center gap-1.5">
+                    <Image
+                      src={UNIT_IMAGES.infantry}
+                      alt="مشاة"
+                      width={16}
+                      height={16}
+                      className="w-4 h-4 object-contain"
+                    />
+                    مشاة (20ن)
                   </span>
-                  <span className="bg-white px-2 py-1 rounded-lg text-xs font-bold border border-slate-200">
-                    🚜 دبابة (200ن)
+                  <span className="bg-white px-2 py-1 rounded-lg text-xs font-bold border border-slate-200 flex items-center gap-1.5">
+                    <Image
+                      src={UNIT_IMAGES.tank}
+                      alt="دبابة"
+                      width={16}
+                      height={16}
+                      className="w-4 h-4 object-contain"
+                    />
+                    دبابة (200ن)
                   </span>
                 </div>
               </div>

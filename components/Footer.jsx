@@ -19,7 +19,8 @@ export default function Footer() {
               </span>
             </Link>
             <p className="text-slate-400 text-sm leading-relaxed max-w-sm mb-6">
-              أول لعبة تحدي وتفكير تجمع بين الذكاء والمعلومات السنعة عشان توزع فريقك وتهجم بذكاء وتفوز على ربعك.
+              أول لعبة تحدي وتفكير تجمع بين الذكاء والمعلومات السنعة عشان توزع
+              فريقك وتهجم بذكاء وتفوز على ربعك.
             </p>
             <div className="flex items-center gap-4 text-slate-400 text-xs font-bold">
               <span className="flex items-center gap-1">
@@ -83,7 +84,7 @@ export default function Footer() {
             <div className="space-y-3 font-semibold text-xs text-slate-300">
               <div className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-cyan-400" />
-                <span>الإيميل: info@mosalam.com</span>
+                <span>الإيميل: info@7elhmbenhm.com</span>
               </div>
             </div>
           </div>

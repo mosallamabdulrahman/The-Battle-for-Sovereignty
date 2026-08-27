@@ -12,6 +12,8 @@ import {
   XCircle,
 } from "lucide-react";
 
+import { UNIT_IMAGES, UNIT_NAMES } from "../../lib/game-data";
+
 export const DIFFICULTY_LABELS = {
   easy: "سهل",
   medium: "متوسط",
@@ -26,12 +28,12 @@ export const RESULT_LABELS = {
 };
 
 export const UNIT_LABELS = {
-  infantry: "جندي 👥",
-  armored: "مدرعة 🛡️",
-  tank: "دبابة 🚜",
-  aircraft: "طائرة ✈️",
-  submarine: "غواصة ⛵",
-  mine: "لغم 💥",
+  infantry: "جندي",
+  armored: "مدرعة",
+  tank: "دبابة",
+  aircraft: "طائرة",
+  submarine: "غواصة",
+  mine: "لغم",
 };
 
 export const FALLBACK_CATEGORY_IMAGE =
@@ -625,9 +627,20 @@ export function CombatEventModal({ event, onClose, autoCloseMs = 2000 }) {
           {RESULT_LABELS[event.result] || event.result}
         </h2>
         {event.unit_type && (
-          <p className="mt-1 text-base font-bold text-slate-700">
-            {UNIT_LABELS[event.unit_type] || event.unit_type}
-          </p>
+          <div className="mt-2 flex items-center justify-center gap-2">
+            {UNIT_IMAGES[event.unit_type] && (
+              <img
+                src={UNIT_IMAGES[event.unit_type]}
+                alt={UNIT_NAMES[event.unit_type] || event.unit_type}
+                className=" h-9 w-9  sm:h-11 sm:h-11 object-contain"
+              />
+            )}
+            <p className="text-base font-bold text-slate-700">
+              {UNIT_NAMES[event.unit_type] ||
+                UNIT_LABELS[event.unit_type] ||
+                event.unit_type}
+            </p>
+          </div>
         )}
         <p className="mt-2 text-sm text-slate-500">
           الطقة على المربع {event.cell_index + 1}
