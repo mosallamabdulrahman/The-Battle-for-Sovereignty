@@ -13,11 +13,10 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import { supabase } from "../../lib/supabase";
-import Header from "../../components/Header";
+import { supabase } from "@/lib/supabase";
+import Header from "@/components/Header";
 
-const FALLBACK_CATEGORY_IMAGE =
-  "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=200&q=80";
+const FALLBACK_CATEGORY_IMAGE = "/images/logo.png";
 
 function ContinueOrRestartModal({ gameName, onContinue, onRestart, onClose }) {
   return (

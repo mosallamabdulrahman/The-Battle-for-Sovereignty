@@ -107,44 +107,55 @@ export default function CategoryModal({
             </div>
           </div>
 
-          <div>
-            <label className="text-[11px] font-bold text-slate-500">
-              الترتيب
-            </label>
-            <input
-              type="number"
-              value={form.sort_order}
-              min={1}
-              onChange={(e) => set("sort_order", Number(e.target.value))}
-              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-cyan-500 outline-none transition-colors"
-            />
-            <p className="mt-1 text-[10px] text-slate-400">
-              ده ترتيب ظهور التصنيف في الصفحة الرئيسية — الرقم الأصغر يظهر
-              الأول. أول رقم مسموح هو 1.
-            </p>
-            {orderTooLow && (
-              <p className="mt-1 text-[10px] font-bold text-rose-600">
-                الترتيب لازم يكون 1 أو أكبر.
+          <div className="grid grid-cols-2 gap-3 items-start">
+            <div>
+              <label className="text-[11px] font-bold text-slate-500">
+                الترتيب
+              </label>
+              <input
+                type="number"
+                value={form.sort_order}
+                min={1}
+                onChange={(e) => set("sort_order", Number(e.target.value))}
+                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-cyan-500 outline-none transition-colors"
+              />
+              <p className="mt-1 text-[10px] text-slate-400">
+                ترتيب الظهور (الأصغر أولاً).
               </p>
-            )}
-            {!orderTooLow && orderTaken && (
-              <p className="mt-1 text-[10px] font-bold text-rose-600">
-                الترتيب ده متاخد بتصنيف تاني — اختار رقم مختلف.
-              </p>
-            )}
-          </div>
+              {orderTooLow && (
+                <p className="mt-1 text-[10px] font-bold text-rose-600">
+                  الترتيب لازم يكون 1 أو أكبر.
+                </p>
+              )}
+              {!orderTooLow && orderTaken && (
+                <p className="mt-1 text-[10px] font-bold text-rose-600">
+                  الترتيب ده متاخد بتصنيف تاني.
+                </p>
+              )}
+            </div>
 
-          <label className="flex items-center gap-2 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={form.is_active}
-              onChange={(e) => set("is_active", e.target.checked)}
-              className="rounded text-cyan-600 focus:ring-cyan-500 h-4 w-4 border-slate-300"
-            />
-            <span className="text-sm font-bold text-slate-700">
-              مفعّل (يظهر في الإعداد)
-            </span>
-          </label>
+            <div>
+              <label className="text-[11px] font-bold text-slate-500">
+                الحالة
+              </label>
+              <div className="mt-1 flex items-center h-[38px]">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={form.is_active}
+                    onChange={(e) => set("is_active", e.target.checked)}
+                    className="rounded text-cyan-600 focus:ring-cyan-500 h-4 w-4 border-slate-300 cursor-pointer"
+                  />
+                  <span className="text-xs font-bold text-slate-700">
+                    مفعّل (يظهر في الإعداد)
+                  </span>
+                </label>
+              </div>
+              <p className="mt-1 text-[10px] text-slate-400">
+                إظهار أو إخفاء في الإعداد.
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Footer */}

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { GATE_COOKIE_NAME, verifyGateToken } from "./lib/site-gate";
+import { GATE_COOKIE_NAME, verifyGateToken } from "@/lib/site-gate";
 
 // Site-wide access gate. Applies to everything the matcher below allows
 // through EXCEPT /battle — team members reach that page via a private

@@ -4,7 +4,7 @@ import { motion } from "motion/react";
 import { Swords, Info, Compass, ShieldAlert, Zap } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import { UNIT_IMAGES, UNIT_NAMES } from "../lib/game-data";
+import { UNIT_IMAGES, UNIT_NAMES } from "@/lib/game-data";
 
 export default function HeroSection() {
   // Let's create a model representation of a 6x6 coordinate grid for illustration

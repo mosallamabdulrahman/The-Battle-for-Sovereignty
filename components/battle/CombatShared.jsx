@@ -12,7 +12,7 @@ import {
   XCircle,
 } from "lucide-react";
 
-import { UNIT_IMAGES, UNIT_NAMES } from "../../lib/game-data";
+import { UNIT_IMAGES, UNIT_NAMES } from "@/lib/game-data";
 
 export const DIFFICULTY_LABELS = {
   easy: "سهل",
@@ -36,8 +36,7 @@ export const UNIT_LABELS = {
   mine: "لغم",
 };
 
-export const FALLBACK_CATEGORY_IMAGE =
-  "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=360&q=80";
+export const FALLBACK_CATEGORY_IMAGE = "/images/logo.png";
 
 export const DIFFICULTY_STRIKE_LABEL = {
   easy: "طقة وحدة",
@@ -392,8 +391,8 @@ function QuestionSlotButton({
 }) {
   const roundedClass =
     side === "right"
-      ? "rounded-r-full rounded-l-2xl"
-      : "rounded-l-full rounded-r-2xl";
+      ? "rounded-r-full rounded-l-md sm:rounded-l-2xl"
+      : "rounded-l-full rounded-r-md sm:rounded-r-2xl";
   const baseBg = side === "right" ? "bg-[#CDD2D2]" : "bg-slate-200";
   const label =
     DIFFICULTY_STRIKE_LABEL[difficulty] ||
@@ -405,7 +404,7 @@ function QuestionSlotButton({
       <button
         type="button"
         disabled
-        className={`h-14 sm:h-16 w-full ${roundedClass} border-2 border-slate-200 bg-slate-100 text-center text-sm sm:text-base font-bold text-slate-300 cursor-not-allowed opacity-60 flex items-center justify-center`}
+        className={`h-10 xs:h-11 sm:h-12 md:h-14 lg:h-16 w-full ${roundedClass} border-2 border-slate-200 bg-slate-100 text-center text-[10px] xs:text-[11px] sm:text-sm md:text-base font-bold text-slate-300 cursor-not-allowed opacity-60 flex items-center justify-center px-1`}
         title="مفيش سؤال متاح بهذا المستوى لهذا التصنيف"
       >
         {label}
@@ -421,7 +420,7 @@ function QuestionSlotButton({
       type="button"
       disabled={isDisabled}
       onClick={() => onSelect(question)}
-      className={`h-14 sm:h-16 w-full ${roundedClass} border-2 border-transparent text-center text-base sm:text-lg font-bold transition-all flex items-center justify-center ${
+      className={`h-10 xs:h-11 sm:h-12 md:h-14 lg:h-16 w-full ${roundedClass} border-2 border-transparent text-center text-[10px] xs:text-[11px] sm:text-sm md:text-base font-bold transition-all flex items-center justify-center px-1 ${
         question.is_used
           ? "border-slate-200 bg-slate-200 text-slate-400 line-through"
           : isActive
@@ -454,7 +453,7 @@ export function QuestionGrid({
   }, {});
 
   return (
-    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+    <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 xs:gap-2.5 sm:gap-4 md:gap-6">
       {Object.entries(categories).map(([categoryId, category]) => {
         const rows = DIFFICULTY_ROW_ORDER.map((difficulty) =>
           category.questions
@@ -464,8 +463,8 @@ export function QuestionGrid({
         );
 
         return (
-          <section key={categoryId} className="flex">
-            <div className="flex-1 flex flex-col justify-between gap-2.5">
+          <section key={categoryId} className="flex min-w-0">
+            <div className="flex-1 flex flex-col justify-between gap-1 sm:gap-2.5 min-w-0">
               {rows.map(([rightQuestion], row) => (
                 <QuestionSlotButton
                   key={`right-${row}`}
@@ -480,21 +479,21 @@ export function QuestionGrid({
               ))}
             </div>
 
-            <div className="w-38 sm:w-40 shrink-0 relative bg-cyan-50 flex flex-col justify-end">
+            <div className="w-14 xs:w-16 sm:w-22 md:w-38 lg:w-40 shrink-0 relative bg-cyan-50 flex flex-col justify-end overflow-hidden">
               <img
                 src={category.imageUrl || FALLBACK_CATEGORY_IMAGE}
                 alt={category.name}
                 className="absolute inset-0 h-full w-full object-cover"
                 loading="lazy"
               />
-              <div className="relative z-10 bg-cyan-700/95 px-1.5 py-2 text-center">
-                <h3 className="font-bold text-white text-xs sm:text-sm truncate">
+              <div className="relative z-10 bg-cyan-700/95 px-1 sm:px-2 py-1.5 sm:py-2.5 min-h-[28px] sm:min-h-[36px] flex items-center justify-center text-center">
+                <h3 className="font-bold text-white text-[10px] xs:text-[11px] sm:text-xs md:text-sm truncate">
                   {category.name}
                 </h3>
               </div>
             </div>
 
-            <div className="flex-1 flex flex-col justify-between gap-0.5">
+            <div className="flex-1 flex flex-col justify-between gap-1 sm:gap-2.5 min-w-0">
               {rows.map(([, leftQuestion], row) => (
                 <QuestionSlotButton
                   key={`left-${row}`}

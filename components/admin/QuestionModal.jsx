@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { AlertTriangle, ImageIcon, Loader2, Save, X } from "lucide-react";
-import { DIFFICULTY_STRIKES } from "../../lib/admin-constants";
+import { DIFFICULTY_STRIKES } from "@/lib/admin-constants";
 import { AnswerImageUpload, MediaUpload } from "./MediaUploaders";
 
 // A category can hold any number of questions — the game randomly picks 6

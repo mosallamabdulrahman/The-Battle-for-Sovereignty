@@ -2,7 +2,7 @@
 
 import { motion } from "motion/react";
 import { Music, Search } from "lucide-react";
-import { DIFFICULTY_AR } from "../../lib/admin-constants";
+import { DIFFICULTY_AR } from "@/lib/admin-constants";
 
 export default function QuestionsTab({
   categories,

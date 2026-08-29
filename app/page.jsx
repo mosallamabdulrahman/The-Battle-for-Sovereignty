@@ -1,11 +1,11 @@
-import Header from '../components/Header';
-import HeroSection from '../components/HeroSection';
-import HowToPlaySection from '../components/HowToPlaySection';
-import CategoriesSection from '../components/CategoriesSection';
-import PaymentGateSection from '../components/PaymentGateSection';
-import GameSetupSection from '../components/GameSetupSection';
-import ScrollToTop from '../components/ScrollToTop';
-import Footer from '../components/Footer';
+import Header from '@/components/Header';
+import HeroSection from '@/components/HeroSection';
+import HowToPlaySection from '@/components/HowToPlaySection';
+import CategoriesSection from '@/components/CategoriesSection';
+import PaymentGateSection from '@/components/PaymentGateSection';
+import GameSetupSection from '@/components/GameSetupSection';
+import ScrollToTop from '@/components/ScrollToTop';
+import Footer from '@/components/Footer';
 
 export default function Home() {
   return (

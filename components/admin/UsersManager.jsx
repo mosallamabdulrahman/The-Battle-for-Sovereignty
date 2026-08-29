@@ -14,8 +14,8 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { supabasePanel as supabase } from "../../lib/supabase-panel";
-import { generatePassword } from "../../lib/auth";
+import { supabasePanel as supabase } from "@/lib/supabase-panel";
+import { generatePassword } from "@/lib/auth";
 import { motion, AnimatePresence } from "motion/react";
 
 const callAdminUsersApi = async (path, method, body) => {

@@ -2,8 +2,8 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import { useEffect, useState } from "react";
-import { supabasePanel as supabase } from "../../lib/supabase-panel";
-import { getUserDisplayName } from "../../lib/auth";
+import { supabasePanel as supabase } from "@/lib/supabase-panel";
+import { getUserDisplayName } from "@/lib/auth";
 import Link from "next/link";
 import { Eye, EyeOff, Loader2, Lock, Shield } from "lucide-react";
 import GameLogo from "@/components/GameLogo";

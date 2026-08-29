@@ -3,18 +3,19 @@
 import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { HelpCircle, Loader2 } from "lucide-react";
-import { supabasePanel as supabase } from "../../lib/supabase-panel";
-import { DIFFICULTY_STRIKES } from "../../lib/admin-constants";
-import UsersManager from "../../components/admin/UsersManager";
-import Toast from "../../components/admin/Toast";
-import CategoryModal from "../../components/admin/CategoryModal";
-import QuestionModal from "../../components/admin/QuestionModal";
-import HelpModal from "../../components/admin/HelpModal";
-import AdminSidebar from "../../components/admin/AdminSidebar";
-import DashboardTab from "../../components/admin/DashboardTab";
-import QuestionsTab from "../../components/admin/QuestionsTab";
-import CategoriesTab from "../../components/admin/CategoriesTab";
-import StatsTab from "../../components/admin/StatsTab";
+import { supabasePanel as supabase } from "@/lib/supabase-panel";
+import { callAdminApi } from "@/lib/admin-api";
+import { DIFFICULTY_STRIKES } from "@/lib/admin-constants";
+import UsersManager from "@/components/admin/UsersManager";
+import Toast from "@/components/admin/Toast";
+import CategoryModal from "@/components/admin/CategoryModal";
+import QuestionModal from "@/components/admin/QuestionModal";
+import HelpModal from "@/components/admin/HelpModal";
+import AdminSidebar from "@/components/admin/AdminSidebar";
+import DashboardTab from "@/components/admin/DashboardTab";
+import QuestionsTab from "@/components/admin/QuestionsTab";
+import CategoriesTab from "@/components/admin/CategoriesTab";
+import StatsTab from "@/components/admin/StatsTab";
 
 const VALID_TABS = ["dashboard", "questions", "categories", "users", "stats"];
 
@@ -82,29 +83,28 @@ export default function AdminPage() {
   );
 
   // ── Data loaders
+  // Categories/questions are read through /api/admin/* (service-role behind
+  // an is_admin() check) instead of the browser client, because the public
+  // RLS policies on these tables only expose is_active = true rows. The
+  // panel has to list disabled rows too — "معطّل" means hidden from the
+  // game, not hidden from the admin, otherwise a disabled category becomes
+  // unreachable and can never be edited or re-enabled.
   const loadCategories = useCallback(async () => {
-    const { data, error } = await supabase
-      .from("question_categories")
-      .select("*")
-      .order("sort_order");
-    if (error) {
-      notify(error.message, "error");
-      return;
+    try {
+      const { categories: rows } = await callAdminApi("/api/admin/categories");
+      setCategories(rows || []);
+    } catch (err) {
+      notify(err.message, "error");
     }
-    setCategories(data || []);
   }, [notify]);
 
   const loadQuestions = useCallback(async () => {
-    const { data, error } = await supabase
-      .from("question_bank")
-      .select("*")
-      .order("category_id")
-      .order("position");
-    if (error) {
-      notify(error.message, "error");
-      return;
+    try {
+      const { questions: rows } = await callAdminApi("/api/admin/questions");
+      setQuestions(rows || []);
+    } catch (err) {
+      notify(err.message, "error");
     }
-    setQuestions(data || []);
   }, [notify]);
 
   // Per-question performance: how many times each bank question has been

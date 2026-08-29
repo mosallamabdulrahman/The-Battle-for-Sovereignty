@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Shield, Menu, X, LogOut, User, Zap, History } from "lucide-react";
 import Link from "next/link";
-import { supabase } from "../lib/supabase";
-import { getUserDisplayName } from "../lib/auth";
+import { supabase } from "@/lib/supabase";
+import { getUserDisplayName } from "@/lib/auth";
 
 import GameLogo from "./GameLogo";
 

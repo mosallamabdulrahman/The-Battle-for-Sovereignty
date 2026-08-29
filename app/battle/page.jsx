@@ -16,16 +16,16 @@ import {
   LockKeyhole,
   LogOut,
 } from "lucide-react";
-import { supabase } from "../../lib/supabase";
+import { supabase } from "@/lib/supabase";
 import { QRCodeSVG } from "qrcode.react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   AbandonedGameView,
   CombatEventModal,
-} from "../../components/battle/CombatShared";
-import { RefereeGameScreen } from "../../components/battle/RefereeGameScreen";
-import { UNIT_IMAGES, UNIT_NAMES } from "../../lib/game-data";
+} from "@/components/battle/CombatShared";
+import { RefereeGameScreen } from "@/components/battle/RefereeGameScreen";
+import { UNIT_IMAGES, UNIT_NAMES } from "@/lib/game-data";
 import GameLogo from "@/components/GameLogo";
 import Image from "next/image";
 
@@ -1874,7 +1874,7 @@ function BattlePageInner() {
                                 alt={cellUnit.name}
                                 width={28}
                                 height={28}
-                                className="w-6 h-6 sm:w-7 sm:h-7 object-contain drop-shadow-sm"
+                                className="w-7 h-7 sm:w-11 sm:h-11 object-contain drop-shadow-sm"
                               />
                               <span className="text-[8px] absolute bottom-0.5 text-cyan-700 font-bold tracking-tight scale-90">
                                 {cellUnit.cost}ن
@@ -1933,7 +1933,7 @@ function BattlePageInner() {
                             alt={unit.name}
                             width={32}
                             height={32}
-                            className="w-7 h-7 object-contain"
+                            className="w-7 h-7 sm:w-11 sm:h-11 object-contain"
                           />
                         </span>
                         <span className="block text-right">

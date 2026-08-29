@@ -22,8 +22,8 @@ import {
   TACTICAL_TOOL_DETAILS,
   UNIT_IMAGES,
   UNIT_NAMES,
-} from "../../lib/game-data";
-import GameLogo from "../GameLogo";
+} from "@/lib/game-data";
+import GameLogo from "@/components/GameLogo";
 import Image from "next/image";
 
 // Shared cell look for both the strike board and the radar board, so a
@@ -67,15 +67,20 @@ function getCombatCellVisual({ result, unit, revealed, canClick }) {
       className:
         "border-2 border-amber-500 bg-amber-100 text-slate-950 shadow-sm",
       content: (
-        <span className="leading-none flex items-center justify-center p-0.5">
-          <Image
-            width={36}
-            height={36}
-            src={UNIT_IMAGES.mine}
-            alt={UNIT_NAMES.mine || "لغم"}
-            className="w-7 h-7 sm:w-8 sm:h-8 object-contain drop-shadow-sm"
-          />
-        </span>
+        <>
+          <span className="leading-none flex items-center justify-center p-0.5">
+            <Image
+              width={36}
+              height={36}
+              src={UNIT_IMAGES.mine}
+              alt={UNIT_NAMES.mine || "لغم"}
+              className="w-7 h-7 sm:w-8 sm:h-8 object-contain drop-shadow-sm"
+            />
+          </span>
+          <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <X className="w-5 h-5 sm:w-6 sm:h-6 stroke-[3.5] text-rose-600 drop-shadow-sm" />
+          </span>
+        </>
       ),
     };
   }
@@ -194,18 +199,18 @@ function TeamPillBar({ team, isBusy, onGrantPoints, onOpenStrike }) {
   const hasStrikes = team.available_strikes > 0;
 
   return (
-    <div className="flex flex-col items-center gap-1">
+    <div className="flex flex-col items-center gap-1 w-full">
       {/* Top Red Team Pill Badge */}
-      <div className="w-full bg-[#a30000] text-white font-bold text-sm sm:text-base text-center p-4 sm:px-8 rounded-full shadow-sm flex items-center justify-center gap-2">
-        <span className="truncate max-w-[120px]">
-          {team.name || (team.team_index === 1 ? "فريق 1" : "فريق 2")}
+      <div className="w-full bg-[#a30000] text-white font-bold text-xs sm:text-base text-center py-1 sm:py-2.5 px-2.5 sm:px-8 rounded-full shadow-sm flex items-center justify-center gap-1.5">
+        <span className="truncate max-w-[100px] sm:max-w-[120px]">
+          {team.name || (team.team_index === 1 ? "الفريق الأول" : "الفريق الثاني")}
         </span>
         {hasStrikes && (
           <button
             type="button"
             disabled={isBusy}
             onClick={() => onOpenStrike(team.team_index)}
-            className="bg-amber-400 text-slate-950 px-2 py-0.5 rounded-full text-[10px] font-bold animate-pulse hover:bg-amber-300"
+            className="bg-amber-400 text-slate-950 px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold animate-pulse hover:bg-amber-300"
           >
             🎯 ({team.available_strikes})
           </button>
@@ -213,23 +218,23 @@ function TeamPillBar({ team, isBusy, onGrantPoints, onOpenStrike }) {
       </div>
 
       {/* Bottom Score Stepper Container (Matching reference screenshot) */}
-      <div className="flex items-center justify-between gap-2 bg-white border-2 border-[#a30000] rounded-full p-1 shadow-sm w-full">
+      <div className="flex items-center justify-between gap-1 sm:gap-2 bg-white border-2 border-[#a30000] rounded-full p-0.5 sm:p-1 shadow-sm w-full">
         <button
           type="button"
           disabled={isBusy}
           onClick={() => onGrantPoints(team.team_index, -50)}
-          className="w-6 h-6 rounded-full bg-[#a30000] hover:bg-[#800000] text-white font-bold text-sm flex items-center justify-center transition disabled:opacity-40 shrink-0"
+          className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-[#a30000] hover:bg-[#800000] text-white font-bold text-xs sm:text-sm flex items-center justify-center transition disabled:opacity-40 shrink-0"
         >
           −
         </button>
-        <span className="font-bold text-base sm:text-lg text-[#a30000] tabular-nums px-2">
+        <span className="font-bold text-sm sm:text-lg text-[#a30000] tabular-nums px-1 sm:px-2">
           {team.score}
         </span>
         <button
           type="button"
           disabled={isBusy}
           onClick={() => onGrantPoints(team.team_index, 50)}
-          className="w-6 h-6 rounded-full bg-[#a30000] hover:bg-[#800000] text-white font-bold text-sm flex items-center justify-center transition disabled:opacity-40 shrink-0"
+          className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-[#a30000] hover:bg-[#800000] text-white font-bold text-xs sm:text-sm flex items-center justify-center transition disabled:opacity-40 shrink-0"
         >
           +
         </button>
@@ -251,12 +256,11 @@ function TeamStrikeStepper({ team, isBusy, onGrantExtraStrike }) {
 
   return (
     <div className="relative w-full">
-      {/* Compact trigger — a different color from the red points controls
-          above it so the two are easy to tell apart at a glance. */}
+      {/* Compact trigger */}
       <button
         type="button"
         onClick={() => setPopoverOpen((open) => !open)}
-        className="w-full rounded-full bg-cyan-700 hover:bg-cyan-800 text-white font-bold text-xs sm:text-sm py-1.5 px-4 shadow-sm transition"
+        className="w-full rounded-full bg-cyan-700 hover:bg-cyan-800 text-white font-bold text-[10px] xs:text-xs sm:text-sm py-1 sm:py-1.5 px-2.5 sm:px-4 shadow-sm transition"
       >
         اضف طاقات زياده{pending > 0 ? ` (${pending})` : ""}
       </button>
@@ -292,9 +296,7 @@ function TeamStrikeStepper({ team, isBusy, onGrantExtraStrike }) {
               </button>
             </div>
 
-            {/* Commit button — grants the strikes and closes the popover;
-                the referee screen auto-opens the strike board once
-                available_strikes > 0, so no extra step is needed here. */}
+            {/* Commit button */}
             <button
               type="button"
               disabled={isBusy || pending === 0}
@@ -318,11 +320,11 @@ function HelperToolsSection({ team, isBusy, onOpenRadar, onUseTool }) {
       : ["phone_friend", "ask_audience", "swap_question"];
 
   return (
-    <div className="flex flex-col items-center">
-      <span className="text-[11px] font-bold text-slate-700 mb-1">
+    <div className="flex flex-col items-center w-full">
+      <span className="text-[10px] sm:text-[11px] font-bold text-slate-700 mb-0.5 sm:mb-1">
         وسائل المساعدة
       </span>
-      <div className="flex items-center gap-1.5 sm:gap-2">
+      <div className="flex items-center justify-center gap-1.5 sm:gap-2">
         {tools.map((toolId) => {
           const tool = TACTICAL_TOOL_DETAILS[toolId];
           const isUsed = usedTools.includes(toolId);
@@ -338,24 +340,24 @@ function HelperToolsSection({ team, isBusy, onOpenRadar, onUseTool }) {
                   ? onOpenRadar(team.team_index)
                   : onUseTool(team.team_index, toolId, null)
               }
-              className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-slate-300 flex items-center justify-center transition-all shadow-sm ${
+              className={`w-7 h-7 xs:w-8 xs:h-8 sm:w-10 sm:h-10 rounded-full border border-slate-300 flex items-center justify-center transition-all shadow-sm ${
                 isUsed
                   ? "bg-slate-200 text-slate-400 cursor-not-allowed"
                   : "bg-white text-slate-800 hover:border-cyan-500 hover:bg-cyan-50 hover:scale-105"
               }`}
             >
               {toolId === "phone_friend" || toolId === "phone" ? (
-                <PhoneCall className="w-4 h-4 text-slate-700" />
+                <PhoneCall className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-700" />
               ) : toolId === "ask_audience" || toolId === "peace" ? (
-                <Users className="w-4 h-4 text-slate-700" />
+                <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-700" />
               ) : toolId === "swap_question" || toolId === "swap" ? (
-                <RotateCcw className="w-4 h-4 text-slate-700" />
+                <RotateCcw className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-700" />
               ) : toolId === "shield" ? (
-                <Shield className="w-4 h-4 text-slate-700" />
+                <Shield className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-700" />
               ) : isRadar ? (
-                <Radar className="w-4 h-4 text-slate-700" />
+                <Radar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-700" />
               ) : (
-                <Star className="w-4 h-4 text-slate-700" />
+                <Star className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-700" />
               )}
             </button>
           );
@@ -376,59 +378,107 @@ export function GameBottomFooter({
   onGrantExtraStrike,
 }) {
   return (
-    <div className="w-full mt-4 sm:mt-8 bg-[#e2e8f0] p-3 sm:p-4 flex flex-col md:flex-row items-center justify-between gap-4">
-      {/* Team 1 Section (Right side in RTL) */}
-      <div className="flex items-center gap-3 sm:gap-6 flex-row-reverse md:flex-row flex-wrap justify-center md:justify-start">
-        <div className="flex flex-col items-center gap-2 w-[130px] sm:w-[150px]">
+    <div className="w-full bg-[#e2e8f0] p-1.5 xs:p-2 sm:p-4 shrink-0">
+      {/* Mobile Layout (< md): 2 columns side by side matching reference screenshot */}
+      <div className="grid grid-cols-2 gap-2 xs:gap-3 md:hidden">
+        {/* Right Section in RTL: Team 1 */}
+        <div className="flex flex-col items-center gap-1">
           <TeamPillBar
             team={team1}
             isBusy={isBusy}
             onGrantPoints={onGrantPoints}
             onOpenStrike={onOpenStrike}
           />
-        </div>
-        <div className="flex flex-col gap-2">
+          <TeamStrikeStepper
+            team={team1}
+            isBusy={isBusy}
+            onGrantExtraStrike={onGrantExtraStrike}
+          />
           <HelperToolsSection
             team={team1}
             isBusy={isBusy}
             onOpenRadar={onOpenRadar}
             onUseTool={onUseTool}
           />
-          <TeamStrikeStepper
-            team={team1}
-            isBusy={isBusy}
-            onGrantExtraStrike={onGrantExtraStrike}
-          />
         </div>
-      </div>
 
-      {/* Center Logo Section */}
-      <div className="flex flex-col items-center justify-center shrink-0 px-2 hidden sm:block">
-        <GameLogo className="w-22 h-22 " />
-      </div>
-
-      {/* Team 2 Section (Left side in RTL) */}
-      <div className="flex items-center gap-3 sm:gap-4 flex-wrap justify-center md:justify-end">
-        <div className="flex flex-col gap-2">
-          <HelperToolsSection
-            team={team2}
-            isBusy={isBusy}
-            onOpenRadar={onOpenRadar}
-            onUseTool={onUseTool}
-          />
-          <TeamStrikeStepper
-            team={team2}
-            isBusy={isBusy}
-            onGrantExtraStrike={onGrantExtraStrike}
-          />
-        </div>
-        <div className="flex flex-col items-center gap-2 w-[130px] sm:w-[150px]">
+        {/* Left Section in RTL: Team 2 */}
+        <div className="flex flex-col items-center gap-1">
           <TeamPillBar
             team={team2}
             isBusy={isBusy}
             onGrantPoints={onGrantPoints}
             onOpenStrike={onOpenStrike}
           />
+          <TeamStrikeStepper
+            team={team2}
+            isBusy={isBusy}
+            onGrantExtraStrike={onGrantExtraStrike}
+          />
+          <HelperToolsSection
+            team={team2}
+            isBusy={isBusy}
+            onOpenRadar={onOpenRadar}
+            onUseTool={onUseTool}
+          />
+        </div>
+      </div>
+
+      {/* Desktop Layout (>= md): UNTOUCHED */}
+      <div className="hidden md:flex items-center justify-between gap-4 w-full">
+        {/* Team 1 Section (Right side in RTL) */}
+        <div className="flex items-center gap-6">
+          <div className="flex flex-col items-center gap-2 w-[150px]">
+            <TeamPillBar
+              team={team1}
+              isBusy={isBusy}
+              onGrantPoints={onGrantPoints}
+              onOpenStrike={onOpenStrike}
+            />
+          </div>
+          <div className="flex flex-col gap-2">
+            <HelperToolsSection
+              team={team1}
+              isBusy={isBusy}
+              onOpenRadar={onOpenRadar}
+              onUseTool={onUseTool}
+            />
+            <TeamStrikeStepper
+              team={team1}
+              isBusy={isBusy}
+              onGrantExtraStrike={onGrantExtraStrike}
+            />
+          </div>
+        </div>
+
+        {/* Center Logo Section */}
+        <div className="flex flex-col items-center justify-center shrink-0 px-2">
+          <GameLogo className="w-22 h-22" />
+        </div>
+
+        {/* Team 2 Section (Left side in RTL) */}
+        <div className="flex items-center gap-4 justify-end">
+          <div className="flex flex-col gap-2">
+            <HelperToolsSection
+              team={team2}
+              isBusy={isBusy}
+              onOpenRadar={onOpenRadar}
+              onUseTool={onUseTool}
+            />
+            <TeamStrikeStepper
+              team={team2}
+              isBusy={isBusy}
+              onGrantExtraStrike={onGrantExtraStrike}
+            />
+          </div>
+          <div className="flex flex-col items-center gap-2 w-[150px]">
+            <TeamPillBar
+              team={team2}
+              isBusy={isBusy}
+              onGrantPoints={onGrantPoints}
+              onOpenStrike={onOpenStrike}
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -742,10 +792,76 @@ export function RefereeGameScreen({
     : new Map();
 
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col gap-4 dir-rtl">
-      <header className="bg-gradient-to-l from-cyan-800 via-cyan-700 to-cyan-600 shadow-lg">
-        <div className="max-w-[98rem] mx-auto px-3 sm:px-6 py-2.5 sm:py-3.5 flex flex-wrap md:flex-nowrap items-center justify-between gap-3 sm:gap-4">
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+    <div className="h-[100dvh] md:min-h-screen md:h-auto max-h-[100dvh] md:max-h-none bg-slate-100 flex flex-col justify-between overflow-hidden md:overflow-visible dir-rtl">
+      <header className="bg-gradient-to-l from-cyan-800 via-cyan-700 to-cyan-600 shadow-lg shrink-0">
+        {/* Mobile Header (< md) matching reference screenshot layout */}
+        <div className="md:hidden px-3 py-2 flex flex-col items-center gap-1.5 w-full">
+          {/* Top row: Logo on Right, Action buttons on Left */}
+          <div className="flex items-center justify-between w-full">
+            <GameLogo className="w-9 h-9 shrink-0" />
+
+            <div className="flex items-center gap-2 text-white font-bold text-xs shrink-0">
+              <button
+                type="button"
+                onClick={() => setConfirmAction("end")}
+                disabled={isBusy || room.status !== "playing"}
+                className="inline-flex items-center gap-1 hover:text-amber-200 transition disabled:opacity-50"
+              >
+                <Flag className="w-3.5 h-3.5 text-white shrink-0" />
+                <span className="whitespace-nowrap">انتهاء اللعبة</span>
+              </button>
+
+              {step !== "grid" && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAnswer(false);
+                    setTeamSelectOpen(false);
+                    setForceGridView(true);
+                    if (activeQuestion) onDeselectQuestion(activeQuestion.id);
+                  }}
+                  className="inline-flex items-center gap-1 hover:text-cyan-200 transition"
+                >
+                  <LayoutGrid className="w-3.5 h-3.5 text-white shrink-0" />
+                  <span className="whitespace-nowrap">الرجوع للوحة</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setConfirmAction("exit")}
+                className="inline-flex items-center gap-1 hover:text-rose-200 transition"
+              >
+                <LogOut className="w-3.5 h-3.5 text-white shrink-0" />
+                <span className="whitespace-nowrap">الخروج</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Middle row: Turn indicator pill */}
+          <button
+            type="button"
+            disabled={isBusy || room.status !== "playing"}
+            onClick={() =>
+              onSetCurrentTurn(currentTeam?.team_index === 1 ? 2 : 1)
+            }
+            className="rounded-full bg-[#a30000] border border-white/20 px-4 py-1 text-xs font-bold text-white shadow-inner flex items-center gap-1.5 hover:bg-[#800000] transition disabled:opacity-60"
+          >
+            <span className="whitespace-nowrap">دور فريق :</span>
+            <span className="text-white font-bold truncate max-w-[140px]">
+              {currentTeam?.name || (currentTeam?.team_index === 1 ? "الفريق الأول" : "الفريق الثاني")}
+            </span>
+          </button>
+
+          {/* Bottom row: Game Title */}
+          <span className="text-sm font-bold text-white/95 tracking-wide drop-shadow-sm text-center truncate max-w-[280px]">
+            {room.game_name || "تجربة اللعبه"}
+          </span>
+        </div>
+
+        {/* Desktop Header (>= md): UNTOUCHED */}
+        <div className="hidden md:flex max-w-[98rem] mx-auto px-3 sm:px-6 py-2.5 sm:py-3.5 flex-nowrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3 shrink-0">
             <GameLogo className="w-14 h-14 sm:w-18 sm:h-18 shrink-0" />
 
             <button
@@ -763,13 +879,13 @@ export function RefereeGameScreen({
             </button>
           </div>
 
-          <div className="flex-1 flex items-center justify-center min-w-[120px] order-3 md:order-2 w-full md:w-auto mt-1 md:mt-0">
-            <span className="text-lg sm:text-xl font-bold text-white/95 tracking-wide drop-shadow-sm text-center truncate max-w-[240px] sm:max-w-none">
+          <div className="flex-1 flex items-center justify-center min-w-[120px]">
+            <span className="text-lg sm:text-xl font-bold text-white/95 tracking-wide drop-shadow-sm text-center truncate">
               {room.game_name || "تجربة اللعبه"}
             </span>
           </div>
 
-          <div className="flex items-center gap-3 sm:gap-5 text-white font-bold text-xs sm:text-sm shrink-0 order-2 md:order-3">
+          <div className="flex items-center gap-3 sm:gap-5 text-white font-bold text-xs sm:text-sm shrink-0">
             <button
               type="button"
               onClick={() => setConfirmAction("end")}
@@ -808,7 +924,7 @@ export function RefereeGameScreen({
         </div>
       </header>
 
-      <main className="w-full mx-auto px-4 mt-4">
+      <main className="w-full max-w-[98rem] mx-auto px-1.5 xs:px-2 sm:px-4 md:px-6 my-auto py-0.5 sm:py-2 flex-1 flex flex-col justify-center min-h-0 overflow-hidden">
         {room.status === "finished" ? (
           <FinishedCelebration room={room} teams={teams} onExit={onExit} />
         ) : step === "grid" ? (

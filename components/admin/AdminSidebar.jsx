@@ -9,7 +9,7 @@ import {
   Tag,
   Users,
 } from "lucide-react";
-import GameLogo from "../GameLogo";
+import GameLogo from "@/components/GameLogo";
 
 const NAV_ITEMS = [
   { key: "dashboard", label: "الرئيسية", icon: LayoutDashboard },

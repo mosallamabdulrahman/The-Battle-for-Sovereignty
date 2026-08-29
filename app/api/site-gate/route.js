@@ -3,7 +3,7 @@ import {
   GATE_COOKIE_NAME,
   createGateToken,
   timingSafeStringEqual,
-} from "../../../lib/site-gate";
+} from "@/lib/site-gate";
 
 export async function POST(request) {
   let body;

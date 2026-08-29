@@ -115,10 +115,21 @@ export default function CategoriesTab({
                             src={cat.image_url}
                             alt={cat.name}
                             className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.src = "/images/logo.png";
+                              e.currentTarget.className =
+                                "w-full h-full object-contain p-1 bg-slate-50";
+                            }}
                           />
                         </a>
                       ) : (
-                        <span className="text-slate-400">—</span>
+                        <div className="w-16 h-10 rounded border border-slate-200 overflow-hidden flex items-center justify-center bg-slate-50">
+                          <img
+                            src="/images/logo.png"
+                            alt="شعار"
+                            className="w-full h-full object-contain p-1 opacity-70"
+                          />
+                        </div>
                       )}
                     </td>
                     <td className="p-3 font-semibold text-slate-700">

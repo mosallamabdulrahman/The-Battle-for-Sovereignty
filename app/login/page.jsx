@@ -17,14 +17,14 @@ import {
   RefreshCw,
 } from "lucide-react";
 import Link from "next/link";
-import GameLogo from "../../components/GameLogo";
-import { supabase } from "../../lib/supabase";
+import GameLogo from "@/components/GameLogo";
+import { supabase } from "@/lib/supabase";
 import {
   generatePassword,
   getSafeRedirect,
   normalizeEmail,
   suggestUsernameFromEmail,
-} from "../../lib/auth";
+} from "@/lib/auth";
 
 const WAS_HERE_KEY = "sovereignty_was_here";
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

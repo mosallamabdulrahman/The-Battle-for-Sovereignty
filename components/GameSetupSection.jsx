@@ -12,13 +12,13 @@ import {
   Copy,
   ImageIcon,
 } from "lucide-react";
-import { supabase } from "../lib/supabase";
+import { supabase } from "@/lib/supabase";
 import { QRCodeSVG } from "qrcode.react";
 import {
   FALLBACK_CATEGORIES,
   buildRoomQuestions,
   loadQuestionSetupData,
-} from "../lib/game-data";
+} from "@/lib/game-data";
 
 export default function GameSetupSection() {
   const [user, setUser] = useState(null);
@@ -391,18 +391,21 @@ export default function GameSetupSection() {
                           : "border-4 border-transparent"
                       }`}
                     >
-                      <span className="w-full h-28 sm:h-32 md:h-36 overflow-hidden bg-slate-50 block shrink-0">
-                        {cat.image_url ? (
-                          <img
-                            src={cat.image_url}
-                            alt={cat.name}
-                            className="h-full w-full"
-                          />
-                        ) : (
-                          <span className="flex h-full w-full items-center justify-center text-slate-300">
-                            <ImageIcon className="w-4 h-4" />
-                          </span>
-                        )}
+                      <span className="w-full h-28 sm:h-32 md:h-36 overflow-hidden bg-slate-50 flex items-center justify-center shrink-0">
+                        <img
+                          src={cat.image_url || "/images/logo.png"}
+                          alt={cat.name}
+                          className={`h-full w-full ${
+                            cat.image_url
+                              ? "object-cover"
+                              : "object-contain p-3 bg-slate-100"
+                          }`}
+                          onError={(e) => {
+                            e.currentTarget.src = "/images/logo.png";
+                            e.currentTarget.className =
+                              "h-full w-full object-contain p-3 bg-slate-100";
+                          }}
+                        />
                       </span>
                       <span className="bg-gradient-to-r from-cyan-500 via-cyan-600 to-sky-500 py-1.5 sm:py-2 px-2 text-center w-full block">
                         <span className="font-bold text-sm sm:text-base text-white leading-tight">

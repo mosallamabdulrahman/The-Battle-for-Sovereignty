@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
-import { requireAdmin } from "../../../../lib/admin-auth";
-import { getSupabaseAdmin } from "../../../../lib/supabase-admin";
+import { requireAdmin } from "@/lib/admin-auth";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
