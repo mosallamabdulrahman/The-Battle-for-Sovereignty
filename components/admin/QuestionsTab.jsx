@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
-import { Music, Search } from "lucide-react";
+import { Music, Search, Video } from "lucide-react";
 import { DIFFICULTY_AR } from "@/lib/admin-constants";
 
 export default function QuestionsTab({
@@ -205,11 +205,31 @@ export default function QuestionsTab({
                                 alt={q.media_type}
                                 className="w-14 h-14"
                               />
+                              {q.image_duration ? (
+                                <span className="text-[11px] font-bold text-slate-500">
+                                  {q.image_duration} ث
+                                </span>
+                              ) : null}
+                            </>
+                          ) : q.media_type === "video" ? (
+                            <>
+                              <Video className="w-3.5 h-3.5" />
+                              <span>
+                                فيديو
+                                {q.media_play_count
+                                  ? ` × ${q.media_play_count}`
+                                  : ""}
+                              </span>
                             </>
                           ) : (
                             <>
                               <Music className="w-3.5 h-3.5" />
-                              <span>صوت</span>
+                              <span>
+                                صوت
+                                {q.media_play_count
+                                  ? ` × ${q.media_play_count}`
+                                  : ""}
+                              </span>
                             </>
                           )}
                         </a>

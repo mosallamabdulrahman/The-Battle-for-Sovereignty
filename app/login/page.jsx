@@ -17,7 +17,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import Link from "next/link";
-import GameLogo from "@/components/GameLogo";
+import GameLogo from "@/components/common/GameLogo";
 import { supabase } from "@/lib/supabase";
 import {
   generatePassword,

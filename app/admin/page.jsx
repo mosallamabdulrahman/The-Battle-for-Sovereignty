@@ -181,7 +181,6 @@ export default function AdminPage() {
         p_id: form.id || null,
         p_name: form.name.trim(),
         p_description: form.description?.trim() || null,
-        p_emoji: form.emoji || "📌",
         p_image_url: form.image_url?.trim() || null,
         p_sort_order: form.sort_order || 0,
         p_is_active: form.is_active,
@@ -215,6 +214,18 @@ export default function AdminPage() {
   };
 
   // ── Questions CRUD
+  // Both extra media settings are optional and mutually exclusive: duration
+  // only applies to images, play count only to audio/video. Normalizing here
+  // (instead of trusting the form) keeps stale values out of the DB even if
+  // the modal state was left dirty. The max clamps mirror the DB CHECK
+  // constraints (image_duration 1–600, media_play_count 1–20) so a typed-in
+  // out-of-range number gets corrected instead of failing the insert.
+  const normalizePositiveInt = (value, max) => {
+    const number = Number(value);
+    if (!Number.isFinite(number) || number <= 0) return null;
+    return Math.min(Math.floor(number), max);
+  };
+
   const saveQuestion = async (form) => {
     const isDup = questions.some(
       (q) =>
@@ -236,6 +247,9 @@ export default function AdminPage() {
     }
     setBusy(true);
     try {
+      const mediaUrl = form.media_url?.trim() || null;
+      const mediaType = mediaUrl ? form.media_type || "image" : null;
+
       const { error } = await supabase.rpc("admin_save_question", {
         p_id: form.id || null,
         p_category_id: form.category_id,
@@ -245,10 +259,16 @@ export default function AdminPage() {
         p_strikes: DIFFICULTY_STRIKES[form.difficulty],
         p_position: form.position || 1,
         p_is_active: form.is_active,
-        p_media_url: form.media_url?.trim() || null,
-        p_media_type: form.media_url?.trim()
-          ? form.media_type || "image"
-          : null,
+        p_media_url: mediaUrl,
+        p_media_type: mediaType,
+        p_image_duration:
+          mediaType === "image"
+            ? normalizePositiveInt(form.image_duration, 600)
+            : null,
+        p_media_play_count:
+          mediaType === "audio" || mediaType === "video"
+            ? normalizePositiveInt(form.media_play_count, 20)
+            : null,
         p_answer_image_url: form.answer_image_url?.trim() || null,
       });
       if (error) throw error;

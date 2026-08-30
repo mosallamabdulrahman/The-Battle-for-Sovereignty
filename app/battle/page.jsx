@@ -26,7 +26,7 @@ import {
 } from "@/components/battle/CombatShared";
 import { RefereeGameScreen } from "@/components/battle/RefereeGameScreen";
 import { UNIT_IMAGES, UNIT_NAMES } from "@/lib/game-data";
-import GameLogo from "@/components/GameLogo";
+import GameLogo from "@/components/common/GameLogo";
 import Image from "next/image";
 
 const TEAM_PUBLIC_COLUMNS = [
@@ -534,7 +534,7 @@ function BattlePageInner() {
       if (categoryIds.length > 0) {
         const { data: categoryData } = await supabase
           .from("question_categories")
-          .select("id,image_url,name,emoji")
+          .select("id,image_url,name")
           .in("id", categoryIds);
         categoryImageMap = new Map(
           (categoryData || []).map((category) => [
@@ -545,7 +545,7 @@ function BattlePageInner() {
         newCategoryInfoMap = new Map(
           (categoryData || []).map((category) => [
             category.id,
-            { name: category.name, emoji: category.emoji },
+            { name: category.name, image_url: category.image_url || "" },
           ]),
         );
       }
@@ -1614,9 +1614,15 @@ function BattlePageInner() {
                       return (
                         <span
                           key={idx}
-                          className="bg-slate-100 text-slate-700 font-bold text-[10px] px-2.5 py-1 rounded-lg border border-slate-200"
+                          className="bg-slate-100 text-slate-700 font-bold text-[10px] px-2.5 py-1 rounded-lg border border-slate-200 inline-flex items-center gap-1.5"
                         >
-                          {info?.emoji || "🛡️"} {info?.name || catId}
+                          <img
+                            src={info?.image_url || "/images/logo.png"}
+                            alt=""
+                            className="h-4 w-4 rounded object-cover shrink-0"
+                            loading="lazy"
+                          />
+                          {info?.name || catId}
                         </span>
                       );
                     })}

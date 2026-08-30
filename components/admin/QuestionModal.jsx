@@ -2,7 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { AlertTriangle, ImageIcon, Loader2, Save, X } from "lucide-react";
+import {
+  AlertTriangle,
+  ImageIcon,
+  Loader2,
+  Repeat,
+  Save,
+  Timer,
+  X,
+} from "lucide-react";
 import { DIFFICULTY_STRIKES } from "@/lib/admin-constants";
 import { AnswerImageUpload, MediaUpload } from "./MediaUploaders";
 
@@ -46,10 +54,19 @@ export default function QuestionModal({
       is_active: true,
       media_url: "",
       media_type: null,
+      image_duration: null,
+      media_play_count: null,
       answer_image_url: "",
     };
   });
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  // Which extra setting applies is driven purely by media_type, so switching
+  // an image out for a video instantly swaps duration ⇄ playback count.
+  const hasMedia = Boolean(form.media_url?.trim());
+  const isImageMedia = hasMedia && form.media_type === "image";
+  const isPlayableMedia =
+    hasMedia && (form.media_type === "audio" || form.media_type === "video");
 
   const usedPositions = new Set(
     (questions || [])
@@ -223,15 +240,80 @@ export default function QuestionModal({
 
           <div>
             <label className="text-[11px] font-bold text-slate-500 flex items-center gap-1">
-              <ImageIcon className="h-3 w-3" /> وسائط (صورة أو صوت — اختياري)
+              <ImageIcon className="h-3 w-3" /> وسائط (صورة أو صوت أو فيديو —
+              اختياري)
             </label>
             <div className="mt-1">
               <MediaUpload
                 value={form.media_url || ""}
                 type={form.media_type}
                 onChange={(url, type) => {
-                  setForm((f) => ({ ...f, media_url: url, media_type: type }));
+                  // Clearing or switching media type must clear the setting
+                  // that no longer applies, otherwise a leftover value from a
+                  // previous file would be saved against the new media.
+                  setForm((f) => ({
+                    ...f,
+                    media_url: url,
+                    media_type: type,
+                    image_duration: type === "image" ? f.image_duration : null,
+                    media_play_count:
+                      type === "audio" || type === "video"
+                        ? f.media_play_count
+                        : null,
+                  }));
                 }}
+                extra={
+                  <>
+                    {isImageMedia && (
+                      <div className="flex items-center gap-1.5 bg-cyan-50/70 border border-cyan-100 rounded-xl px-2.5 py-1">
+                        <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1 whitespace-nowrap">
+                          <Timer className="h-3.5 w-3.5 text-cyan-600" />
+                          مدة العرض:
+                        </label>
+                        <input
+                          type="number"
+                          min={1}
+                          max={600}
+                          value={form.image_duration ?? ""}
+                          onChange={(e) => {
+                            const raw = e.target.value;
+                            set(
+                              "image_duration",
+                              raw === "" ? null : Math.max(1, Number(raw)),
+                            );
+                          }}
+                          className="w-16 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-center font-bold text-slate-700 focus:border-cyan-500 outline-none transition-colors"
+                          placeholder="ثواني"
+                          title="مدة عرض الصورة بالثواني (فاضية = بدون توقيت)"
+                        />
+                      </div>
+                    )}
+                    {isPlayableMedia && (
+                      <div className="flex items-center gap-1.5 bg-cyan-50/70 border border-cyan-100 rounded-xl px-2.5 py-1">
+                        <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1 whitespace-nowrap">
+                          <Repeat className="h-3.5 w-3.5 text-cyan-600" />
+                          مرات التشغيل:
+                        </label>
+                        <input
+                          type="number"
+                          min={1}
+                          max={20}
+                          value={form.media_play_count ?? ""}
+                          onChange={(e) => {
+                            const raw = e.target.value;
+                            set(
+                              "media_play_count",
+                              raw === "" ? null : Math.max(1, Number(raw)),
+                            );
+                          }}
+                          className="w-16 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-center font-bold text-slate-700 focus:border-cyan-500 outline-none transition-colors"
+                          placeholder="بدون حد"
+                          title="عدد مرات التشغيل (فاضية = بدون حد)"
+                        />
+                      </div>
+                    )}
+                  </>
+                }
               />
             </div>
           </div>
@@ -244,19 +326,20 @@ export default function QuestionModal({
               <AnswerImageUpload
                 value={form.answer_image_url || ""}
                 onChange={(url) => set("answer_image_url", url)}
+                extra={
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={form.is_active}
+                      onChange={(e) => set("is_active", e.target.checked)}
+                      className="rounded text-cyan-600 focus:ring-cyan-500 h-4 w-4 border-slate-300 cursor-pointer"
+                    />
+                    <span className="text-sm font-bold text-slate-700">مفعّل</span>
+                  </label>
+                }
               />
             </div>
           </div>
-
-          <label className="flex items-center gap-2 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={form.is_active}
-              onChange={(e) => set("is_active", e.target.checked)}
-              className="rounded text-cyan-600 focus:ring-cyan-500 h-4 w-4 border-slate-300"
-            />
-            <span className="text-sm font-bold text-slate-700">مفعّل</span>
-          </label>
         </div>
 
         {/* Footer */}

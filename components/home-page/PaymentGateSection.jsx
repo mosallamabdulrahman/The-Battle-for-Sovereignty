@@ -68,7 +68,7 @@ export default function PaymentGateSection() {
   return (
     <section
       id="payment-gate"
-      className="py-16 bg-slate-50 relative overflow-hidden"
+      className="py-8 sm:py-12 bg-slate-50 relative overflow-hidden"
     >
       {/* Visual Background Accents */}
       <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-200/20 rounded-full blur-3xl pointer-events-none" />

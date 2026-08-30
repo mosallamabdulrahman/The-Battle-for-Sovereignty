@@ -100,7 +100,7 @@ export default function HowToPlaySection() {
   return (
     <section
       id="how-to-play"
-      className="py-16 md:py-24 bg-gradient-to-b from-white to-slate-50"
+      className="py-8 md:py-12 bg-gradient-to-b from-white to-slate-50"
     >
       <div className="max-w-[85rem] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Heading */}

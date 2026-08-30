@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   AlertTriangle,
   CheckCircle,
+  EyeOff,
   Shield,
   Star,
   Trophy,
@@ -47,28 +48,160 @@ export const DIFFICULTY_STRIKE_LABEL = {
 // ── Media Player ───────────────────────────────────────────────
 // Renders directly under the question text, above the timer. Keyed by the
 // parent question so switching questions always remounts (no stale audio/image).
-export function MediaPlayer({ mediaUrl, mediaType }) {
-  if (!mediaUrl || !mediaType) return null;
+//
+// Two optional per-question rules come from the bank (admin panel):
+//   • imageDuration    — hide the image N seconds after it first appears.
+//   • mediaPlayCount   — allow audio/video to be played only N times total.
+// Both are null/0 by default, which means "no limit" and keeps the old
+// behaviour for every question saved before these fields existed.
+function TimedImage({ mediaUrl, durationSeconds }) {
+  const [hidden, setHidden] = useState(false);
 
-  if (mediaType === "image") {
+  // The parent keys this component by url+duration, so a fresh mount already
+  // resets `hidden` — the effect only has to own the timer itself.
+  useEffect(() => {
+    if (!durationSeconds || durationSeconds <= 0) return;
+    const timeoutId = setTimeout(
+      () => setHidden(true),
+      durationSeconds * 1000,
+    );
+    return () => clearTimeout(timeoutId);
+  }, [durationSeconds]);
+
+  if (hidden) {
     return (
-      <div className="mt-4">
-        <img
-          src={mediaUrl}
-          alt="وسائط السؤال"
-          className="w-full max-h-72 object-contain"
-          loading="lazy"
-        />
+      <div className="mt-4 flex flex-col items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-6 text-slate-500">
+        <EyeOff className="h-6 w-6" />
+        <span className="text-xs font-bold">
+          خلص وقت عرض الصورة ({durationSeconds} ثانية).
+        </span>
       </div>
     );
   }
 
-  if (mediaType === "audio") {
+  return (
+    <div className="mt-4">
+      <img
+        src={mediaUrl}
+        alt="وسائط السؤال"
+        className="w-full max-h-72 object-contain"
+        loading="lazy"
+      />
+      {durationSeconds > 0 && (
+        <p className="mt-1 text-[10px] font-bold text-slate-400">
+          الصورة تختفي بعد {durationSeconds} ثانية.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function LimitedPlaybackMedia({ mediaUrl, mediaType, maxPlays }) {
+  const mediaRef = useRef(null);
+  const [playsUsed, setPlaysUsed] = useState(0);
+
+  const limited = Boolean(maxPlays && maxPlays > 0);
+  const exhausted = limited && playsUsed >= maxPlays;
+
+  // onEnded is the only reliable "one full play finished" signal; once the
+  // budget is spent the element is pulled out of the DOM so seeking/replaying
+  // through the native controls can't be used to squeeze in an extra listen.
+  const handleEnded = () => {
+    if (!limited) return;
+    setPlaysUsed((used) => {
+      const next = used + 1;
+      if (next >= maxPlays && mediaRef.current) {
+        mediaRef.current.pause();
+      }
+      return next;
+    });
+  };
+
+  const remainingLabel = limited
+    ? exhausted
+      ? "خلصت مرات التشغيل المسموحة."
+      : `باقي ${maxPlays - playsUsed} من ${maxPlays} مرات تشغيل.`
+    : null;
+
+  if (mediaType === "video") {
     return (
-      <div className="mt-4 flex items-center gap-3 rounded-2xl border border-cyan-200 bg-cyan-50 p-4">
-        <Volume2 className="h-5 w-5 shrink-0 text-cyan-600" />
-        <audio controls src={mediaUrl} className="w-full h-8" />
+      <div className="mt-4 space-y-2">
+        {exhausted ? (
+          <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-6 text-slate-500">
+            <EyeOff className="h-6 w-6" />
+            <span className="text-xs font-bold">{remainingLabel}</span>
+          </div>
+        ) : (
+          <video
+            ref={mediaRef}
+            controls
+            src={mediaUrl}
+            onEnded={handleEnded}
+            className="max-h-72 w-full rounded-2xl border border-cyan-200 bg-black object-contain"
+          />
+        )}
+        {remainingLabel && !exhausted && (
+          <p className="text-[10px] font-bold text-slate-400">
+            {remainingLabel}
+          </p>
+        )}
       </div>
+    );
+  }
+
+  return (
+    <div className="mt-4 space-y-2">
+      <div className="flex items-center gap-3 rounded-2xl border border-cyan-200 bg-cyan-50 p-4">
+        <Volume2 className="h-5 w-5 shrink-0 text-cyan-600" />
+        {exhausted ? (
+          <span className="text-xs font-bold text-slate-500">
+            {remainingLabel}
+          </span>
+        ) : (
+          <audio
+            ref={mediaRef}
+            controls
+            src={mediaUrl}
+            onEnded={handleEnded}
+            className="h-8 w-full"
+          />
+        )}
+      </div>
+      {remainingLabel && !exhausted && (
+        <p className="text-[10px] font-bold text-slate-400">{remainingLabel}</p>
+      )}
+    </div>
+  );
+}
+
+export function MediaPlayer({
+  mediaUrl,
+  mediaType,
+  imageDuration = null,
+  mediaPlayCount = null,
+}) {
+  if (!mediaUrl || !mediaType) return null;
+
+  // Keyed on the settings themselves so any change (new media, new duration,
+  // new play budget) remounts the child and resets its timer/counter state.
+  if (mediaType === "image") {
+    return (
+      <TimedImage
+        key={`${mediaUrl}|${imageDuration || 0}`}
+        mediaUrl={mediaUrl}
+        durationSeconds={imageDuration || 0}
+      />
+    );
+  }
+
+  if (mediaType === "audio" || mediaType === "video") {
+    return (
+      <LimitedPlaybackMedia
+        key={`${mediaUrl}|${mediaPlayCount || 0}`}
+        mediaUrl={mediaUrl}
+        mediaType={mediaType}
+        maxPlays={mediaPlayCount || 0}
+      />
     );
   }
 

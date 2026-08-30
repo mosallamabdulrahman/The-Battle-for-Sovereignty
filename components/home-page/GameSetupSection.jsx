@@ -106,7 +106,7 @@ export default function GameSetupSection() {
 
       if (!result.fromSupabase) {
         triggerToast(
-          "ما لقينا بنك الأسئلة في Supabase. شغل ملف SUPABASE_QUESTION_BANK.sql أول شي.",
+          "ما لقينا بنك الأسئلة في Supabase. تأكد من إعدادات الاتصال وحدث الصفحة.",
           "warning",
         );
       }
@@ -283,7 +283,7 @@ export default function GameSetupSection() {
   return (
     <section
       id="game-setup"
-      className="py-16 bg-slate-50 border-t border-slate-200 relative overflow-hidden dir-rtl"
+      className="py-8 sm:py-12 bg-slate-50 border-t border-slate-200 relative overflow-hidden dir-rtl"
     >
       {/* Decorative vectors */}
       <div className="absolute top-20 left-10 w-64 h-64 bg-cyan-100/40 rounded-full blur-3xl pointer-events-none" />
@@ -372,8 +372,8 @@ export default function GameSetupSection() {
 
               {questionSourceReady && categoriesList.length === 0 && (
                 <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-center text-sm font-bold text-amber-900">
-                  ماكو فئات محملة من Supabase. شغل ملف
-                  SUPABASE_QUESTION_BANK.sql تالي حدث الصفحة.
+                  ماكو فئات محملة من Supabase. تأكد إن في فئات مفعّلة من لوحة
+                  التحكم تالي حدث الصفحة.
                 </div>
               )}
 

@@ -14,7 +14,7 @@ import {
   Zap,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import Header from "@/components/Header";
+import Header from "@/components/layout/Header";
 
 const FALLBACK_CATEGORY_IMAGE = "/images/logo.png";
 
@@ -215,7 +215,7 @@ export default function MyGamesPage() {
           .select("*")
           .eq("judge_id", user.id)
           .order("created_at", { ascending: false }),
-        supabase.from("question_categories").select("id,name,image_url,emoji"),
+        supabase.from("question_categories").select("id,name,image_url"),
       ]);
 
       if (!roomsResult.error) setRooms(roomsResult.data || []);

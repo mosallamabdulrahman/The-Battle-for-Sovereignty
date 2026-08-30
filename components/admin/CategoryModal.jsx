@@ -20,7 +20,6 @@ export default function CategoryModal({
     return {
       name: "",
       description: "",
-      emoji: "📌",
       image_url: "",
       sort_order: nextOrder,
       is_active: true,

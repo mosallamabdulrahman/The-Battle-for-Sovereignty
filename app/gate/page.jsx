@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion } from "motion/react";
 import { Eye, EyeOff, Lock, ShieldCheck, User, Loader2 } from "lucide-react";
-import GameLogo from "@/components/GameLogo";
+import GameLogo from "@/components/common/GameLogo";
 import { getSafeRedirect } from "@/lib/auth";
 
 export default function SiteGatePage() {

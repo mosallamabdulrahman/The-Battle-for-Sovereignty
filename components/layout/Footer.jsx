@@ -3,11 +3,11 @@
 import { Shield, Swords, Mail, Globe, Award } from "lucide-react";
 import Link from "next/link";
 
-import GameLogo from "./GameLogo";
+import GameLogo from "@/components/common/GameLogo";
 
 export default function Footer() {
   return (
-    <footer className="bg-slate-900 text-slate-100/90 pt-16 pb-8 border-t border-slate-800">
+    <footer className="bg-slate-900 text-slate-100/90 py-8 sm:pt-12 pb-6 border-t border-slate-800">
       <div className="max-w-[85rem] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-12 pb-12 border-b border-slate-800">
           {/* Main info */}

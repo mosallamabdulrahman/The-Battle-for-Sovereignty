@@ -6,7 +6,7 @@ import { supabasePanel as supabase } from "@/lib/supabase-panel";
 import { getUserDisplayName } from "@/lib/auth";
 import Link from "next/link";
 import { Eye, EyeOff, Loader2, Lock, Shield } from "lucide-react";
-import GameLogo from "@/components/GameLogo";
+import GameLogo from "@/components/common/GameLogo";
 import { motion } from "motion/react";
 
 function AdminLoginForm({ onSuccess }) {
@@ -76,83 +76,83 @@ function AdminLoginForm({ onSuccess }) {
           onSubmit={handleSubmit}
           className="w-full rounded-3xl border border-slate-800 bg-slate-900 p-8 shadow-2xl space-y-5"
         >
-        <div className="flex flex-col items-center gap-3 text-center">
-          <div className="border border-cyan-500/30 rounded-2xl p-3">
-            <GameLogo className="w-16 h-16" />
+          <div className="flex flex-col items-center gap-3 text-center">
+            <div className="border border-cyan-500/30 rounded-2xl p-3">
+              <GameLogo className="w-16 h-16" />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold text-white">دخول لوحة التحكم</h1>
+              <p className="text-xs text-slate-400 mt-1">
+                للمستخدمين المصرّح لهم فقط
+              </p>
+            </div>
           </div>
+
           <div>
-            <h1 className="text-lg font-bold text-white">دخول لوحة التحكم</h1>
-            <p className="text-xs text-slate-400 mt-1">
-              للمستخدمين المصرّح لهم فقط
-            </p>
-          </div>
-        </div>
-
-        <div>
-          <label className="text-[11px] font-bold text-slate-400">
-            اسم المستخدم أو الإيميل
-          </label>
-          <input
-            value={identifier}
-            onChange={(e) => setIdentifier(e.target.value)}
-            autoFocus
-            className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
-            placeholder="اسم المستخدم أو الإيميل"
-          />
-        </div>
-
-        <div>
-          <label className="text-[11px] font-bold text-slate-400">
-            الباسورد
-          </label>
-          <div className="relative mt-1">
+            <label className="text-[11px] font-bold text-slate-400">
+              اسم المستخدم أو الإيميل
+            </label>
             <input
-              type={showPassword ? "text" : "password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="text-right w-full rounded-xl border border-slate-700 bg-slate-800 px-3 py-2.5 pl-10 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
-              placeholder="••••••••"
-              dir="ltr"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              autoFocus
+              className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+              placeholder="اسم المستخدم أو الإيميل"
             />
-            <button
-              type="button"
-              onClick={() => setShowPassword((v) => !v)}
-              className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500"
-            >
-              {showPassword ? (
-                <EyeOff className="h-4 w-4" />
-              ) : (
-                <Eye className="h-4 w-4" />
-              )}
-            </button>
           </div>
-        </div>
 
-        {error && (
-          <p className="rounded-xl border border-rose-800 bg-rose-950/60 px-3 py-2 text-xs font-bold text-rose-300 text-center">
-            {error}
-          </p>
-        )}
+          <div>
+            <label className="text-[11px] font-bold text-slate-400">
+              الباسورد
+            </label>
+            <div className="relative mt-1">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="text-right w-full rounded-xl border border-slate-700 bg-slate-800 px-3 py-2.5 pl-10 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                placeholder="••••••••"
+                dir="ltr"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500"
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+            </div>
+          </div>
 
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="w-full flex items-center justify-center gap-2 rounded-xl bg-cyan-600 py-3 text-sm font-bold text-white hover:bg-cyan-500 transition disabled:opacity-60"
-        >
-          {isLoading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Lock className="h-4 w-4" />
+          {error && (
+            <p className="rounded-xl border border-rose-800 bg-rose-950/60 px-3 py-2 text-xs font-bold text-rose-300 text-center">
+              {error}
+            </p>
           )}
-          دخول
-        </button>
 
-        <Link
-          href="/"
-          className="block text-center text-xs font-bold text-slate-500 hover:text-cyan-400 transition"
-        >
-          ارجع للموقع الرئيسي
-        </Link>
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full flex items-center justify-center gap-2 rounded-xl bg-cyan-600 py-3 text-sm font-bold text-white hover:bg-cyan-500 transition disabled:opacity-60"
+          >
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Lock className="h-4 w-4" />
+            )}
+            دخول
+          </button>
+
+          <Link
+            href="/"
+            className="block text-center text-xs font-bold text-slate-500 hover:text-cyan-400 transition"
+          >
+            ارجع للموقع الرئيسي
+          </Link>
         </form>
       </motion.div>
     </div>

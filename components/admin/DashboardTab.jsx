@@ -114,6 +114,13 @@ export default function DashboardTab({ questions, categories, setTab }) {
               </span>
             </p>
             <p>
+              • أسئلة تحتوي على فيديو:{" "}
+              <span className="font-bold text-cyan-600">
+                {questions.filter((q) => q.media_type === "video").length}{" "}
+                سؤال
+              </span>
+            </p>
+            <p>
               • أسئلة نصية فقط:{" "}
               <span className="font-bold text-slate-500">
                 {questions.filter((q) => !q.media_url).length} سؤال

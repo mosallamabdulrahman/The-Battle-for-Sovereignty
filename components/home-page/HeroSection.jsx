@@ -45,14 +45,14 @@ export default function HeroSection() {
 
       <div className="max-w-[85rem] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Adjusted content to offset header height gracefully while maintaining requested pt-0 */}
-        <div className="pt-28 md:pt-36 grid grid-cols-1 lg:grid-cols-12 gap-12">
+        <div className="pt-30 md:pt-36 grid grid-cols-1 lg:grid-cols-12 gap-12">
           {/* Hero text */}
           <div className="lg:col-span-7 flex flex-col items-start text-right">
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="inline-flex items-center gap-2 bg-cyan-100 text-cyan-800 font-bold px-4 py-1.5 rounded-full text-sm mb-6"
+              className="inline-flex items-center gap-2 bg-cyan-100 text-cyan-800 font-bold px-4 py-1.5 rounded-full text-[11px] sm:text-sm mb-3 sm:mb-6"
             >
               <Zap className="w-4 h-4 fill-cyan-700" />
               <span>الموسم الأول حق لعبة حيلهم بينهم نزل الحين!</span>
@@ -62,7 +62,7 @@ export default function HeroSection() {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-4xl sm:text-5xl md:text-6xl font-bold text-slate-900 leading-tight tracking-tight mb-6"
+              className="text-3xl sm:text-5xl md:text-6xl font-bold text-slate-900 leading-tight tracking-tight mb-3 sm:mb-6"
             >
               القمة تبي قوة المعرفة... <br />
               <span className="bg-gradient-to-r from-cyan-600 to-sky-500 bg-clip-text text-transparent">
@@ -74,7 +74,7 @@ export default function HeroSection() {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-lg md:text-xl text-slate-600 leading-relaxed max-w-2xl mb-8"
+              className="text-base sm:text-xl text-slate-600 leading-relaxed max-w-2xl mb-4 sm:mb-8"
             >
               حول معلوماتك العامة وذكائك حق عتاد صجي! ابنِ معسكرك، ووزع جنودك
               بذكاء وسرية تامة على الخريطة، وعقبها طق خصمك طقات قوية على خريطة
@@ -86,7 +86,7 @@ export default function HeroSection() {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
-              className="flex flex-wrap gap-4 w-full sm:w-auto"
+              className="flex flex-col md:flex-row gap-4 w-full sm:w-auto"
             >
               <a
                 href="#categories"
@@ -146,7 +146,7 @@ export default function HeroSection() {
                         alt={UNIT_NAMES[cell.unitKey] || "وحدة"}
                         width={28}
                         height={28}
-                        className="w-6 h-6 sm:w-7 sm:h-7 object-contain drop-shadow-sm select-none"
+                        className="w-8 h-8 sm:w-10 sm:h-10 object-contain drop-shadow-sm select-none"
                       />
                     )}
 
@@ -175,7 +175,7 @@ export default function HeroSection() {
                       alt="مشاة"
                       width={16}
                       height={16}
-                      className="w-4 h-4 object-contain"
+                      className="w-6 h-6 object-contain"
                     />
                     مشاة (20ن)
                   </span>
@@ -185,7 +185,7 @@ export default function HeroSection() {
                       alt="دبابة"
                       width={16}
                       height={16}
-                      className="w-4 h-4 object-contain"
+                      className="w-6 h-6 object-contain"
                     />
                     دبابة (200ن)
                   </span>

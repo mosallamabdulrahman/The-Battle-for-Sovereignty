@@ -7,7 +7,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { getUserDisplayName } from "@/lib/auth";
 
-import GameLogo from "./GameLogo";
+import GameLogo from "@/components/common/GameLogo";
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);

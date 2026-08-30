@@ -1,15 +1,18 @@
-import Header from '@/components/Header';
-import HeroSection from '@/components/HeroSection';
-import HowToPlaySection from '@/components/HowToPlaySection';
-import CategoriesSection from '@/components/CategoriesSection';
-import PaymentGateSection from '@/components/PaymentGateSection';
-import GameSetupSection from '@/components/GameSetupSection';
-import ScrollToTop from '@/components/ScrollToTop';
-import Footer from '@/components/Footer';
+import Header from "@/components/layout/Header";
+import HeroSection from "@/components/home-page/HeroSection";
+import HowToPlaySection from "@/components/home-page/HowToPlaySection";
+import CategoriesSection from "@/components/home-page/CategoriesSection";
+import PaymentGateSection from "@/components/home-page/PaymentGateSection";
+import GameSetupSection from "@/components/home-page/GameSetupSection";
+import ScrollToTop from "@/components/common/ScrollToTop";
+import Footer from "@/components/layout/Footer";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col overflow-x-hidden" suppressHydrationWarning>
+    <div
+      className="min-h-screen bg-slate-50 flex flex-col overflow-x-hidden"
+      suppressHydrationWarning
+    >
       {/* Dynamic Sticky Header */}
       <Header />
 

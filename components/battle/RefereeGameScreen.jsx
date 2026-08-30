@@ -23,7 +23,7 @@ import {
   UNIT_IMAGES,
   UNIT_NAMES,
 } from "@/lib/game-data";
-import GameLogo from "@/components/GameLogo";
+import GameLogo from "@/components/common/GameLogo";
 import Image from "next/image";
 
 // Shared cell look for both the strike board and the radar board, so a
@@ -203,7 +203,8 @@ function TeamPillBar({ team, isBusy, onGrantPoints, onOpenStrike }) {
       {/* Top Red Team Pill Badge */}
       <div className="w-full bg-[#a30000] text-white font-bold text-xs sm:text-base text-center py-1 sm:py-2.5 px-2.5 sm:px-8 rounded-full shadow-sm flex items-center justify-center gap-1.5">
         <span className="truncate max-w-[100px] sm:max-w-[120px]">
-          {team.name || (team.team_index === 1 ? "الفريق الأول" : "الفريق الثاني")}
+          {team.name ||
+            (team.team_index === 1 ? "الفريق الأول" : "الفريق الثاني")}
         </span>
         {hasStrikes && (
           <button
@@ -849,7 +850,10 @@ export function RefereeGameScreen({
           >
             <span className="whitespace-nowrap">دور فريق :</span>
             <span className="text-white font-bold truncate max-w-[140px]">
-              {currentTeam?.name || (currentTeam?.team_index === 1 ? "الفريق الأول" : "الفريق الثاني")}
+              {currentTeam?.name ||
+                (currentTeam?.team_index === 1
+                  ? "الفريق الأول"
+                  : "الفريق الثاني")}
             </span>
           </button>
 
@@ -924,7 +928,7 @@ export function RefereeGameScreen({
         </div>
       </header>
 
-      <main className="w-full max-w-[98rem] mx-auto px-1.5 xs:px-2 sm:px-4 md:px-6 my-auto py-0.5 sm:py-2 flex-1 flex flex-col justify-center min-h-0 overflow-hidden">
+      <main className="w-full max-w-[98rem] mx-auto px-1.5 xs:px-2 sm:px-4 md:px-6 my-auto py-2 sm:py-4 flex-1 flex flex-col justify-center min-h-0 overflow-hidden">
         {room.status === "finished" ? (
           <FinishedCelebration room={room} teams={teams} onExit={onExit} />
         ) : step === "grid" ? (
@@ -999,8 +1003,11 @@ export function RefereeGameScreen({
                       {activeQuestion.question_text}
                     </h2>
                     <MediaPlayer
+                      key={activeQuestion.id}
                       mediaUrl={activeQuestion.media_url}
                       mediaType={activeQuestion.media_type}
+                      imageDuration={activeQuestion.image_duration}
+                      mediaPlayCount={activeQuestion.media_play_count}
                     />
 
                     {/* Bottom Right: Category badge */}
