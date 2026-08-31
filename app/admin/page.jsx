@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable react-hooks/set-state-in-effect */
 
 import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
@@ -36,6 +37,8 @@ export default function AdminPage() {
     return "questions";
   });
 
+  const [searchQuery, setSearchQuery] = useState("");
+
   const setTab = useCallback((newTab) => {
     setTabState(newTab);
     setSearchQuery("");
@@ -59,7 +62,6 @@ export default function AdminPage() {
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
-  const [searchQuery, setSearchQuery] = useState("");
   const [categories, setCategories] = useState([]);
   const [questions, setQuestions] = useState([]);
   const [questionStats, setQuestionStats] = useState({});
@@ -375,9 +377,9 @@ export default function AdminPage() {
         <AdminSidebar tab={tab} setTab={setTab} />
 
         {/* Main Content Area */}
-        <main className="flex-1 bg-[#f0f0f1] p-6 text-[#2c3338] overflow-auto">
+        <main className="flex-1 bg-[#f0f0f1] p-3 sm:p-6 text-[#2c3338] overflow-auto">
           {/* WordPress Page Header Tools */}
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-normal text-[#1d2327]">
                 {tab === "dashboard" && "لوحة التحكم الرئيسة"}

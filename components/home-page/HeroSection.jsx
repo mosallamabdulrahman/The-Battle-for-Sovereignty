@@ -136,7 +136,7 @@ export default function HeroSection() {
                     }`}
                   >
                     {!cell.unitKey && (
-                      <span className="text-[10px] text-slate-300 font-mono tracking-tighter">
+                      <span className="text-[10px] text-slate-300  tracking-tighter">
                         {cell.row},{cell.col}
                       </span>
                     )}

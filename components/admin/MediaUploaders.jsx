@@ -64,7 +64,8 @@ export function MediaUpload({ value, type, onChange, extra }) {
             className="h-32 w-full object-cover"
             onError={(e) => {
               e.currentTarget.src = "/images/logo.png";
-              e.currentTarget.className = "h-32 w-full object-contain p-3 bg-slate-100";
+              e.currentTarget.className =
+                "h-32 w-full object-contain p-3 bg-slate-100";
             }}
           />
         </div>
@@ -83,7 +84,7 @@ export function MediaUpload({ value, type, onChange, extra }) {
         <input
           value={value}
           onChange={(e) => onChange(e.target.value, type)}
-          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-[11px] font-mono text-slate-500 bg-slate-50 focus:border-cyan-500 outline-none transition-colors"
+          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-[11px]  text-slate-500 bg-slate-50 focus:border-cyan-500 outline-none transition-colors"
           placeholder="أو أدخل رابط URL مباشرة"
         />
       ) : (
@@ -94,7 +95,7 @@ export function MediaUpload({ value, type, onChange, extra }) {
             if (!url) return;
             onChange(url, mediaTypeFromUrl(url));
           }}
-          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-[11px] font-mono text-slate-500 bg-slate-50 focus:border-cyan-500 outline-none transition-colors"
+          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-[11px]  text-slate-500 bg-slate-50 focus:border-cyan-500 outline-none transition-colors"
           placeholder="أو أدخل رابط URL مباشرة"
         />
       )}
@@ -181,7 +182,8 @@ export function CategoryImageUpload({ value, onChange, extra }) {
             className="h-32 w-full object-cover"
             onError={(e) => {
               e.currentTarget.src = "/images/logo.png";
-              e.currentTarget.className = "h-32 w-full object-contain p-3 bg-slate-100";
+              e.currentTarget.className =
+                "h-32 w-full object-contain p-3 bg-slate-100";
             }}
           />
         </div>
@@ -189,7 +191,7 @@ export function CategoryImageUpload({ value, onChange, extra }) {
       <input
         value={value || ""}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-[11px] font-mono text-slate-500 bg-slate-50 focus:border-cyan-500 outline-none transition-colors"
+        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-[11px]  text-slate-500 bg-slate-50 focus:border-cyan-500 outline-none transition-colors"
         placeholder="أو أدخل رابط URL مباشرة"
       />
       <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -276,7 +278,8 @@ export function AnswerImageUpload({ value, onChange, extra }) {
             className="h-32 w-full object-cover"
             onError={(e) => {
               e.currentTarget.src = "/images/logo.png";
-              e.currentTarget.className = "h-32 w-full object-contain p-3 bg-slate-100";
+              e.currentTarget.className =
+                "h-32 w-full object-contain p-3 bg-slate-100";
             }}
           />
         </div>
@@ -284,7 +287,7 @@ export function AnswerImageUpload({ value, onChange, extra }) {
       <input
         value={value || ""}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-[11px] font-mono text-slate-500 bg-slate-50 focus:border-cyan-500 outline-none transition-colors"
+        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-[11px]  text-slate-500 bg-slate-50 focus:border-cyan-500 outline-none transition-colors"
         placeholder="أو أدخل رابط URL مباشرة"
       />
       <div className="flex items-center justify-between gap-2 flex-wrap">

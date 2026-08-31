@@ -134,7 +134,7 @@ export default function HowToPlaySection() {
                 className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative group hover:shadow-xl hover:border-cyan-200 transition-all duration-300"
               >
                 {/* Step badge */}
-                <div className="absolute top-4 left-4 text-slate-100 font-bold text-5xl font-mono leading-none select-none group-hover:text-cyan-50 transition-colors">
+                <div className="absolute top-4 left-4 text-slate-100 font-bold text-5xl  leading-none select-none group-hover:text-cyan-50 transition-colors">
                   {item.step}
                 </div>
 

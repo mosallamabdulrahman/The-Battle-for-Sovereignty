@@ -5,9 +5,56 @@ import { useEffect, useState } from "react";
 import { supabasePanel as supabase } from "@/lib/supabase-panel";
 import { getUserDisplayName } from "@/lib/auth";
 import Link from "next/link";
-import { Eye, EyeOff, Loader2, Lock, Shield } from "lucide-react";
+import { Eye, EyeOff, Loader2, Lock, Menu, Shield, X } from "lucide-react";
 import GameLogo from "@/components/common/GameLogo";
 import { motion } from "motion/react";
+import { AdminNavProvider, useAdminNav } from "@/components/admin/AdminNavContext";
+
+function AdminTopBar({ displayName, onSignOut }) {
+  const { mobileOpen, toggleMobileOpen } = useAdminNav();
+
+  return (
+    <div className="h-9 md:h-8 bg-[#1d2327] text-[#c3c4c7] text-[13px] flex items-center justify-between px-3 md:px-4 select-none z-[190] shrink-0 border-b border-[#2c3338]">
+      {/* Right side (RTL) - Hamburger menu button on mobile + Brand & Visit Site */}
+      <div className="flex items-center gap-2 md:gap-4">
+        <button
+          type="button"
+          onClick={toggleMobileOpen}
+          className="md:hidden flex items-center justify-center w-7 h-7 text-slate-300 hover:text-white hover:bg-[#2c3338] rounded transition cursor-pointer"
+          aria-label="القائمة الجانبية"
+        >
+          {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </button>
+
+        <Link
+          href="/"
+          className="flex items-center gap-1.5 hover:bg-[#2c3338] hover:text-[#72aee6] h-8 px-2 transition rounded"
+        >
+          <span className="text-[12px] font-medium">بطل الموقع</span>
+        </Link>
+      </div>
+
+      {/* Left side (RTL) - User Profile + Logout */}
+      <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2 h-8 px-2 md:px-3">
+          <span className="text-[12px] text-slate-300 hidden sm:inline">
+            شلونك، {displayName}
+          </span>
+          <div className="w-5 h-5 rounded-full bg-slate-600 flex items-center justify-center text-[10px] text-white font-bold border border-slate-500">
+            {displayName?.[0] || "م"}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={onSignOut}
+          className="h-8 px-2 md:px-3 text-[12px] text-slate-300 hover:bg-[#2c3338] hover:text-[#72aee6] transition rounded cursor-pointer"
+        >
+          تسجيل خروج
+        </button>
+      </div>
+    </div>
+  );
+}
 
 function AdminLoginForm({ onSuccess }) {
   const [identifier, setIdentifier] = useState("");
@@ -208,51 +255,27 @@ export default function AdminLayout({ children }) {
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.4 }}
-      className="min-h-screen bg-[#f0f0f1] text-[#3c434a] font-sans antialiased dir-rtl flex flex-col"
-    >
-      {/* WordPress-style Top Admin Bar */}
-      <div className="h-8 bg-[#1d2327] text-[#c3c4c7] text-[13px] flex items-center justify-between px-4 select-none z-[190] shrink-0 border-b border-[#2c3338]">
-        {/* Right side (RTL) - Brand & Visit Site */}
-        <div className="flex items-center gap-4">
-          <Link
-            href="/"
-            className="flex items-center gap-1.5 hover:bg-[#2c3338] hover:text-[#72aee6] h-8 px-2 transition"
-          >
-            <span className="text-[12px]">بطل الموقع</span>
-          </Link>
-        </div>
+    <AdminNavProvider>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.4 }}
+        className="min-h-screen bg-[#f0f0f1] text-[#3c434a] font-sans antialiased dir-rtl flex flex-col"
+      >
+        {/* WordPress-style Top Admin Bar */}
+        <AdminTopBar
+          displayName={displayName}
+          onSignOut={async () => {
+            await supabase.auth.signOut();
+            setState("denied");
+          }}
+        />
 
-        {/* Left side (RTL) - User Profile + Logout */}
-        <div className="flex items-center gap-1">
-          <div className="flex items-center gap-2 h-8 px-3">
-            <span className="text-[12px] text-slate-300">
-              شلونك، {displayName}
-            </span>
-            <div className="w-5 h-5 rounded-full bg-slate-600 flex items-center justify-center text-[10px] text-white font-bold border border-slate-500">
-              {displayName?.[0] || "م"}
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={async () => {
-              await supabase.auth.signOut();
-              setState("denied");
-            }}
-            className="h-8 px-3 text-[12px] text-slate-300 hover:bg-[#2c3338] hover:text-[#72aee6] transition"
-          >
-            تسجيل خروج
-          </button>
+        {/* Page Content Shell */}
+        <div className="flex-1 flex flex-col min-h-[calc(100vh-32px)]">
+          {children}
         </div>
-      </div>
-
-      {/* Page Content Shell */}
-      <div className="flex-1 flex flex-col min-h-[calc(100vh-32px)]">
-        {children}
-      </div>
-    </motion.div>
+      </motion.div>
+    </AdminNavProvider>
   );
 }

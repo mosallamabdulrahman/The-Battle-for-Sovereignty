@@ -11,11 +11,10 @@ export default function StatsTab({ categories, questions, categoryUsage }) {
       className="space-y-6"
     >
       {/* Category Usage Statistics */}
-      <div className="bg-white border border-[#ccd0d4] p-8 shadow-sm">
-        <h3 className="font-semibold text-slate-900 border-b pb-3 mb-5 text-base flex items-center justify-between">
+      <div className="bg-white border border-[#ccd0d4] p-4 sm:p-8 shadow-sm">
+        <h3 className="font-semibold text-slate-900 border-b pb-3 mb-5 text-base flex flex-col sm:flex-row gap-1 items-center justify-between">
           <span>
-            🎮 إحصائيات اختيار التصنيفات في ألعاب اللعبة (كم مرة انلعب كل
-            تصنيف)
+            🎮 إحصائيات اختيار التصنيفات في ألعاب اللعبة (كم مرة انلعب كل تصنيف)
           </span>
           <span className="text-[12px] text-slate-400 font-normal">
             محسوبة تلقائياً من غرف اللعب الحالية والسابقة بقاعدة البيانات
