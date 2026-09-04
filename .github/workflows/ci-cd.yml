@@ -55,8 +55,9 @@ jobs:
           script: |
             set -e
             cd /root/The-Battle-for-Sovereignty
+            git remote set-url origin https://github.com/mosallamabdulrahman/7elhmbenhm-Game.git || true
             git fetch origin
             git checkout main
-            git pull --ff-only origin main
+            git reset --hard origin/main
             chmod +x scripts/deploy.sh
             ./scripts/deploy.sh
