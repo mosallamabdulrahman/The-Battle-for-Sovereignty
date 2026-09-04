@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Smartphone,
@@ -17,8 +17,10 @@ import { QRCodeSVG } from "qrcode.react";
 import {
   FALLBACK_CATEGORIES,
   buildRoomQuestions,
+  groupCategories,
   loadQuestionSetupData,
 } from "@/lib/game-data";
+import CategoryGroupSection from "@/components/home-page/CategoryGroupSection";
 
 export default function GameSetupSection() {
   const [user, setUser] = useState(null);
@@ -26,6 +28,7 @@ export default function GameSetupSection() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdRoom, setCreatedRoom] = useState(null);
   const [categoriesList, setCategoriesList] = useState(FALLBACK_CATEGORIES);
+  const [groupsList, setGroupsList] = useState([]);
   const [questionRows, setQuestionRows] = useState([]);
   const [questionSourceReady, setQuestionSourceReady] = useState(false);
   const [questionSourceFromSupabase, setQuestionSourceFromSupabase] =
@@ -37,6 +40,14 @@ export default function GameSetupSection() {
   const [team1Name, setTeam1Name] = useState("كتائب الفرسان");
   const [team2Name, setTeam2Name] = useState("صقور النخبة");
   const [teamTokens, setTeamTokens] = useState(null);
+
+  // Cards stay grouped by their category group so each group can collapse on
+  // its own. Categories that aren't attached to a group yet come back in
+  // `ungrouped` and render in a plain grid below the collapsible sections.
+  const { groups: renderedGroups, ungrouped: ungroupedCategories } = useMemo(
+    () => groupCategories(categoriesList, groupsList),
+    [categoriesList, groupsList],
+  );
 
   // Toast Helper
   const triggerToast = (message, type = "warning") => {
@@ -100,6 +111,7 @@ export default function GameSetupSection() {
       if (!isActive) return;
 
       setCategoriesList(result.categories);
+      setGroupsList(result.groups);
       setQuestionRows(result.questions);
       setQuestionSourceFromSupabase(result.fromSupabase);
       setQuestionSourceReady(true);
@@ -280,6 +292,44 @@ export default function GameSetupSection() {
     triggerToast(`نسخنا الرابط حق ${label} لجهازك!`, "success");
   };
 
+  // One card per question category. Shared by the collapsible group sections
+  // and the ungrouped grid so both render the exact same markup.
+  const renderCategoryCard = (cat) => {
+    const isSelected = selectedCategories.includes(cat.id);
+    return (
+      <motion.button
+        key={cat.id}
+        whileTap={{ scale: 0.97 }}
+        onClick={() => handleCategoryClick(cat.id)}
+        className={`rounded-2xl text-right flex flex-col relative overflow-hidden cursor-pointer transition-all ${
+          isSelected
+            ? "border-4 border-amber-400 shadow-lg shadow-amber-400/25"
+            : "border-4 border-transparent"
+        }`}
+      >
+        <span className="w-full h-28 sm:h-32 md:h-36 overflow-hidden bg-slate-50 flex items-center justify-center shrink-0">
+          <img
+            src={cat.image_url || "/images/logo.png"}
+            alt={cat.name}
+            className={`h-full w-full ${
+              cat.image_url ? "object-cover" : "object-contain p-3 bg-slate-100"
+            }`}
+            onError={(e) => {
+              e.currentTarget.src = "/images/logo.png";
+              e.currentTarget.className =
+                "h-full w-full object-contain p-3 bg-slate-100";
+            }}
+          />
+        </span>
+        <span className="bg-gradient-to-r from-cyan-500 via-cyan-600 to-sky-500 py-1.5 sm:py-2 px-2 text-center w-full block">
+          <span className="font-bold text-sm sm:text-base text-white leading-tight">
+            {cat.name}
+          </span>
+        </span>
+      </motion.button>
+    );
+  };
+
   return (
     <section
       id="game-setup"
@@ -377,44 +427,20 @@ export default function GameSetupSection() {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                {categoriesList.map((cat) => {
-                  const isSelected = selectedCategories.includes(cat.id);
-                  return (
-                    <motion.button
-                      key={cat.id}
-                      whileTap={{ scale: 0.97 }}
-                      onClick={() => handleCategoryClick(cat.id)}
-                      className={`rounded-2xl text-right flex flex-col relative overflow-hidden cursor-pointer transition-all ${
-                        isSelected
-                          ? "border-4 border-amber-400 shadow-lg shadow-amber-400/25"
-                          : "border-4 border-transparent"
-                      }`}
-                    >
-                      <span className="w-full h-28 sm:h-32 md:h-36 overflow-hidden bg-slate-50 flex items-center justify-center shrink-0">
-                        <img
-                          src={cat.image_url || "/images/logo.png"}
-                          alt={cat.name}
-                          className={`h-full w-full ${
-                            cat.image_url
-                              ? "object-cover"
-                              : "object-contain p-3 bg-slate-100"
-                          }`}
-                          onError={(e) => {
-                            e.currentTarget.src = "/images/logo.png";
-                            e.currentTarget.className =
-                              "h-full w-full object-contain p-3 bg-slate-100";
-                          }}
-                        />
-                      </span>
-                      <span className="bg-gradient-to-r from-cyan-500 via-cyan-600 to-sky-500 py-1.5 sm:py-2 px-2 text-center w-full block">
-                        <span className="font-bold text-sm sm:text-base text-white leading-tight">
-                          {cat.name}
-                        </span>
-                      </span>
-                    </motion.button>
-                  );
-                })}
+              <div className="space-y-12">
+                {renderedGroups.map((group) => (
+                  <CategoryGroupSection key={group.id} title={group.title}>
+                    {group.items.map(renderCategoryCard)}
+                  </CategoryGroupSection>
+                ))}
+
+                {/* Question categories not attached to a group yet — shown in a
+                    plain grid so they stay selectable instead of disappearing. */}
+                {ungroupedCategories.length > 0 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 p-2">
+                    {ungroupedCategories.map(renderCategoryCard)}
+                  </div>
+                )}
               </div>
             </div>
 

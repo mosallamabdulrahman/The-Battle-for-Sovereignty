@@ -31,6 +31,7 @@ export default function QuestionModal({
   onSave,
   onClose,
   busy,
+  defaultCategoryId,
 }) {
   const [form, setForm] = useState(() => {
     if (question) {
@@ -42,20 +43,26 @@ export default function QuestionModal({
         category_id: hasValidCategory
           ? question.category_id
           : categories[0]?.id || "",
+        show_question_first: Boolean(question.show_question_first),
       };
     }
-    const initialCategoryId = categories[0]?.id || "";
+    const targetCategoryId =
+      (defaultCategoryId &&
+        categories.some((c) => String(c.id) === String(defaultCategoryId)))
+        ? defaultCategoryId
+        : categories[0]?.id || "";
     return {
-      category_id: initialCategoryId,
+      category_id: targetCategoryId,
       question_text: "",
       answer_text: "",
       difficulty: "easy",
-      position: nextPosition(questions, initialCategoryId),
+      position: nextPosition(questions, targetCategoryId),
       is_active: true,
       media_url: "",
       media_type: null,
       image_duration: null,
       media_play_count: null,
+      show_question_first: false,
       answer_image_url: "",
     };
   });
@@ -260,59 +267,75 @@ export default function QuestionModal({
                       type === "audio" || type === "video"
                         ? f.media_play_count
                         : null,
+                    show_question_first: url ? f.show_question_first : false,
                   }));
                 }}
                 extra={
-                  <>
-                    {isImageMedia && (
-                      <div className="flex items-center gap-1.5 bg-cyan-50/70 border border-cyan-100 rounded-xl px-2.5 py-1">
-                        <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1 whitespace-nowrap">
-                          <Timer className="h-3.5 w-3.5 text-cyan-600" />
-                          مدة العرض:
-                        </label>
+                  hasMedia && (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <label className="flex items-center gap-1.5 cursor-pointer select-none bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-xl px-2.5 py-1 text-slate-700 hover:bg-slate-100 transition-colors">
                         <input
-                          type="number"
-                          min={1}
-                          max={600}
-                          value={form.image_duration ?? ""}
-                          onChange={(e) => {
-                            const raw = e.target.value;
-                            set(
-                              "image_duration",
-                              raw === "" ? null : Math.max(1, Number(raw)),
-                            );
-                          }}
-                          className="w-16 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-center font-bold text-slate-700 focus:border-cyan-500 outline-none transition-colors"
-                          placeholder="ثواني"
-                          title="مدة عرض الصورة بالثواني (فاضية = بدون توقيت)"
+                          type="checkbox"
+                          checked={Boolean(form.show_question_first)}
+                          onChange={(e) =>
+                            set("show_question_first", e.target.checked)
+                          }
+                          className="rounded text-cyan-600 focus:ring-cyan-500 h-3.5 w-3.5 border-slate-300 cursor-pointer"
                         />
-                      </div>
-                    )}
-                    {isPlayableMedia && (
-                      <div className="flex items-center gap-1.5 bg-cyan-50/70 border border-cyan-100 rounded-xl px-2.5 py-1">
-                        <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1 whitespace-nowrap">
-                          <Repeat className="h-3.5 w-3.5 text-cyan-600" />
-                          مرات التشغيل:
-                        </label>
-                        <input
-                          type="number"
-                          min={1}
-                          max={20}
-                          value={form.media_play_count ?? ""}
-                          onChange={(e) => {
-                            const raw = e.target.value;
-                            set(
-                              "media_play_count",
-                              raw === "" ? null : Math.max(1, Number(raw)),
-                            );
-                          }}
-                          className="w-16 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-center font-bold text-slate-700 focus:border-cyan-500 outline-none transition-colors"
-                          placeholder="بدون حد"
-                          title="عدد مرات التشغيل (فاضية = بدون حد)"
-                        />
-                      </div>
-                    )}
-                  </>
+                        <span className="text-xs font-bold whitespace-nowrap">
+                          ظهور السؤال أولاً
+                        </span>
+                      </label>
+                      {isImageMedia && (
+                        <div className="flex items-center gap-1.5 bg-cyan-50/70 border border-cyan-100 rounded-xl px-2.5 py-1">
+                          <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1 whitespace-nowrap">
+                            <Timer className="h-3.5 w-3.5 text-cyan-600" />
+                            مدة العرض:
+                          </label>
+                          <input
+                            type="number"
+                            min={1}
+                            max={600}
+                            value={form.image_duration ?? ""}
+                            onChange={(e) => {
+                              const raw = e.target.value;
+                              set(
+                                "image_duration",
+                                raw === "" ? null : Math.max(1, Number(raw)),
+                              );
+                            }}
+                            className="w-16 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-center font-bold text-slate-700 focus:border-cyan-500 outline-none transition-colors"
+                            placeholder="ثواني"
+                            title="مدة عرض الصورة بالثواني (فاضية = بدون توقيت)"
+                          />
+                        </div>
+                      )}
+                      {isPlayableMedia && (
+                        <div className="flex items-center gap-1.5 bg-cyan-50/70 border border-cyan-100 rounded-xl px-2.5 py-1">
+                          <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1 whitespace-nowrap">
+                            <Repeat className="h-3.5 w-3.5 text-cyan-600" />
+                            مرات التشغيل:
+                          </label>
+                          <input
+                            type="number"
+                            min={1}
+                            max={20}
+                            value={form.media_play_count ?? ""}
+                            onChange={(e) => {
+                              const raw = e.target.value;
+                              set(
+                                "media_play_count",
+                                raw === "" ? null : Math.max(1, Number(raw)),
+                              );
+                            }}
+                            className="w-16 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-center font-bold text-slate-700 focus:border-cyan-500 outline-none transition-colors"
+                            placeholder="بدون حد"
+                            title="عدد مرات التشغيل (فاضية = بدون حد)"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )
                 }
               />
             </div>

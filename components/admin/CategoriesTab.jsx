@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "motion/react";
 import { ChevronDown, ChevronUp, Search } from "lucide-react";
 
 export default function CategoriesTab({
   categories,
   filteredCategories,
+  groups = [],
   questions,
   categoryUsage,
   busy,
@@ -16,6 +17,11 @@ export default function CategoriesTab({
   deleteCategory,
 }) {
   const [expandedIds, setExpandedIds] = useState(new Set());
+
+  const groupsMap = useMemo(
+    () => new Map((groups || []).map((g) => [String(g.id), g.name])),
+    [groups],
+  );
 
   const toggleExpand = (id) => {
     setExpandedIds((prev) => {
@@ -34,14 +40,14 @@ export default function CategoriesTab({
       className="space-y-4"
     >
       {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row justify-end items-stretch sm:items-center gap-3">
+      <div className="flex flex-col sm:flex-row justify-start items-stretch sm:items-center gap-3">
         {/* Search Box */}
         <div className="relative w-full sm:w-auto">
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="ابحث عن تصنيف..."
+            placeholder="ابحث عن فئة أسئلة..."
             className="border border-[#ccd0d4] bg-white rounded px-3 py-1.5 pl-8 text-sm outline-none focus:border-[#2271b1] w-full sm:w-64 shadow-sm"
           />
           <Search className="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5" />
@@ -56,6 +62,7 @@ export default function CategoriesTab({
             <thead>
               <tr className="bg-white border-b border-[#ccd0d4] select-none text-[#2c3338] font-bold text-[14px]">
                 <th className="p-3 text-right">الاسم</th>
+                <th className="p-3 text-right">التصنيف</th>
                 <th className="p-3 text-right">الوصف</th>
                 <th className="p-3 text-right">الترتيب</th>
                 <th className="p-3 text-right">صورة الغلاف</th>
@@ -67,8 +74,8 @@ export default function CategoriesTab({
             <tbody className="divide-y divide-[#f0f0f1]">
               {filteredCategories.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="p-8 text-center text-slate-400">
-                    لا توجد تصنيفات تطابق البحث.
+                  <td colSpan="8" className="p-8 text-center text-slate-400">
+                    لا توجد فئات أسئلة تطابق البحث.
                   </td>
                 </tr>
               ) : (
@@ -102,6 +109,11 @@ export default function CategoriesTab({
                             حذف
                           </button>
                         </div>
+                      </td>
+                      <td className="p-3">
+                        <span className="inline-flex items-center gap-1 bg-slate-100 border border-slate-200 text-slate-700 px-2 py-0.5 rounded text-xs font-semibold">
+                          {groupsMap.get(String(cat.group_id)) || "—"}
+                        </span>
                       </td>
                       <td className="p-3 text-slate-600">
                         {cat.description ? (
@@ -280,6 +292,15 @@ export default function CategoriesTab({
                       transition={{ duration: 0.2 }}
                       className="pt-2 border-t border-slate-100 space-y-2 text-[12px]"
                     >
+                      <div className="flex justify-between items-center py-1 border-b border-slate-50">
+                        <span className="font-bold text-slate-500">
+                          التصنيف الرئيسي:
+                        </span>
+                        <span className="inline-flex items-center gap-1 bg-slate-100 border border-slate-200 text-slate-700 px-2 py-0.5 rounded text-xs font-semibold">
+                          {groupsMap.get(String(cat.group_id)) || "—"}
+                        </span>
+                      </div>
+
                       <div className="py-1 border-b border-slate-50">
                         <span className="font-bold text-slate-500 block mb-0.5">
                           الوصف:
@@ -344,7 +365,7 @@ export default function CategoriesTab({
 
         {/* Footer info */}
         <div className="bg-[#f6f7f7] border-t border-[#ccd0d4] p-3 text-[12px] text-slate-500 text-left">
-          إجمالي التصنيفات المفلترة: {filteredCategories.length} من أصل{" "}
+          إجمالي فئات الأسئلة المفلترة: {filteredCategories.length} من أصل{" "}
           {categories.length}
         </div>
       </div>

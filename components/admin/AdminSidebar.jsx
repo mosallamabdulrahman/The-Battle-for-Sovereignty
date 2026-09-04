@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   BarChart3,
   Edit2,
+  FolderTree,
   Globe,
   LayoutDashboard,
   Tag,
@@ -16,8 +17,9 @@ import { useAdminNav } from "@/components/admin/AdminNavContext";
 
 const NAV_ITEMS = [
   { key: "dashboard", label: "الرئيسية", icon: LayoutDashboard },
+  { key: "groups", label: "التصنيفات", icon: FolderTree },
+  { key: "categories", label: "فئات الأسئلة", icon: Tag },
   { key: "questions", label: "الأسئلة", icon: Edit2 },
-  { key: "categories", label: "تصنيفات الأسئلة", icon: Tag },
   { key: "users", label: "المستخدمين", icon: Users },
   { key: "stats", label: "إحصائيات اللعبة", icon: BarChart3 },
 ];

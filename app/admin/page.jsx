@@ -16,9 +16,18 @@ import AdminSidebar from "@/components/admin/AdminSidebar";
 import DashboardTab from "@/components/admin/DashboardTab";
 import QuestionsTab from "@/components/admin/QuestionsTab";
 import CategoriesTab from "@/components/admin/CategoriesTab";
+import GroupsTab from "@/components/admin/GroupsTab";
+import GroupModal from "@/components/admin/GroupModal";
 import StatsTab from "@/components/admin/StatsTab";
 
-const VALID_TABS = ["dashboard", "questions", "categories", "users", "stats"];
+const VALID_TABS = [
+  "dashboard",
+  "groups",
+  "categories",
+  "questions",
+  "users",
+  "stats",
+];
 
 // ─── Main Admin Page ────────────────────────────────────────────
 export default function AdminPage() {
@@ -62,6 +71,7 @@ export default function AdminPage() {
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
+  const [groups, setGroups] = useState([]);
   const [categories, setCategories] = useState([]);
   const [questions, setQuestions] = useState([]);
   const [questionStats, setQuestionStats] = useState({});
@@ -70,6 +80,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState({ msg: "", type: "success" });
+  const [groupModal, setGroupModal] = useState(null); // null | {} | group object
   const [catModal, setCatModal] = useState(null); // null | {} | category object
   const [qModal, setQModal] = useState(null);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -85,12 +96,15 @@ export default function AdminPage() {
   );
 
   // ── Data loaders
-  // Categories/questions are read through /api/admin/* (service-role behind
-  // an is_admin() check) instead of the browser client, because the public
-  // RLS policies on these tables only expose is_active = true rows. The
-  // panel has to list disabled rows too — "معطّل" means hidden from the
-  // game, not hidden from the admin, otherwise a disabled category becomes
-  // unreachable and can never be edited or re-enabled.
+  const loadGroups = useCallback(async () => {
+    try {
+      const { groups: rows } = await callAdminApi("/api/admin/groups");
+      setGroups(rows || []);
+    } catch (err) {
+      notify(err.message, "error");
+    }
+  }, [notify]);
+
   const loadCategories = useCallback(async () => {
     try {
       const { categories: rows } = await callAdminApi("/api/admin/categories");
@@ -163,6 +177,7 @@ export default function AdminPage() {
   useEffect(() => {
     let active = true;
     Promise.all([
+      loadGroups(),
       loadCategories(),
       loadQuestions(),
       loadCategoryUsage(),
@@ -173,7 +188,54 @@ export default function AdminPage() {
     return () => {
       active = false;
     };
-  }, [loadCategories, loadQuestions, loadCategoryUsage, loadQuestionStats]);
+  }, [
+    loadGroups,
+    loadCategories,
+    loadQuestions,
+    loadCategoryUsage,
+    loadQuestionStats,
+  ]);
+
+  // ── Groups CRUD
+  const saveGroup = async (form) => {
+    setBusy(true);
+    try {
+      const { error } = await supabase.rpc("admin_save_group", {
+        p_id: form.id || null,
+        p_name: form.name.trim(),
+      });
+      if (error) throw error;
+      notify(form.id ? "تم تحديث التصنيف." : "تم إضافة التصنيف.");
+      await loadGroups();
+      setGroupModal(null);
+    } catch (err) {
+      notify(err.message, "error");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const deleteGroup = async (id, name) => {
+    if (
+      !window.confirm(
+        `حذف التصنيف "${name}"؟ ستصبح فئات الأسئلة التابعة له بدون تصنيف رئيسي.`,
+      )
+    )
+      return;
+    setBusy(true);
+    try {
+      const { error } = await supabase.rpc("admin_delete_group", {
+        p_id: id,
+      });
+      if (error) throw error;
+      notify("تم حذف التصنيف.");
+      await Promise.all([loadGroups(), loadCategories()]);
+    } catch (err) {
+      notify(err.message, "error");
+    } finally {
+      setBusy(false);
+    }
+  };
 
   // ── Categories CRUD
   const saveCategory = async (form) => {
@@ -186,9 +248,10 @@ export default function AdminPage() {
         p_image_url: form.image_url?.trim() || null,
         p_sort_order: form.sort_order || 0,
         p_is_active: form.is_active,
+        p_group_id: form.group_id || null,
       });
       if (error) throw error;
-      notify(form.id ? "تم تحديث التصنيف." : "تم إضافة التصنيف.");
+      notify(form.id ? "تم تحديث فئة الأسئلة." : "تم إضافة فئة الأسئلة.");
       await loadCategories();
       setCatModal(null);
     } catch (err) {
@@ -199,7 +262,7 @@ export default function AdminPage() {
   };
 
   const deleteCategory = async (id) => {
-    if (!window.confirm("حذف هذا التصنيف وكل أسئلته؟")) return;
+    if (!window.confirm("حذف فئة الأسئلة هذه وكل أسئلتها؟")) return;
     setBusy(true);
     try {
       const { error } = await supabase.rpc("admin_delete_category", {
@@ -251,8 +314,11 @@ export default function AdminPage() {
     try {
       const mediaUrl = form.media_url?.trim() || null;
       const mediaType = mediaUrl ? form.media_type || "image" : null;
+      const showQuestionFirst = mediaUrl
+        ? Boolean(form.show_question_first)
+        : false;
 
-      const { error } = await supabase.rpc("admin_save_question", {
+      const rpcParams = {
         p_id: form.id || null,
         p_category_id: form.category_id,
         p_question_text: form.question_text.trim(),
@@ -272,7 +338,15 @@ export default function AdminPage() {
             ? normalizePositiveInt(form.media_play_count, 20)
             : null,
         p_answer_image_url: form.answer_image_url?.trim() || null,
-      });
+        p_show_question_first: showQuestionFirst,
+      };
+
+      let { error } = await supabase.rpc("admin_save_question", rpcParams);
+      if (error && error.message?.includes("p_show_question_first")) {
+        delete rpcParams.p_show_question_first;
+        const retry = await supabase.rpc("admin_save_question", rpcParams);
+        error = retry.error;
+      }
       if (error) throw error;
       notify(form.id ? "تم تحديث السؤال." : "تم إضافة السؤال.");
       await loadQuestions();
@@ -347,10 +421,21 @@ export default function AdminPage() {
     <>
       <Toast msg={toast.msg} type={toast.type} onClose={closeToast} />
       <AnimatePresence>
+        {groupModal !== null && (
+          <GroupModal
+            group={groupModal.id ? groupModal : null}
+            onSave={saveGroup}
+            onClose={() => setGroupModal(null)}
+            busy={busy}
+          />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
         {catModal !== null && (
           <CategoryModal
             category={catModal.id ? catModal : null}
             categories={categories}
+            groups={groups}
             onSave={saveCategory}
             onClose={() => setCatModal(null)}
             busy={busy}
@@ -366,6 +451,7 @@ export default function AdminPage() {
             onSave={saveQuestion}
             onClose={() => setQModal(null)}
             busy={busy}
+            defaultCategoryId={qModal.category_id || filterCategory || ""}
           />
         )}
       </AnimatePresence>
@@ -383,25 +469,30 @@ export default function AdminPage() {
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-normal text-[#1d2327]">
                 {tab === "dashboard" && "لوحة التحكم الرئيسة"}
+                {tab === "groups" && "التصنيفات"}
+                {tab === "categories" && "فئات الأسئلة"}
                 {tab === "questions" && "الأسئلة"}
-                {tab === "categories" && "تصنيفات الأسئلة"}
                 {tab === "users" && "المستخدمين"}
                 {tab === "stats" && "إحصائيات اللعبة"}
               </h1>
 
               {tab === "questions" && (
                 <button
-                  onClick={() => setQModal({})}
+                  type="button"
+                  onClick={() =>
+                    setQModal({ category_id: filterCategory || "" })
+                  }
                   disabled={categories.length === 0}
-                  className="bg-[#f6f7f7] border border-[#2271b1] hover:bg-[#f0f0f1] text-[#2271b1] text-xs font-semibold px-2.5 py-1 rounded transition shadow-sm"
+                  className="bg-[#f6f7f7] border border-[#2271b1] hover:bg-[#2271b1] hover:text-white text-[#2271b1] text-xs font-semibold px-2.5 py-1 rounded transition shadow-sm cursor-pointer disabled:opacity-50"
                 >
                   أضف جديداً
                 </button>
               )}
               {tab === "categories" && (
                 <button
+                  type="button"
                   onClick={() => setCatModal({})}
-                  className="bg-[#f6f7f7] border border-[#2271b1] hover:bg-[#f0f0f1] text-[#2271b1] text-xs font-semibold px-2.5 py-1 rounded transition shadow-sm"
+                  className="bg-[#f6f7f7] border border-[#2271b1] hover:bg-[#2271b1] hover:text-white text-[#2271b1] text-xs font-semibold px-2.5 py-1 rounded transition shadow-sm cursor-pointer"
                 >
                   أضف جديداً
                 </button>
@@ -447,10 +538,21 @@ export default function AdminPage() {
             />
           )}
 
+          {tab === "groups" && (
+            <GroupsTab
+              groups={groups}
+              categories={categories}
+              busy={busy}
+              setGroupModal={setGroupModal}
+              deleteGroup={deleteGroup}
+            />
+          )}
+
           {tab === "categories" && (
             <CategoriesTab
               categories={categories}
               filteredCategories={filteredCategories}
+              groups={groups}
               questions={questions}
               categoryUsage={categoryUsage}
               busy={busy}

@@ -1,9 +1,38 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useRef } from "react";
 import { motion } from "motion/react";
-import { ChevronDown, ChevronUp, Music, Search, Video } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  ChevronLeft,
+  ChevronRight,
+  Music,
+  Search,
+  Video,
+} from "lucide-react";
 import { DIFFICULTY_AR } from "@/lib/admin-constants";
+
+function getPageNumbers(current, total) {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+  const pages = [];
+  pages.push(1);
+  if (current > 3) {
+    pages.push("...");
+  }
+  const start = Math.max(2, current - 1);
+  const end = Math.min(total - 1, current + 1);
+  for (let i = start; i <= end; i += 1) {
+    pages.push(i);
+  }
+  if (current < total - 2) {
+    pages.push("...");
+  }
+  pages.push(total);
+  return pages;
+}
 
 function CategoryFilterDropdown({
   categories,
@@ -15,6 +44,16 @@ function CategoryFilterDropdown({
   const selectedCat = categories.find(
     (c) => String(c.id) === String(filterCategory),
   );
+
+  const questionCounts = useMemo(() => {
+    const counts = {};
+    for (const q of questions) {
+      if (q.category_id) {
+        counts[q.category_id] = (counts[q.category_id] || 0) + 1;
+      }
+    }
+    return counts;
+  }, [questions]);
 
   return (
     <div className="relative w-full sm:w-64">
@@ -90,7 +129,7 @@ function CategoryFilterDropdown({
 
             {categories.map((c) => {
               const isSelected = String(filterCategory) === String(c.id);
-              const count = questions.filter((q) => q.category_id === c.id).length;
+              const count = questionCounts[c.id] || 0;
               return (
                 <button
                   key={c.id}
@@ -156,6 +195,35 @@ export default function QuestionsTab({
   onInlineDifficultyChange,
 }) {
   const [expandedIds, setExpandedIds] = useState(new Set());
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+  const filterKey = `${filterCategory || ""}_${searchQuery || ""}`;
+  const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
+  const tableTopRef = useRef(null);
+
+  // Adjust page state during render when filter or search changes (official React pattern)
+  if (prevFilterKey !== filterKey) {
+    setPrevFilterKey(filterKey);
+    setPage(1);
+  }
+
+  const totalPages = Math.max(1, Math.ceil(filteredQuestions.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, filteredQuestions.length);
+
+  const paginatedQuestions = useMemo(() => {
+    return filteredQuestions.slice(startIndex, endIndex);
+  }, [filteredQuestions, startIndex, endIndex]);
+
+  const goToPage = (nextPage) => {
+    const target = Math.max(1, Math.min(nextPage, totalPages));
+    setPage(target);
+    requestAnimationFrame(() => {
+      tableTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
 
   const toggleExpand = (id) => {
     setExpandedIds((prev) => {
@@ -168,10 +236,11 @@ export default function QuestionsTab({
 
   return (
     <motion.div
+      ref={tableTopRef}
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
-      className="space-y-4"
+      className="space-y-4 scroll-mt-6"
     >
       {/* Filter and Search Bar */}
       <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3">
@@ -219,7 +288,7 @@ export default function QuestionsTab({
                   </td>
                 </tr>
               ) : (
-                filteredQuestions.map((q) => {
+                paginatedQuestions.map((q) => {
                   const cat =
                     (q.category_id
                       ? categoryMap[String(q.category_id)]
@@ -329,7 +398,8 @@ export default function QuestionsTab({
                       <td className="p-3 text-slate-500 ">#{q.position}</td>
                       <td className="p-3">
                         {q.media_url ? (
-                          <a
+                          <>
+                            <a
                             href={q.media_url}
                             target="_blank"
                             rel="noopener noreferrer"
@@ -370,6 +440,12 @@ export default function QuestionsTab({
                               </>
                             )}
                           </a>
+                            {q.show_question_first && (
+                              <span className="block mt-1 text-[10px] font-bold text-cyan-700 bg-cyan-50 border border-cyan-100 px-1.5 py-0.5 rounded w-fit">
+                                السؤال أولاً
+                              </span>
+                            )}
+                          </>
                         ) : (
                           <span className="text-slate-400">—</span>
                         )}
@@ -435,7 +511,7 @@ export default function QuestionsTab({
               لا توجد أسئلة تطابق البحث أو التصنيف المختار.
             </div>
           ) : (
-            filteredQuestions.map((q) => {
+            paginatedQuestions.map((q) => {
               const cat =
                 (q.category_id ? categoryMap[String(q.category_id)] : null) ||
                 categories[0];
@@ -627,7 +703,8 @@ export default function QuestionsTab({
                         </span>
                         <div>
                           {q.media_url ? (
-                            <a
+                            <>
+                              <a
                               href={q.media_url}
                               target="_blank"
                               rel="noopener noreferrer"
@@ -668,7 +745,13 @@ export default function QuestionsTab({
                                 </>
                               )}
                             </a>
-                          ) : (
+                            {q.show_question_first && (
+                              <span className="block mt-1 text-[10px] font-bold text-cyan-700 bg-cyan-50 border border-cyan-100 px-1.5 py-0.5 rounded w-fit">
+                                السؤال أولاً
+                              </span>
+                            )}
+                          </>
+                        ) : (
                             <span className="text-slate-400">—</span>
                           )}
                         </div>
@@ -738,10 +821,104 @@ export default function QuestionsTab({
           )}
         </div>
 
-        {/* Footer info */}
-        <div className="bg-[#f6f7f7] border-t border-[#ccd0d4] p-3 text-[12px] text-slate-500 text-left">
-          إجمالي الأسئلة المفلترة: {filteredQuestions.length} من أصل{" "}
-          {questions.length}
+        {/* Pagination Bar */}
+        <div className="bg-[#f6f7f7] border-t border-[#ccd0d4] p-3 sm:px-4 flex flex-col md:flex-row items-center justify-between gap-3 text-[13px] text-slate-600 select-none">
+          {/* Page size and range info */}
+          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 w-full md:w-auto">
+            <span>
+              {filteredQuestions.length === 0 ? (
+                "لا توجد نتائج"
+              ) : (
+                <>
+                  عرض <strong className="text-slate-800 font-bold">{startIndex + 1}</strong> إلى{" "}
+                  <strong className="text-slate-800 font-bold">{endIndex}</strong> من أصل{" "}
+                  <strong className="text-slate-800 font-bold">{filteredQuestions.length}</strong> سؤال
+                </>
+              )}
+            </span>
+            {filteredQuestions.length > 0 && (
+              <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                <span>| لكل صفحة:</span>
+                {[25, 50, 100].map((size) => (
+                  <button
+                    key={size}
+                    type="button"
+                    onClick={() => {
+                      setPageSize(size);
+                      setCurrentPage(1);
+                      requestAnimationFrame(() => {
+                        tableTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                      });
+                    }}
+                    className={`px-2 py-0.5 rounded text-xs font-semibold cursor-pointer transition ${
+                      pageSize === size
+                        ? "bg-[#2271b1] text-white shadow-xs"
+                        : "bg-white border border-[#ccd0d4] text-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Navigation buttons: Previous, Page Numbers, Next */}
+          {totalPages > 1 && (
+            <div className="flex flex-wrap items-center justify-center gap-1 w-full md:w-auto">
+              {/* زر السابق */}
+              <button
+                type="button"
+                disabled={currentPage <= 1}
+                onClick={() => goToPage(currentPage - 1)}
+                className="px-3 py-1.5 bg-white border border-[#ccd0d4] rounded text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1 cursor-pointer shadow-xs"
+                title="الصفحة السابقة"
+              >
+                <ChevronRight className="w-3.5 h-3.5" />
+                <span>السابق</span>
+              </button>
+
+              {/* Page pills */}
+              <div className="flex items-center gap-1">
+                {getPageNumbers(currentPage, totalPages).map((p, idx) => {
+                  if (p === "...") {
+                    return (
+                      <span key={`dots-${idx}`} className="px-1.5 text-slate-400 text-xs font-bold">
+                        …
+                      </span>
+                    );
+                  }
+                  const isCurrent = p === currentPage;
+                  return (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => goToPage(p)}
+                      className={`min-w-[30px] h-[28px] px-2 rounded text-xs font-semibold transition cursor-pointer flex items-center justify-center ${
+                        isCurrent
+                          ? "bg-[#2271b1] text-white shadow-xs"
+                          : "bg-white border border-[#ccd0d4] text-slate-700 hover:bg-slate-50"
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* زر التالي */}
+              <button
+                type="button"
+                disabled={currentPage >= totalPages}
+                onClick={() => goToPage(currentPage + 1)}
+                className="px-3 py-1.5 bg-white border border-[#ccd0d4] rounded text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1 cursor-pointer shadow-xs"
+                title="الصفحة التالية"
+              >
+                <span>التالي</span>
+                <ChevronLeft className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </motion.div>

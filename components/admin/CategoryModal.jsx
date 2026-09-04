@@ -8,17 +8,24 @@ import { CategoryImageUpload } from "./MediaUploaders";
 export default function CategoryModal({
   category,
   categories,
+  groups = [],
   onSave,
   onClose,
   busy,
 }) {
   const [form, setForm] = useState(() => {
-    if (category) return category;
+    if (category) {
+      return {
+        ...category,
+        group_id: category.group_id ? String(category.group_id) : "",
+      };
+    }
     const usedOrders = new Set((categories || []).map((c) => c.sort_order));
     let nextOrder = 1;
     while (usedOrders.has(nextOrder)) nextOrder += 1;
     return {
       name: "",
+      group_id: groups[0]?.id ? String(groups[0].id) : "",
       description: "",
       image_url: "",
       sort_order: nextOrder,
@@ -31,6 +38,7 @@ export default function CategoryModal({
     (c) => c.sort_order === form.sort_order && c.id !== form.id,
   );
   const orderTooLow = form.sort_order < 1;
+  const isMissingGroup = !form.group_id || !form.group_id.trim();
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -57,12 +65,12 @@ export default function CategoryModal({
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-slate-100">
           <h2 className="font-bold text-slate-900">
-            {category ? "تعديل تصنيف" : "تصنيف جديد"}
+            {category ? "تعديل فئة الأسئلة" : "فئة أسئلة جديدة"}
           </h2>
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-lg hover:bg-slate-100 transition-colors"
+            className="p-1 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
           >
             <X className="h-5 w-5 text-slate-400" />
           </button>
@@ -72,14 +80,37 @@ export default function CategoryModal({
         <div className="flex-1 overflow-y-auto p-6 space-y-4 text-right">
           <div>
             <label className="text-[11px] font-bold text-slate-500">
-              الاسم *
+              اسم فئة الأسئلة *
             </label>
             <input
               value={form.name}
               onChange={(e) => set("name", e.target.value)}
               className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-cyan-500 outline-none transition-colors"
-              placeholder="اسم التصنيف"
+              placeholder="مثال: أعلام الدول، معرفة عامة، كلمات كويتية..."
             />
+          </div>
+
+          <div>
+            <label className="text-[11px] font-bold text-slate-500">
+              التصنيف (المجموعة الرئيسية) *
+            </label>
+            <select
+              value={form.group_id}
+              onChange={(e) => set("group_id", e.target.value)}
+              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm bg-white focus:border-cyan-500 outline-none transition-colors"
+            >
+              <option value="">-- اختر التصنيف الرئيسي --</option>
+              {(groups || []).map((g) => (
+                <option key={g.id} value={g.id}>
+                  {g.name}
+                </option>
+              ))}
+            </select>
+            {isMissingGroup && (
+              <p className="mt-1 text-[10px] font-bold text-amber-600">
+                يجب اختيار تصنيف رئيسي تتبع له فئة الأسئلة.
+              </p>
+            )}
           </div>
 
           <div>
@@ -162,8 +193,14 @@ export default function CategoryModal({
           <button
             type="button"
             onClick={() => onSave(form)}
-            disabled={busy || !form.name.trim() || orderTaken || orderTooLow}
-            className="flex-1 flex items-center justify-center gap-2 rounded-2xl bg-cyan-600 py-3 text-sm font-bold text-white disabled:opacity-60 hover:bg-cyan-700 transition-all duration-200 shadow-md hover:shadow-lg active:scale-[0.98]"
+            disabled={
+              busy ||
+              !form.name.trim() ||
+              isMissingGroup ||
+              orderTaken ||
+              orderTooLow
+            }
+            className="flex-1 flex items-center justify-center gap-2 rounded-2xl bg-cyan-600 py-3 text-sm font-bold text-white disabled:opacity-60 hover:bg-cyan-700 transition-all duration-200 shadow-md hover:shadow-lg active:scale-[0.98] cursor-pointer"
           >
             {busy ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -175,7 +212,7 @@ export default function CategoryModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all duration-200 active:scale-[0.98]"
+            className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all duration-200 active:scale-[0.98] cursor-pointer"
           >
             إلغاء
           </button>

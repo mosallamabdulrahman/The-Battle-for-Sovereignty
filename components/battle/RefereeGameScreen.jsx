@@ -689,6 +689,7 @@ export function RefereeGameScreen({
   const [teamSelectOpen, setTeamSelectOpen] = useState(false);
   const [forceGridView, setForceGridView] = useState(false);
   const [lastQuestionId, setLastQuestionId] = useState(room.active_question_id);
+  const [mediaRevealed, setMediaRevealed] = useState(false);
   const [radarModalTeam, setRadarModalTeam] = useState(null);
   const [strikeModalTeam, setStrikeModalTeam] = useState(null);
   const [confirmAction, setConfirmAction] = useState(null); // null | "end" | "exit"
@@ -707,6 +708,7 @@ export function RefereeGameScreen({
     setShowAnswer(false);
     setTeamSelectOpen(false);
     setForceGridView(false);
+    setMediaRevealed(false);
   }
 
   // A team with pending strikes always takes over the strike modal —
@@ -1002,13 +1004,31 @@ export function RefereeGameScreen({
                     <h2 className="text-lg sm:text-2xl md:text-3xl font-bold text-slate-950 leading-relaxed px-2">
                       {activeQuestion.question_text}
                     </h2>
-                    <MediaPlayer
-                      key={activeQuestion.id}
-                      mediaUrl={activeQuestion.media_url}
-                      mediaType={activeQuestion.media_type}
-                      imageDuration={activeQuestion.image_duration}
-                      mediaPlayCount={activeQuestion.media_play_count}
-                    />
+                    {activeQuestion.media_url && (
+                      activeQuestion.show_question_first && !mediaRevealed ? (
+                        <div className="mt-6 flex flex-col items-center justify-center">
+                          <button
+                            type="button"
+                            onClick={() => setMediaRevealed(true)}
+                            className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-600 to-sky-600 hover:from-cyan-500 hover:to-sky-500 active:scale-95 px-6 py-3 text-sm sm:text-base font-bold text-white shadow-lg shadow-cyan-600/25 transition-all duration-200 cursor-pointer"
+                          >
+                            <Play className="h-5 w-5 fill-white" />
+                            <span>عرض الوسائط</span>
+                          </button>
+                          <p className="mt-2 text-xs font-semibold text-slate-400">
+                            (نص السؤال يظهر أولاً — اضغط لعرض الوسائط)
+                          </p>
+                        </div>
+                      ) : (
+                        <MediaPlayer
+                          key={activeQuestion.id}
+                          mediaUrl={activeQuestion.media_url}
+                          mediaType={activeQuestion.media_type}
+                          imageDuration={activeQuestion.image_duration}
+                          mediaPlayCount={activeQuestion.media_play_count}
+                        />
+                      )
+                    )}
 
                     {/* Bottom Right: Category badge */}
                     <span className="absolute -bottom-4 sm:-bottom-5 right-3 sm:right-6 md:right-8 z-20 rounded-xl bg-rose-500 px-3 py-1.5 sm:px-5 sm:py-2 text-xs sm:text-sm font-bold text-white shadow-lg">

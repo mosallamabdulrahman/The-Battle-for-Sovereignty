@@ -284,10 +284,11 @@ export default function UsersManager({ notify }) {
         )}
       </AnimatePresence>
 
-      <div className="flex justify-end">
+      <div className="flex justify-start">
         <button
+          type="button"
           onClick={() => setModal({})}
-          className="bg-[#f6f7f7] border border-[#2271b1] hover:bg-[#f0f0f1] text-[#2271b1] text-xs font-semibold px-2.5 py-1 rounded transition shadow-sm flex items-center gap-1.5"
+          className="bg-[#f6f7f7] border border-[#2271b1] hover:bg-[#2271b1] hover:text-white text-[#2271b1] text-xs font-semibold px-2.5 py-1 rounded transition shadow-sm flex items-center gap-1.5 cursor-pointer"
         >
           <Plus className="w-3.5 h-3.5" />
           أضف مستخدم جديد
