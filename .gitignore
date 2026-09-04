@@ -5,3 +5,7 @@ coverage/
 *.log
 .env*
 !.env.example
+.tmp*
+__*
+*.temp
+.temp/
