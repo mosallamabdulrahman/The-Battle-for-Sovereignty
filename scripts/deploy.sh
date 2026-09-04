@@ -7,7 +7,8 @@ DEPLOY_HEALTH_TIMEOUT="${DEPLOY_HEALTH_TIMEOUT:-180}"
 
 cd "$ROOT_DIR"
 
-docker compose up -d --build --no-deps app
+docker compose build --no-cache app
+docker compose up -d --force-recreate --no-deps app
 
 start_time="$(date +%s)"
 
